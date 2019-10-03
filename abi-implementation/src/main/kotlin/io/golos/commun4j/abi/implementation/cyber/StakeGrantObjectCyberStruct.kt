@@ -1,0 +1,75 @@
+// Class is generated, changes would be overridden on compile
+package io.golos.commun4j.abi.implementation.cyber
+
+import com.squareup.moshi.JsonClass
+import io.golos.commun4j.abi.implementation.AbiBinaryGenCyber
+import io.golos.commun4j.abi.writer.Abi
+import io.golos.commun4j.abi.writer.CyberNameCompress
+import io.golos.commun4j.abi.writer.LongCompress
+import io.golos.commun4j.abi.writer.ShortCompress
+import io.golos.commun4j.abi.writer.SymbolCodeCompress
+import io.golos.commun4j.abi.writer.compression.CompressionType
+import io.golos.commun4j.chain.actions.transaction.abi.ActionAbi
+import io.golos.commun4j.chain.actions.transaction.abi.TransactionAuthorizationAbi
+import io.golos.commun4j.sharedmodel.CyberName
+import io.golos.commun4j.sharedmodel.CyberSymbolCode
+import kotlin.Long
+import kotlin.Short
+import kotlin.String
+import kotlin.collections.List
+
+@Abi
+@JsonClass(generateAdapter = true)
+data class StakeGrantObjectCyberStruct(
+  val id: Long,
+  val token_code: CyberSymbolCode,
+  val grantor_name: CyberName,
+  val recipient_name: CyberName,
+  val pct: Short,
+  val share: Long,
+  val break_fee: Short,
+  val break_min_own_staked: Long
+) {
+  val structName: String = "stake_grant_object"
+
+  val getId: Long
+    @LongCompress
+    get() = id
+
+  val getTokenCode: CyberSymbolCode
+    @SymbolCodeCompress
+    get() = token_code
+
+  val getGrantorName: CyberName
+    @CyberNameCompress
+    get() = grantor_name
+
+  val getRecipientName: CyberName
+    @CyberNameCompress
+    get() = recipient_name
+
+  val getPct: Short
+    @ShortCompress
+    get() = pct
+
+  val getShare: Long
+    @LongCompress
+    get() = share
+
+  val getBreakFee: Short
+    @ShortCompress
+    get() = break_fee
+
+  val getBreakMinOwnStaked: Long
+    @LongCompress
+    get() = break_min_own_staked
+
+  fun toHex() = AbiBinaryGenCyber(CompressionType.NONE)
+                 .squishStakeGrantObjectCyberStruct(this)
+                 .toHex()
+  fun toActionAbi(
+    contractName: String,
+    actionName: String,
+    transactionAuth: List<TransactionAuthorizationAbi>
+  ) = ActionAbi(contractName, actionName,
+         transactionAuth, toHex())}

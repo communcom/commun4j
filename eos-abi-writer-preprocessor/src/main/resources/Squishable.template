@@ -1,0 +1,244 @@
+package ${package_name};
+
+import io.golos.commun4j.core.crypto.EosPublicKey;
+import io.golos.commun4j.abi.writer.ByteWriter;
+import io.golos.commun4j.abi.writer.Squishable;
+
+import ${abi.getClassPackage()}.${abi.getClassName()};
+
+public class ${abi.getClassName()}Squishable implements Squishable<${abi.getClassName()}>{
+
+    private final AbiBinaryGen${class_postfix} abiBinaryGen;
+
+    ${abi.getClassName()}Squishable(AbiBinaryGen${class_postfix} abiBinaryGen) {
+        this.abiBinaryGen = abiBinaryGen;
+    }
+
+     <#if !abi.hasChildCompress()>
+     private static ${abi.getClassName()}Squishable instance;
+
+         static ${abi.getClassName()}Squishable getInstance() {
+             if (instance != null) return instance;
+             else {
+                 if (instance != null) return instance;
+                 synchronized (${abi.getClassName()}Squishable.class) {
+                     if (instance != null) return instance;
+                     instance = new ${abi.getClassName()}Squishable(null);
+
+                 }
+                 return instance;
+             }
+         }
+     </#if>
+
+    @Override
+    public void squish(${abi.getClassName()} ${abi.getClassName()?lower_case}, ByteWriter byteWriter) {
+        <#list abi.getFields() as field>
+            <#if field.isName()>
+                 byteWriter.putName(${abi.getClassName()?lower_case}.${field.getName()}(),
+                 <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isAccountName()>
+                byteWriter.putAccountName(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isBlockNum()>
+                byteWriter.putBlockNum(${abi.getClassName()?lower_case}.${field.getName()}(),
+                 <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isBlockPrefix()>
+                byteWriter.putBlockPrefix(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isPublicKey()>
+                  byteWriter.putPublicKey(${abi.getClassName()?lower_case}.${field.getName()}(),
+                  <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+             <#if field.isCyberNameCollection()>
+                 byteWriter.putCyberNamesCollection(${abi.getClassName()?lower_case}.${field.getName()}(),
+                 <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+             </#if>
+             <#if field.isCheckSum()>
+                byteWriter.putCheckSum(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isAsset()>
+                byteWriter.putAsset(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+
+            <#if field.isChainId()>
+                byteWriter.putChainId(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isHexCollection()>
+                byteWriter.putHexCollection(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isData()>
+                byteWriter.putData(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isTimestamp()>
+                byteWriter.putTimestampMs(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isByte()>
+                byteWriter.putByte(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isShort()>
+                byteWriter.putShort(${abi.getClassName()?lower_case}.${field.getName()}(),
+                 <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isInt()>
+                byteWriter.putInt(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isVariableUInt()>
+                byteWriter.putVariableUInt(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isLong()>
+                byteWriter.putLong(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isFloat()>
+                byteWriter.putFloat(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isBytes()>
+                byteWriter.putBytes(${abi.getClassName()?lower_case}.${field.getName()}(),
+                 <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isSymbol()>
+                byteWriter.putSymbol(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isSymbolCode()>
+                byteWriter.putSymbolCode(${abi.getClassName()?lower_case}.${field.getName()}(),
+                 <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isString()>
+                byteWriter.putString(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isBool()>
+             byteWriter.putBoolean(${abi.getClassName()?lower_case}.${field.getName()}(),
+             <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isStringCollection()>
+                byteWriter.putStringCollection(${abi.getClassName()?lower_case}.${field.getName()}(),
+                 <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isAccountNameCollection()>
+                byteWriter.putAccountNameCollection(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isInterfaceCollection()>
+                byteWriter.putInterfaceCollection(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+            </#if>
+            <#if field.isChild()>
+                abiBinaryGen.squish${extractObject(field.getClassType())}(${abi.getClassName()?lower_case}.${field.getName()}());
+            </#if>
+            <#if field.isShortCollection()>
+                 byteWriter.putShortCollection(${abi.getClassName()?lower_case}.${field.getName()}(), <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+             </#if>
+             <#if field.isIntCollection()>
+                  byteWriter.putIntCollection(${abi.getClassName()?lower_case}.${field.getName()}(),
+                   <#if field.isNullable()>true
+                 <#else>false
+                 </#if>
+                 );
+             </#if>
+
+            <#if field.isCollection()>
+                abiBinaryGen.squishCollection${extractListObject(field.getClassType())}(
+                    ${abi.getClassName()?lower_case}.${field.getName()}(),
+                    byteWriter);
+            </#if>
+        </#list>
+    }
+}

@@ -1,0 +1,40 @@
+// Class is generated, changes would be overridden on compile
+package io.golos.commun4j.abi.implementation.cyber
+
+import com.squareup.moshi.JsonClass
+import io.golos.commun4j.abi.implementation.AbiBinaryGenCyber
+import io.golos.commun4j.abi.writer.Abi
+import io.golos.commun4j.abi.writer.ChildCompress
+import io.golos.commun4j.abi.writer.ShortCompress
+import io.golos.commun4j.abi.writer.compression.CompressionType
+import io.golos.commun4j.chain.actions.transaction.abi.ActionAbi
+import io.golos.commun4j.chain.actions.transaction.abi.TransactionAuthorizationAbi
+import kotlin.Short
+import kotlin.String
+import kotlin.collections.List
+
+@Abi
+@JsonClass(generateAdapter = true)
+data class PermissionLevelWeightCyberStruct(
+  val permission: PermissionLevelCyberStruct,
+  val weight: Short
+) {
+  val structName: String = "permission_level_weight"
+
+  val getPermission: PermissionLevelCyberStruct
+    @ChildCompress
+    get() = permission
+
+  val getWeight: Short
+    @ShortCompress
+    get() = weight
+
+  fun toHex() = AbiBinaryGenCyber(CompressionType.NONE)
+                 .squishPermissionLevelWeightCyberStruct(this)
+                 .toHex()
+  fun toActionAbi(
+    contractName: String,
+    actionName: String,
+    transactionAuth: List<TransactionAuthorizationAbi>
+  ) = ActionAbi(contractName, actionName,
+         transactionAuth, toHex())}

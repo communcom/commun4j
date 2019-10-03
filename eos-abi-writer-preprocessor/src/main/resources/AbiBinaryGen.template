@@ -1,0 +1,74 @@
+package ${package_name};
+
+<#list abi_list as abi>
+import ${abi.getClassPackage()}.${abi.getClassName()};
+</#list>
+
+import io.golos.commun4j.abi.writer.ByteWriter;
+import io.golos.commun4j.abi.writer.bytewriter.DefaultByteWriter;
+import io.golos.commun4j.abi.writer.compression.CompressionFactory;
+import io.golos.commun4j.abi.writer.compression.CompressionType;
+
+import io.golos.commun4j.core.hex.DefaultHexWriter;
+import io.golos.commun4j.core.hex.HexWriter;
+
+import java.util.List;
+
+public class AbiBinaryGen${class_postfix} {
+
+    private final ByteWriter byteWriter;
+    private final HexWriter hexWriter;
+    private final CompressionType compressionType;
+
+    <#list abi_list as abi>
+    private final ${abi.getClassName()}Squishable ${abi.getClassName()?lower_case}Squishable;
+    </#list>
+
+    public AbiBinaryGen${class_postfix}(CompressionType compressionType) {
+        this(
+            new DefaultByteWriter(512),
+            new DefaultHexWriter(),
+            compressionType
+        );
+    }
+
+    public AbiBinaryGen${class_postfix}(ByteWriter byteWriter, HexWriter hexWriter, CompressionType compressionType) {
+        this.byteWriter = byteWriter;
+        this.hexWriter = hexWriter;
+        this.compressionType = compressionType;
+
+        <#list abi_list as abi>
+        <#if !abi.hasChildCompress()>
+        this.${abi.getClassName()?lower_case}Squishable = ${abi.getClassName()}Squishable.getInstance();
+        <#else>
+          this.${abi.getClassName()?lower_case}Squishable = new ${abi.getClassName()}Squishable(this);
+          </#if>
+        </#list>
+    }
+
+    public byte[] toBytes() {
+        return new CompressionFactory(compressionType)
+            .create()
+            .compress(byteWriter.toBytes());
+    }
+
+    public String toHex() {
+        byte[] compressedBytes = toBytes();
+        return hexWriter.bytesToHex(compressedBytes, 0, compressedBytes.length, null);
+    }
+
+    <#list abi_list as abi>
+
+        public AbiBinaryGen${class_postfix} squish${abi.getClassName()}(${abi.getClassName()} ${abi.getClassName()?lower_case}) {
+            ${abi.getClassName()?lower_case}Squishable.squish(${abi.getClassName()?lower_case}, byteWriter);
+            return this;
+        }
+
+        void squishCollection${abi.getClassName()}(List<${abi.getClassName()}> ${abi.getClassName()?lower_case}List, ByteWriter byteWriter) {
+            byteWriter.putVariableUInt(${abi.getClassName()?lower_case}List.size(), false);
+            for (${abi.getClassName()} ${abi.getClassName()?lower_case} : ${abi.getClassName()?lower_case}List) {
+                ${abi.getClassName()?lower_case}Squishable.squish(${abi.getClassName()?lower_case}, byteWriter);
+            }
+        }
+    </#list>
+}

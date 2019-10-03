@@ -1,0 +1,38 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+    }
+}
+
+group groupName
+version versionName
+
+apply plugin: 'kotlin'
+apply plugin: 'kotlin-kapt'
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://dl.bintray.com/memtrip/maven/"
+    }
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
+    implementation "com.squareup.retrofit2:converter-moshi:$retrofitVersion"
+    implementation "com.squareup.moshi:moshi-kotlin:$moshiKotlinVersion"
+    implementation "com.squareup.okhttp3:logging-interceptor:$loggingIntrceptorVersion"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinReflectVersion"
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.6"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.6"
+}
+
+apply from: '../publish.gradle'

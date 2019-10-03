@@ -1,0 +1,27 @@
+apply plugin: 'java'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+repositories {
+    mavenCentral()
+}
+
+group = groupName
+version = versionName
+sourceCompatibility = '1.7'
+
+dependencies {
+    annotationProcessor "com.google.auto.service:auto-service:$autoServiceVersion"
+    implementation "com.google.auto.service:auto-service:$autoServiceVersion"
+    implementation 'org.freemarker:freemarker:2.3.28'
+    implementation 'com.google.googlejavaformat:google-java-format:1.0'
+    implementation project(path: ':eos-abi-writer', configuration: 'default')
+   
+    testImplementation 'junit:junit:4.12'
+}
+
+
+

@@ -1,0 +1,44 @@
+apply plugin: 'kotlin'
+apply plugin: 'kotlin-kapt'
+
+group groupName
+version versionName
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+    }
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
+
+}
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.6"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.6"
+}
+
+dependencies {
+    compileOnly project(":abi-converter")
+
+    kapt project(path:":eos-abi-writer-preprocessor", configuration: 'default')
+    implementation project(":shared-model")
+    implementation project(":eos-abi-writer")
+    implementation project(":eos-chain-actions")
+    implementation project(":eos-core")
+
+    implementation "com.squareup.moshi:moshi:$moshiVersion"
+    implementation "com.squareup.okhttp3:logging-interceptor:$loggingIntrceptorVersion"
+
+    kapt "com.squareup.moshi:moshi-kotlin-codegen:$moshiCodegenVersion"
+}
+
+apply from: '../publish.gradle'
+
+
