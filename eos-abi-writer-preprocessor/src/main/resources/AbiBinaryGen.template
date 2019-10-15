@@ -59,12 +59,15 @@ public class AbiBinaryGen${class_postfix} {
 
     <#list abi_list as abi>
 
-        public AbiBinaryGen${class_postfix} squish${abi.getClassName()}(${abi.getClassName()} ${abi.getClassName()?lower_case}) {
-            ${abi.getClassName()?lower_case}Squishable.squish(${abi.getClassName()?lower_case}, byteWriter);
+        public AbiBinaryGen${class_postfix} squish${abi.getClassName()}(${abi.getClassName()} ${abi.getClassName()?lower_case}, boolean isNullable) {
+            if (isNullable){
+                byteWriter.putBoolean(${abi.getClassName()?lower_case} != null, false);
+            }
+            if (${abi.getClassName()?lower_case} != null) ${abi.getClassName()?lower_case}Squishable.squish(${abi.getClassName()?lower_case}, byteWriter);
             return this;
         }
 
-        void squishCollection${abi.getClassName()}(List<${abi.getClassName()}> ${abi.getClassName()?lower_case}List, ByteWriter byteWriter) {
+        void squishCollection${abi.getClassName()}(List<${abi.getClassName()}> ${abi.getClassName()?lower_case}List, ByteWriter byteWriter, boolean isNullable) {
             byteWriter.putVariableUInt(${abi.getClassName()?lower_case}List.size(), false);
             for (${abi.getClassName()} ${abi.getClassName()?lower_case} : ${abi.getClassName()?lower_case}List) {
                 ${abi.getClassName()?lower_case}Squishable.squish(${abi.getClassName()?lower_case}, byteWriter);

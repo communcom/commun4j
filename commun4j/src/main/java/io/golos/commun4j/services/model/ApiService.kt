@@ -4,8 +4,7 @@ package io.golos.commun4j.services.model
 import io.golos.commun4j.chain.actions.transaction.abi.TransactionAbi
 import io.golos.commun4j.http.rpc.model.ApiResponseError
 import io.golos.commun4j.http.rpc.model.transaction.response.TransactionCommitted
-import io.golos.commun4j.model.CyberDiscussion
-import io.golos.commun4j.model.DiscussionsResult
+import io.golos.commun4j.model.*
 import io.golos.commun4j.sharedmodel.AuthSecret
 import io.golos.commun4j.sharedmodel.CyberName
 import io.golos.commun4j.sharedmodel.Either
@@ -29,11 +28,7 @@ interface ApiService {
                        username: String?,
                        app: String): Either<DiscussionsResult, ApiResponseError>
 
-    fun getPost(userId: String?,
-                username: String?,
-                permlink: String,
-                parsingType: ContentParsingType,
-                appName: String): Either<CyberDiscussion, ApiResponseError>
+
 
     fun getComment(userId: String?,
                    permlink: String,
@@ -103,19 +98,28 @@ interface ApiService {
 
     fun unAuth()
 
-    fun resolveProfile(username: String,
-                       appName: String): Either<ResolvedProfile, ApiResponseError>
+    fun resolveProfile(username: String): Either<ResolvedProfile, ApiResponseError>
 
     fun <T : Any> pushTransactionWithProvidedBandwidth(chainId: String,
                                                        transactionAbi: TransactionAbi,
                                                        signature: String,
                                                        traceType: Class<T>): Either<TransactionCommitted<T>, GolosEosError>
 
-    fun getCommunitiesList(name: String, offset: Int): Either<GetCommunitiesResponse, ApiResponseError>
+    fun getCommunitiesList(name: String, offset: Int, limit: Int): Either<GetCommunitiesResponse, ApiResponseError>
 
     fun getCommunity(communityId: String, userId: String): Either<GetCommunitiesItem, ApiResponseError>
 
     fun shutDown()
+
+    fun getPost(userId: CyberName,
+                communityId: String,
+                permlink: String): Either<CyberDiscussion, ApiResponseError>
+
+    fun getPosts(): Either<GetDiscussionsResult, ApiResponseError>
+
+    abstract fun getPostRaw(userId: CyberName, communityId: String, permlink: String): Either<CyberDiscussionRaw, ApiResponseError>
+
+    abstract fun getPostsRaw(): Either<GetDiscussionsResultRaw, ApiResponseError>
 
 
 }

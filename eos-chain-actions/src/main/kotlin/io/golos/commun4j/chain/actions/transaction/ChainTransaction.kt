@@ -57,14 +57,14 @@ abstract class ChainTransaction(
                                         transaction,
                                         emptyList()
                                 )
-                        ).toBytes(), authorizingPrivateKey)
+                                , false).toBytes(), authorizingPrivateKey)
 
                 chainApi.pushTransaction(
                         PushTransaction(
                                 asList(signature),
                                 "none",
                                 "",
-                                AbiBinaryGenTransactionWriter(CompressionType.NONE).squishTransactionAbi(transaction).toHex()))
+                                AbiBinaryGenTransactionWriter(CompressionType.NONE).squishTransactionAbi(transaction , false).toHex()))
             } else {
                 Single.just(Response.error(info.code(), info.errorBody()!!))
             }

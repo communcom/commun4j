@@ -57,6 +57,6 @@ class SellRamChain(chainApi: io.golos.commun4j.http.rpc.ChainApi) : io.golos.com
                                 transactionContext.authorizingAccountName,
                                 args.quantity)
                 )
-        ).toHex()
+                , false).toHex()
     }
 }

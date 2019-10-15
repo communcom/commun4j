@@ -19,11 +19,9 @@ internal class DiscussionsRequests(val type: String,
                                    val app: String)
 
 @JsonClass(generateAdapter = true)
-internal class DiscussionRequests(val userId: String?,
-                                  val username: String?,
+internal class DiscussionRequests(val userId: String,
                                   val permlink: String,
-                                  val contentType: String,
-                                  val app: String)
+                                  val communityId: String)
 
 @JsonClass(generateAdapter = true)
 internal class UserMetaDataRequest(val userId: String?, val username: String?)
@@ -34,7 +32,7 @@ internal class GetSecretRequest
 internal class ServicesAuthRequest(val user: String, val sign: String, val secret: String)
 
 @JsonClass(generateAdapter = true)
-internal class ResolveUserNameRequest(val username: String, val app: String)
+internal class ResolveUserNameRequest(val username: String)
 
 @JsonClass(generateAdapter = true)
 internal class PushTransactionWithProvidedBandwidth(val transaction: TransactionBody,

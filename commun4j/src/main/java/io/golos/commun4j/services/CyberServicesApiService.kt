@@ -3,6 +3,7 @@ package io.golos.commun4j.services
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
+import com.squareup.moshi.adapters.PolymorphicJsonAdapterFactory
 import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.golos.commun4j.abi.writer.compression.CompressionType
@@ -11,28 +12,25 @@ import io.golos.commun4j.chain.actions.transaction.abi.TransactionAbi
 import io.golos.commun4j.http.rpc.SocketClientImpl
 import io.golos.commun4j.http.rpc.model.ApiResponseError
 import io.golos.commun4j.http.rpc.model.transaction.response.TransactionCommitted
-import io.golos.commun4j.model.ContentRow
-import io.golos.commun4j.model.CyberDiscussion
-import io.golos.commun4j.model.DiscussionsResult
-import io.golos.commun4j.model.WriteUserToBlockchainRequest
+import io.golos.commun4j.model.*
 import io.golos.commun4j.services.model.*
 import io.golos.commun4j.sharedmodel.*
 import io.golos.commun4j.utils.*
 import java.math.BigInteger
 import java.util.*
-import kotlin.collections.HashMap
 
 private enum class ServicesGateMethods {
     GET_FEED, GET_POST, GET_COMMENT, GET_COMMENTS, GET_USER_METADATA, GET_SECRET, AUTH, GET_EMBED,
     GET_REGISTRATION_STATE, REG_FIRST_STEP, REG_VERIFY_PHONE, REG_SET_USER_NAME, REG_WRITE_TO_BLOCKCHAIN,
     REG_RESEND_SMS, WAIT_BLOCK, WAIT_FOR_TRANSACTION, PUSH_SUBSCRIBE, PUSH_UNSUBSCRIBE, GET_NOTIFS_HISTORY, MARK_VIEWED,
     GET_UNREAD_COUNT, MARK_VIEWED_ALL, SET_SETTINGS, GET_SETTINGS, GET_SUBSCRIPTIONS, GET_SUBSCRIBERS,
-    RESOLVE_USERNAME, PROVIDE_BANDWIDTH, GET_COMMUNITIES,GET_COMMUNITIY;
+    RESOLVE_USERNAME, PROVIDE_BANDWIDTH, GET_COMMUNITIES, GET_COMMUNITIY, GET_POSTS;
 
     override fun toString(): String {
         return when (this) {
             GET_FEED -> "content.getFeed"
             GET_POST -> "content.getPost"
+            GET_POSTS -> "content.getPosts"
             GET_COMMENT -> "content.getComment"
             GET_COMMENTS -> "content.getComments"
             WAIT_BLOCK -> "content.waitForBlock"
@@ -59,7 +57,7 @@ private enum class ServicesGateMethods {
             GET_SUBSCRIBERS -> "content.getSubscribers"
             RESOLVE_USERNAME -> "content.resolveProfile"
             PROVIDE_BANDWIDTH -> "bandwidth.provide"
-            GET_COMMUNITIES -> "content.getCommunitiesList"
+            GET_COMMUNITIES -> "content.getCommunities"
             GET_COMMUNITIY -> "content.getCommunity"
         }
     }
@@ -74,11 +72,16 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                 .add(CyberName::class.java, CyberNameAdapter())
                 .add(UserRegistrationState::class.java, UserRegistrationStateAdapter())
                 .add(RegistrationStrategy::class.java, UserRegistrationStrategyAdapter())
-                .add(ContentRow::class.java, ContentRowAdapter())
+                .add(
+                        PolymorphicJsonAdapterFactory.of(Content::class.java, "type")
+                                .withSubtype(Paragraph::class.java, "paragraph")
+                                .withSubtype(Attachments::class.java, "attachments")
+                )
                 .add(EventType::class.java, EventTypeAdapter())
                 .add(CyberName::class.java, CyberNameAdapter())
                 .add(ServiceSettingsLanguage::class.java, ServiceSettingsLanguageAdapter())
                 .add(EventsAdapter())
+                .add(ToStringAdaptper())
                 .add(CyberAsset::class.java, CyberAssetAdapter())
                 .add(KotlinJsonAdapterFactory())
                 .build(),
@@ -113,25 +116,24 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         apiClient.dropConnection()
     }
 
-    override fun resolveProfile(username: String, appName: String): Either<ResolvedProfile, ApiResponseError> {
+    override fun resolveProfile(username: String): Either<ResolvedProfile, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.RESOLVE_USERNAME.toString(),
                 ResolveUserNameRequest(
-                        username,
-                        appName
+                        username
                 ), ResolvedProfile::class.java)
     }
 
-    override fun getCommunitiesList(name: String, offset: Int) = apiClient.send(
+    override fun getCommunitiesList(name: String, offset: Int, limit: Int) = apiClient.send(
             ServicesGateMethods.GET_COMMUNITIES.toString(),
-            hashMapOf<Any, Any>("userId" to name, "offset" to offset),
+            hashMapOf<Any, Any>("userId" to name, "offset" to offset, "limit" to limit),
             GetCommunitiesResponse::class.java)
 
     override fun getCommunity(communityId: String, userId: String) = apiClient.send(
             ServicesGateMethods.GET_COMMUNITIY.toString(),
             hashMapOf(
-                 "communityId" to communityId,
-                "userId" to userId),
+                    "communityId" to communityId,
+                    "userId" to userId),
             GetCommunitiesItem::class.java)
 
 
@@ -141,7 +143,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                                                                 traceType: Class<T>): Either<TransactionCommitted<T>, GolosEosError> {
         val packedTransactionHex =
                 AbiBinaryGenTransactionWriter(CompressionType.NONE)
-                        .squishTransactionAbi(transactionAbi)
+                        .squishTransactionAbi(transactionAbi, false)
                         .toHex()
 
 
@@ -230,17 +232,38 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun getPost(
-            userId: String?,
-            username: String?,
-            permlink: String,
-            parsingType: ContentParsingType,
-            appName: String
+    override fun getPost(userId: CyberName,
+                         communityId: String,
+                         permlink: String
     ): Either<CyberDiscussion, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_POST.toString(),
-                DiscussionRequests(userId, username, permlink, parsingType.asContentType(), appName),
+                DiscussionRequests(userId.name, permlink, communityId),
                 CyberDiscussion::class.java
+        )
+    }
+
+    override fun getPostRaw(userId: CyberName, communityId: String, permlink: String): Either<CyberDiscussionRaw, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.GET_POST.toString(),
+                DiscussionRequests(userId.name, permlink, communityId),
+                CyberDiscussionRaw::class.java
+        )
+    }
+
+    override fun getPosts(): Either<GetDiscussionsResult, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.GET_POSTS.toString(),
+                Any(),
+                GetDiscussionsResult::class.java
+        )
+    }
+
+    override fun getPostsRaw(): Either<GetDiscussionsResultRaw, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.GET_POSTS.toString(),
+                Any(),
+                GetDiscussionsResultRaw::class.java
         )
     }
 
@@ -270,13 +293,10 @@ internal class CyberServicesApiService @JvmOverloads constructor(
 
         return apiClient.send(
                 ServicesGateMethods.GET_COMMENT.toString(), DiscussionRequests(
-                userId,
-                username,
+                userId!!,
                 permlink,
-                parsingType.asContentType(),
-                app
-        ), CyberDiscussion::class.java
-        )
+                ""
+        ), CyberDiscussion::class.java)
     }
 
     override fun getComments(

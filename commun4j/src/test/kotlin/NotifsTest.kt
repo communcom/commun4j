@@ -15,7 +15,7 @@ class NotifsTest {
     val client = Commun4j(Commun4jConfig(blockChainHttpApiUrl = "http://46.4.96.246:8888/",
             servicesUrl = "ws://116.203.98.241:8080"))
 
-    val userId = (client.resolveCanonicalCyberName("cbfjdhdhjdh", "gls") as Either.Success).value.userId
+    val userId = (client.resolveCanonicalCyberName("cbfjdhdhjdh") as Either.Success).value.userId
     val key = "5JTZuS3VANMazmS3ZXCMXUrUJp6Qwv8HUMzxjX1SURa64w86AgL"
 
     @Test

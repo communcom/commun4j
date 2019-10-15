@@ -64,6 +64,6 @@ class TransferChain(chainApi: io.golos.commun4j.http.rpc.ChainApi) : io.golos.co
                     args.quantity,
                     args.memo)
             )
-        ).toHex()
+        , false).toHex()
     }
 }

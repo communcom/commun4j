@@ -19,6 +19,9 @@ class KeyStorage {
         return accounts[activeAcc]!!
     }
 
+    fun getActiveKeyOfActiveAccount() = getActiveAccountKeys().first { it.first == AuthType.ACTIVE }.second
+
+
     @Synchronized
     fun getActiveAccount(): CyberName {
         return activeAccount

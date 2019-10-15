@@ -60,6 +60,6 @@ class BuyRamBytesChain(chainApi: io.golos.commun4j.http.rpc.ChainApi) : io.golos
                     args.receiver,
                     args.quantity)
             )
-        ).toHex()
+                , false).toHex()
     }
 }

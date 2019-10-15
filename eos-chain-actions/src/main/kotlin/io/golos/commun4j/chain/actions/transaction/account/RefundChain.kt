@@ -33,6 +33,6 @@ class RefundChain(chainApi: io.golos.commun4j.http.rpc.ChainApi) : io.golos.comm
     private fun refundAbi(transactionContext: io.golos.commun4j.chain.actions.transaction.TransactionContext): String {
         return AbiBinaryGenTransactionWriter(CompressionType.NONE).squishRefundBody(
                 RefundBody(RefundArgs(transactionContext.authorizingAccountName))
-        ).toHex()
+                , false).toHex()
     }
 }

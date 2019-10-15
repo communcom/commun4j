@@ -4,6 +4,8 @@ package io.golos.commun4j
 
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
+import io.golos.commun4j.abi.implementation.comn.gallery.*
+import io.golos.commun4j.abi.implementation.comn.social.*
 import io.golos.commun4j.abi.implementation.cyber.AuthorityCyberStruct
 import io.golos.commun4j.abi.implementation.cyber.KeyWeightCyberStruct
 import io.golos.commun4j.abi.implementation.cyber.NewaccountCyberAction
@@ -102,9 +104,7 @@ open class Commun4j @JvmOverloads constructor(
      * @param appName app in which domain this name is. Currently there is 'cyber' and 'gls' apps
      * @throws IllegalArgumentException if name doesn't exist
      * */
-    fun resolveCanonicalCyberName(name: String,
-                                  appName: String) =
-            apiService.resolveProfile(name, appName)
+    fun resolveCanonicalCyberName(name: String) = apiService.resolveProfile(name)
 
 
     private inline fun <reified T : Any> pushTransaction(
@@ -112,7 +112,7 @@ open class Commun4j @JvmOverloads constructor(
             key: String,
             bandWidthRequest: BandWidthRequest?): Either<TransactionCommitted<T>, GolosEosError> {
 
-        return if (bandWidthRequest?.source == BandWidthSource.GOLOSIO_SERVICES) {
+        return if (bandWidthRequest?.source == BandWidthSource.COMN_SERVICES) {
 
             val signedTrx =
                     TransactionPusher.createSignedTransaction(actions + createProvideBw(actions.first().authorization.first().actor.toCyberName(), bandWidthRequest.actor),
@@ -392,267 +392,309 @@ open class Commun4j @JvmOverloads constructor(
         return callTilTimeoutExceptionVanishes(setUserNameCallable)
     }
 
+    @JvmOverloads
+    fun createPost(
+            communCode: CyberSymbolCode,
+            header: String,
+            body: String,
+            tags: List<String>,
+            metadata: String,
+            curatorsPrcnt: Short,
+            weight: Short?,
+            bandWidthRequest: BandWidthRequest? = null,
+            author: CyberName = keyStorage.getActiveAccount(),
+            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<CreatemssgComnGalleryStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<CreatemssgComnGalleryStruct>(CreatemssgComnGalleryAction(
+                    CreatemssgComnGalleryStruct(communCode,
+                            MssgidComnGalleryStruct(author, formatPostPermlink(header)),
+                            MssgidComnGalleryStruct(CyberName(), ""),
+                            header,
+                            body,
+                            tags,
+                            metadata,
+                            curatorsPrcnt,
+                            weight)
+            ).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(author.name, "active"))
+            ), authorKey, bandWidthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun createComment(
+            parentMssgId: MssgidComnGalleryStruct,
+            communCode: CyberSymbolCode,
+            header: String,
+            body: String,
+            tags: List<String>,
+            metadata: String,
+            curatorsPrcnt: Short,
+            weight: Short?,
+            bandWidthRequest: BandWidthRequest? = null,
+            author: CyberName = keyStorage.getActiveAccount(),
+            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<CreatemssgComnGalleryStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<CreatemssgComnGalleryStruct>(CreatemssgComnGalleryAction(
+                    CreatemssgComnGalleryStruct(communCode,
+                            MssgidComnGalleryStruct(author, formatPostPermlink(header)),
+                            parentMssgId,
+                            header,
+                            body,
+                            tags,
+                            metadata,
+                            curatorsPrcnt,
+                            weight)
+            ).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(author.name, "active"))
+            ), authorKey, bandWidthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun updatePostOrComment(
+            messageId: MssgidComnGalleryStruct,
+            communCode: CyberSymbolCode,
+            header: String,
+            body: String,
+            tags: List<String>,
+            metadata: String,
+            bandWidthRequest: BandWidthRequest? = null,
+            author: CyberName = keyStorage.getActiveAccount(),
+            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<UpdatemssgComnGalleryStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<UpdatemssgComnGalleryStruct>(UpdatemssgComnGalleryAction(
+                    UpdatemssgComnGalleryStruct(communCode,
+                            messageId,
+                            header,
+                            body,
+                            tags,
+                            metadata)
+            ).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(author.name, "active"))
+            ), authorKey, bandWidthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun deletePostOrComment(
+            messageId: MssgidComnGalleryStruct,
+            communCode: CyberSymbolCode,
+            bandWidthRequest: BandWidthRequest? = null,
+            author: CyberName = keyStorage.getActiveAccount(),
+            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<DeletemssgComnGalleryStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<DeletemssgComnGalleryStruct>(DeletemssgComnGalleryAction(
+                    DeletemssgComnGalleryStruct(communCode,
+                            messageId)
+            ).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(author.name, "active"))
+            ), authorKey, bandWidthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+
+    @JvmOverloads
+    fun upVote(communCode: CyberSymbolCode,
+               messageId: MssgidComnGalleryStruct,
+               weight: Short,
+               bandWidthRequest: BandWidthRequest? = null,
+               voter: CyberName = keyStorage.getActiveAccount(),
+               key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<VoteComnGalleryStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<VoteComnGalleryStruct>(UpvoteComnGalleryAction(VoteComnGalleryStruct(communCode,
+                    voter, messageId, weight)
+            ).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(voter.name, "active"))
+            ), key, bandWidthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun downVote(communCode: CyberSymbolCode,
+                 messageId: MssgidComnGalleryStruct,
+                 weight: Short,
+                 bandWidthRequest: BandWidthRequest? = null,
+                 voter: CyberName = keyStorage.getActiveAccount(),
+                 key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<VoteComnGalleryStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<VoteComnGalleryStruct>(DownvoteComnGalleryAction(VoteComnGalleryStruct(communCode,
+                    voter, messageId, weight)
+            ).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(voter.name, "active"))
+            ), key, bandWidthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun unVote(communCode: CyberSymbolCode,
+               messageId: MssgidComnGalleryStruct,
+               bandWidthRequest: BandWidthRequest? = null,
+               voter: CyberName = keyStorage.getActiveAccount(),
+               key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<UnvoteComnGalleryStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<UnvoteComnGalleryStruct>(UnvoteComnGalleryAction(UnvoteComnGalleryStruct(
+                    communCode, voter, messageId
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(voter.name, "active"))
+            ), key, bandWidthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun pinUser(pinning: CyberName,
+                bandWidthRequest: BandWidthRequest? = null,
+                pinner: CyberName = keyStorage.getActiveAccount(),
+                key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<PinComnSocialStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<PinComnSocialStruct>(PinComnSocialAction(PinComnSocialStruct(
+                    pinner, pinning
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(pinner.name, "active"))
+            ), key, bandWidthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun unpinUser(unpinning: CyberName,
+                  bandWidthRequest: BandWidthRequest? = null,
+                  pinner: CyberName = keyStorage.getActiveAccount(),
+                  key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<PinComnSocialStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<PinComnSocialStruct>(UnpinComnSocialAction(PinComnSocialStruct(
+                    pinner, unpinning
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(pinner.name, "active"))
+            ), key, bandWidthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun block(blocking: CyberName,
+              bandWidthRequest: BandWidthRequest? = null,
+              blocker: CyberName = keyStorage.getActiveAccount(),
+              key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<BlockComnSocialStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<BlockComnSocialStruct>(BlockComnSocialAction(BlockComnSocialStruct(
+                    blocker, blocking
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(blocker.name, "active"))
+            ), key, bandWidthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun unBlock(blocking: CyberName,
+                bandWidthRequest: BandWidthRequest? = null,
+                blocker: CyberName = keyStorage.getActiveAccount(),
+                key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<BlockComnSocialStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<BlockComnSocialStruct>(UnblockComnSocialAction(BlockComnSocialStruct(
+                    blocker, blocking
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(blocker.name, "active"))
+            ), key, bandWidthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun updateUserMetadata(
+            avatarUrl: String?,
+            coverUrl: String?,
+            biography: String?,
+            facebook: String?,
+            telegram: String?,
+            whatsapp: String?,
+            wechat: String?,
+            bandWidthRequest: BandWidthRequest? = null,
+            user: CyberName = keyStorage.getActiveAccount(),
+            key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<UpdatemetaComnSocialStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<UpdatemetaComnSocialStruct>(UpdatemetaComnSocialAction(UpdatemetaComnSocialStruct(
+                    user,
+                    AccountmetaComnSocialStruct(
+                            avatarUrl, coverUrl, biography, facebook, telegram, whatsapp, wechat
+                    )
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(user.name, "active"))
+            ), key, bandWidthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun DeleteUserMetadata(
+            bandWidthRequest: BandWidthRequest? = null,
+            user: CyberName = keyStorage.getActiveAccount(),
+            key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<DeletemetaComnSocialStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<DeletemetaComnSocialStruct>(DeletemetaComnSocialAction(DeletemetaComnSocialStruct(
+                    user
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(user.name, "active"))
+            ), key, bandWidthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
 
     fun getCommunitiesList(user: CyberName,
-                           offfset: Int) = apiService.getCommunitiesList(user.name, offfset)
+                           offset: Int,
+                           limit: Int) = apiService.getCommunitiesList(user.name, offset, limit)
 
     fun getCommunity(communityId: String,
                      userId: CyberName) = apiService.getCommunity(communityId, userId.name)
 
-    /** method for fetching posts of certain community from cyberway microservices.
-     * return objects may differ, depending on auth state of current user.
-     * @param communityId userId of community
-     * @param type type of parsing to apply to content. According to [type] returning [DiscussionsResult]'s [DiscussionContent] may vary:
-     * for [ContentParsingType.MOBILE] there would rows of text and images, for [ContentParsingType.WEB] there would be 'body' with web parsing rules to apply,
-     * for [ContentParsingType.RAW] there would be 'raw' field, with contents as is
-     * @param limit limit of returned discussions
-     * @param sort [FeedSort.INVERTED] if you need new posts first,
-     * [FeedSort.SEQUENTIALLY] if you need old first
-     * @param sequenceKey paging key for querying next page of discussions. is from [DiscussionsResult.sequenceKey].
-     * null, if you want posts from beginning
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * also this exception may occur during authorization in case of active user change in [keyStorage], if there is some query in process.
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     */
-
-    fun getCommunityPosts(
-            communityId: String,
-            type: ContentParsingType,
-            timeFrame: FeedTimeFrame?,
-            limit: Int,
-            sort: FeedSort,
-            tags: List<String>?,
-            sequenceKey: String? = null,
-            appName: String = "gls"
-    ) = apiService.getDiscussions(PostsFeedType.COMMUNITY, sort, timeFrame, type, sequenceKey,
-            limit, null, communityId, tags, null, appName)
-
-
-    /** method for fetching user subscribed communities posts
-     * return objects may differ, depending on auth state of current user.
-     * @param user user, which subscriptions to fetch
-     * @param type type of parsing to apply to content. According to [type] returning [DiscussionsResult]'s [DiscussionContent] may vary:
-     * for [ContentParsingType.MOBILE] there would rows of text and images, for [ContentParsingType.WEB] there would be 'body' with web parsing rules to apply,
-     * for [ContentParsingType.RAW] there would be 'raw' field, with contents as is
-     * @param limit limit of returned discussions
-     * @param sort [FeedSort.INVERTED] if you need new posts first, [FeedSort.SEQUENTIALLY] if you need old first
-     * @param sequenceKey paging key for querying next page of discussions. is from [DiscussionsResult.sequenceKey]
-     * null, if you want posts from beginning
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * also this exception may occur during authorization in case of active user change in [keyStorage], if there is some query in process.
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     */
-
-    fun getUserSubscriptions(
-            user: CyberName?,
-            userName: String?,
-            type: ContentParsingType,
-            limit: Int,
-            sort: FeedSort,
-            sequenceKey: String? = null,
-            appName: String = "gls"
-    ) = apiService.getDiscussions(
-            PostsFeedType.SUBSCRIPTIONS,
-            sort, null, type, sequenceKey, limit, user?.name,
-            null, null, userName, appName)
-
-    /** method for fetching posts of certain user
-     * return objects may differ, depending on auth state of current user.
-     *  in [CyberDiscussion] returned by this method, in [ContentBody] [ContentBody.preview] is not empty
-     * @param user user, which subscriptions to fetch
-     * @param type type of parsing to apply to content. According to [type] returning [DiscussionsResult]'s [DiscussionContent] may vary:
-     * for [ContentParsingType.MOBILE] there would rows of text and images, for [ContentParsingType.WEB] there would be 'body' with web parsing rules to apply,
-     * for [ContentParsingType.RAW] there would be 'raw' field, with contents as is
-     * @param limit limit of returned discussions
-     * @param sort [FeedSort.INVERTED] if you need new posts first, [FeedSort.SEQUENTIALLY] if you need old first
-     * @param sequenceKey paging key for querying next page of discussions. is from [DiscussionsResult.sequenceKey]
-     * null, if you want posts from beginning
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * also this exception may occur during authorization in case of active user change in [keyStorage], if there is some query in process.
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     */
-
-    fun getUserPosts(
-            user: CyberName?,
-            userName: String?,
-            type: ContentParsingType,
-            limit: Int,
-            sort: FeedSort,
-            sequenceKey: String? = null,
-            appName: String = "gls"
-    ) = apiService.getDiscussions(
-            PostsFeedType.USER_POSTS,
-            sort,
-            null,
-            type,
-            sequenceKey,
-            limit,
-            user?.name,
-            null,
-            null,
-            userName,
-            appName)
-
-
-    /** method for fetching particular post
-     * return objects may differ, depending on auth state of current user.
-     * in [CyberDiscussion] returned by this method, in [ContentBody] [ContentBody.full] is not empty
-     * @param user user, which post to fetch
-     * @param permlink permlink of post to fetch
-     * @param parsingType type of parsing to apply to content. According to [parsingType] returning [DiscussionsResult]'s [DiscussionContent] may vary:
-     * for [ContentParsingType.MOBILE] there would rows of text and images, for [ContentParsingType.WEB] there would be 'body' with web parsing rules to apply,
-     * for [ContentParsingType.RAW] there would be 'raw' field, with contents as is
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * also this exception may occur during authorization in case of active user change in [keyStorage], if there is some query in process.
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     */
-
 
     fun getPost(
-            user: CyberName?,
-            userName: String?,
-            permlink: String,
-            parsingType: ContentParsingType,
-            appName: String = "gls"
-    ) = apiService.getPost(user?.name, userName, permlink, parsingType, appName)
+            userId: CyberName,
+            communityId: String,
+            permlink: String
+    ) = apiService.getPost(userId, communityId, permlink)
 
+    fun getPostRaw(
+            userId: CyberName,
+            communityId: String,
+            permlink: String
+    ) = apiService.getPostRaw(userId, communityId, permlink)
 
-    /** method for fetching particular comment
-     * return objects may differ, depending on auth state of current user.
-     * @param user user, which comment to fetch
-     * @param permlink permlink of comment to fetch
-     * @param parsingType type of parsing to apply to content. According to [parsingType] returning [DiscussionsResult]'s [DiscussionContent] may vary:
-     * for [ContentParsingType.MOBILE] there would rows of text and images, for [ContentParsingType.WEB] there would be 'body' with web parsing rules to apply,
-     * for [ContentParsingType.RAW] there would be 'raw' field, with contents as is
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * also this exception may occur during authorization in case of active user change in [keyStorage], if there is some query in process.
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     */
+    fun getPosts() = apiService.getPosts()
 
-    fun getComment(
-            user: CyberName?,
-            userName: String?,
-            permlink: String,
-            parsingType: ContentParsingType,
-            appName: String = "gls"
-    ) = apiService.getComment(user?.name, permlink, parsingType, userName, appName)
+    fun getPostsRaw() = apiService.getPostsRaw()
 
-    /** method for fetching comments particular post
-     * return objects may differ, depending on auth state of current user.
-     * @param user user of original post
-     * @param permlink permlink of original post
-     * @param parsingType type of parsing to apply to content. According to [parsingType] returning [DiscussionsResult]'s [DiscussionContent] may vary:
-     * for [ContentParsingType.MOBILE] there would rows of text and images, for [ContentParsingType.WEB] there would be 'body' with web parsing rules to apply,
-     * for [ContentParsingType.RAW] there would be 'raw' field, with contents as is
-     * @param limit number of comments to fetch. Comments are fetched sequentially, without concerning on comment level
-     * @param sort [FeedSort.INVERTED] if you need new comments first, [FeedSort.SEQUENTIALLY] if you need old first
-     * @param sequenceKey paging key for querying next page of comments. is from [DiscussionsResult.sequenceKey]
-     * null, if you want posts from beginning
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * also this exception may occur during authorization in case of active user change in [keyStorage], if there is some query in process.
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     */
-
-    fun getCommentsOfPost(
-            user: CyberName?,
-            userName: String?,
-            permlink: String,
-            parsingType: ContentParsingType,
-            limit: Int,
-            sort: FeedSort,
-            sequenceKey: String? = null,
-            appName: String = "gls"
-    ) = apiService.getComments(
-            sort, sequenceKey, limit,
-            CommentsOrigin.COMMENTS_OF_POST, parsingType,
-            user?.name, permlink, userName, appName)
-
-    /** method for fetching replies to particular user
-     * return objects may differ, depending on auth state of current user.
-     * @param user user which replies to fetch
-     * @param parsingType type of parsing to apply to content. According to [parsingType] returning [DiscussionsResult]'s [DiscussionContent] may vary:
-     * for [ContentParsingType.MOBILE] there would rows of text and images, for [ContentParsingType.WEB] there would be 'body' with web parsing rules to apply,
-     * for [ContentParsingType.RAW] there would be 'raw' field, with contents as is
-     * @param limit number of comments to fetch. Comments are fetched sequentially, without concerning on comment level
-     * @param sort [FeedSort.INVERTED] if you need new comments first, [FeedSort.SEQUENTIALLY] if you need old first
-     * @param sequenceKey paging key for querying next page of comments. is from [DiscussionsResult.sequenceKey]
-     * null, if you want posts from beginning
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * also this exception may occur during authorization in case of active user change in [keyStorage], if there is some query in process.
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     */
-    fun getUserReplies(
-            user: CyberName?,
-            userName: String?,
-            parsingType: ContentParsingType,
-            limit: Int,
-            sort: FeedSort,
-            sequenceKey: String? = null,
-            appName: String = "gls"
-    ) = apiService.getComments(
-            sort, sequenceKey, limit,
-            CommentsOrigin.REPLIES, parsingType,
-            user?.name, null, userName, appName)
-
-    /** method for fetching comments particular user
-     * return objects may differ, depending on auth state of current user.
-     * @param user name of user, which comments we need
-     * @param parsingType type of parsing to apply to content. According to [parsingType] returning [DiscussionsResult]'s [DiscussionContent] may vary:
-     * for [ContentParsingType.MOBILE] there would rows of text and images, for [ContentParsingType.WEB] there would be 'body' with web parsing rules to apply,
-     * for [ContentParsingType.RAW] there would be 'raw' field, with contents as is
-     * @param limit number of comments to fetch.
-     * @param sort [FeedSort.INVERTED] if you need new comments first, [FeedSort.SEQUENTIALLY] if you need old first
-     * @param sequenceKey paging key for querying next page of comments. is from [DiscussionsResult.sequenceKey]
-     * null, if you want posts from beginning
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * also this exception may occur during authorization in case of active user change in [keyStorage], if there is some query in process.
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     */
-
-    fun getCommentsOfUser(
-            user: CyberName?,
-            userName: String?,
-            parsingType: ContentParsingType,
-            limit: Int,
-            sort: FeedSort,
-            sequenceKey: String? = null,
-            appName: String = "gls"
-    ): Either<DiscussionsResult, ApiResponseError> =
-            apiService.getComments(
-                    sort, sequenceKey, limit,
-                    CommentsOrigin.COMMENTS_OF_USER, parsingType,
-                    user?.name, null, userName, appName)
-
-    /**Do not use, would be changed soon*/
-    fun getSubscriptionsToUsers(ofUser: CyberName,
-                                limit: Int,
-                                sequenceKey: String? = null,
-                                appName: String = "gls") = apiService.getSubscriptions(ofUser, limit, SubscriptionType.USER, sequenceKey, appName)
-
-    /**Do not use, would be changed soon*/
-    fun getSubscriptionsToCommunities(ofUser: CyberName,
-                                      limit: Int,
-                                      sequenceKey: String? = null,
-                                      appName: String = "gls") = apiService.getSubscriptions(ofUser, limit, SubscriptionType.COMMUNITY, sequenceKey, appName)
-
-    /**Do not use, would be changed soon*/
-    fun getUsersSubscribedToUser(user: CyberName,
-                                 limit: Int,
-                                 sequenceKey: String? = null,
-                                 appName: String = "gls") = apiService.getSubscribers(user, limit, SubscriptionType.USER, sequenceKey, appName)
-
-    /**Do not use, would be changed soon*/
-    fun getCommunitiesSubscribedToUser(ofUser: CyberName,
-                                       limit: Int,
-                                       sequenceKey: String? = null,
-                                       appName: String = "gls") = apiService.getSubscribers(ofUser, limit, SubscriptionType.COMMUNITY, sequenceKey, appName)
-
-
-    /** method for fetching  metedata of some user
-     * @param user name of user, which metadata is  fetched
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     */
     fun getUserProfile(user: CyberName?, userName: String?): Either<GetProfileResult, ApiResponseError> =
             apiService.getProfile(user?.name, userName)
 
@@ -1017,4 +1059,4 @@ private fun createProvideBw(forUser: CyberName, actor: CyberName): ActionAbi = A
                         ProvideBandwichAbi(
                                 actor,
                                 forUser)
-                ).toHex())
+                , false).toHex())

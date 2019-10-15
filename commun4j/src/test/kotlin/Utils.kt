@@ -10,7 +10,7 @@
 //import io.golos.commun4j.core.crypto.EosPrivateKey
 //import io.golos.commun4j.core.crypto.signature.PrivateKeySigning
 //import io.golos.commun4j.http.rpc.model.transaction.response.TransactionCommitted
-//import io.golos.commun4j.model.ContentRow
+//import io.golos.commun4j.model.Content
 //import io.golos.commun4j.services.model.*
 //import io.golos.commun4j.sharedmodel.*
 //import io.golos.commun4j.utils.*
@@ -79,7 +79,7 @@
 //                .add(CyberName::class.java, CyberNameAdapter())
 //                .add(UserRegistrationState::class.java, UserRegistrationStateAdapter())
 //                .add(RegistrationStrategy::class.java, UserRegistrationStrategyAdapter())
-//                .add(ContentRow::class.java, ContentRowAdapter())
+//                .add(Content::class.java, ContentRowAdapter())
 //                .add(EventType::class.java, EventTypeAdapter())
 //                .add(CyberNameAdapter())
 //                .add(ServiceSettingsLanguage::class.java, ServiceSettingsLanguageAdapter())

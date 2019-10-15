@@ -61,6 +61,6 @@ class VoteChain(chainApi: io.golos.commun4j.http.rpc.ChainApi) : io.golos.commun
                     args.proxy,
                     args.producers)
             )
-        ).toHex()
+        , false).toHex()
     }
 }

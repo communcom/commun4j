@@ -62,6 +62,6 @@ class UnDelegateBandwidthChain(chainApi: io.golos.commun4j.http.rpc.ChainApi) : 
                     args.netQuantity,
                     args.cpuQuantity)
             )
-        ).toHex()
+                , false).toHex()
     }
 }

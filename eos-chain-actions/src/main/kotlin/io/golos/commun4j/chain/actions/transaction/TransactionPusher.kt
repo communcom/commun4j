@@ -78,7 +78,7 @@ object TransactionPusher {
                                 "none",
                                 "",
                                 AbiBinaryGenTransactionWriter(CompressionType.NONE)
-                                        .squishTransactionAbi(signatureResult.value.transaction).toHex()
+                                        .squishTransactionAbi(signatureResult.value.transaction , false).toHex()
                         ))))
                 .url("${blockChainUrl.removeSuffix("/")}/v1/chain/push_transaction")
                 .build()
@@ -206,7 +206,7 @@ object TransactionPusher {
 
         return PrivateKeySigning()
                 .sign(AbiBinaryGenTransactionWriter(CompressionType.NONE)
-                        .squishSignedTransactionAbi(st)
+                        .squishSignedTransactionAbi(st , false)
                         .toBytes(), privateKey)
 
     }

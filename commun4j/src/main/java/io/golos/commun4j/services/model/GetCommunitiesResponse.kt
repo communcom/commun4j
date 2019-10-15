@@ -4,15 +4,15 @@ import com.squareup.moshi.JsonClass
 
 
 @JsonClass(generateAdapter = true)
-data class GetCommunitiesResponse(val communities: List<GetCommunitiesItem>)
+data class GetCommunitiesResponse(val items: List<GetCommunitiesItem>)
 
 @JsonClass(generateAdapter = true)
 data class GetCommunitiesItem(val subscribersCount: Int,
-                              val communityId: String,
-                              val communityName:String,
-                              val avatar: String?,
+                              val id: String,
+                              val name:String,
+                              val code: String,
+                              val avatarUrl: String?,
                               val coverImageLink: String?,
-                              val tokenName: String,
-                              val ticker: String,
+                              val language: String?,
                               val description: String?,
                               val rules: String?)

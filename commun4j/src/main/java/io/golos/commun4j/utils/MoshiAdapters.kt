@@ -1,9 +1,6 @@
 package io.golos.commun4j.utils
 
 import com.squareup.moshi.*
-import io.golos.commun4j.model.ContentRow
-import io.golos.commun4j.model.ImageRow
-import io.golos.commun4j.model.TextRow
 import io.golos.commun4j.services.model.*
 
 
@@ -27,6 +24,18 @@ class UserRegistrationStateAdapter : JsonAdapter<UserRegistrationState>() {
     }
 }
 
+
+annotation class ToStringParseable
+
+class ToStringAdaptper {
+    @FromJson
+    @ToStringParseable
+     fun fromJson(reader: JsonReader): String {
+        val data = reader.readJsonValue()
+        return data?.toString().orEmpty()
+    }
+}
+
 class UserRegistrationStrategyAdapter : JsonAdapter<RegistrationStrategy>() {
 
     override fun fromJson(reader: JsonReader): RegistrationStrategy {
@@ -43,46 +52,6 @@ class UserRegistrationStrategyAdapter : JsonAdapter<RegistrationStrategy>() {
 
     override fun toJson(writer: JsonWriter, value: RegistrationStrategy?) {
         writer.value(value?.name ?: "")
-    }
-}
-
-class ContentRowAdapter : JsonAdapter<ContentRow>() {
-    override fun fromJson(reader: JsonReader): ContentRow? {
-        reader.beginObject()
-        var type: String? = null
-        var src: String? = null
-        var content: String? = null
-
-        while (reader.hasNext()) {
-            val fieldName = reader.nextName()
-            when (fieldName) {
-                "type" -> type = reader.nextString()
-                "content" -> content = reader.nextString()
-                "src" -> src = reader.nextString()
-                else -> {
-                    try {
-                        val unknownToke = reader.peek()
-                        if (unknownToke == JsonReader.Token.NULL) reader.nextNull<Any?>()
-                        else reader.nextString()
-
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-            }
-        }
-
-        val out = when (type!!) {
-            TextRow.typeName -> TextRow(content!!)
-            ImageRow.typeName -> ImageRow(src!!)
-            else -> throw java.lang.IllegalArgumentException("unknown type $type")
-        }
-        reader.endObject()
-        return out
-    }
-
-    override fun toJson(writer: JsonWriter, value: ContentRow?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }
 

@@ -65,6 +65,6 @@ class DelegateBandwidthChain(chainApi: io.golos.commun4j.http.rpc.ChainApi) : io
                     args.cpuQuantity,
                     if (args.transfer) 1 else 0)
             )
-        ).toHex()
+                , false).toHex()
     }
 }

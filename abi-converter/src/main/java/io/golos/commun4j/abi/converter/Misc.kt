@@ -279,7 +279,7 @@ fun generateClasses(eosAbi: EosAbi,
                             builder.addFunction(FunSpec
                                     .builder("toHex")
                                     .addCode("""return AbiBinaryGen$writerInterfaceName(CompressionType.NONE)
-                                        |               .squish$className(this)
+                                        |               .squish$className(this, false)
                                         |               .toHex()
                                     """.trimMargin())
                                     .build())
@@ -288,7 +288,7 @@ fun generateClasses(eosAbi: EosAbi,
                                         .builder(squishMethodName)
                                         .addModifiers(KModifier.OVERRIDE)
                                         .addCode("""return AbiBinaryGen$writerInterfaceName(CompressionType.NONE)
-                                        |               .squish$className(this)
+                                        |               .squish$className(this, false)
                                         |               .toBytes()
                                     """.trimMargin())
                                         .build())

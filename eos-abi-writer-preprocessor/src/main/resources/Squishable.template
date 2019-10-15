@@ -218,7 +218,11 @@ public class ${abi.getClassName()}Squishable implements Squishable<${abi.getClas
                  );
             </#if>
             <#if field.isChild()>
-                abiBinaryGen.squish${extractObject(field.getClassType())}(${abi.getClassName()?lower_case}.${field.getName()}());
+                abiBinaryGen.squish${extractObject(field.getClassType())}(${abi.getClassName()?lower_case}.${field.getName()}(),
+                <#if field.isNullable()>true
+                                 <#else>false
+                                 </#if>
+                                 );
             </#if>
             <#if field.isShortCollection()>
                  byteWriter.putShortCollection(${abi.getClassName()?lower_case}.${field.getName()}(), <#if field.isNullable()>true
@@ -237,7 +241,7 @@ public class ${abi.getClassName()}Squishable implements Squishable<${abi.getClas
             <#if field.isCollection()>
                 abiBinaryGen.squishCollection${extractListObject(field.getClassType())}(
                     ${abi.getClassName()?lower_case}.${field.getName()}(),
-                    byteWriter);
+                    byteWriter, false);
             </#if>
         </#list>
     }
