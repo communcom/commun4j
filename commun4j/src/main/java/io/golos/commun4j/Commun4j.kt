@@ -403,18 +403,17 @@ open class Commun4j @JvmOverloads constructor(
             weight: Short?,
             bandWidthRequest: BandWidthRequest? = null,
             author: CyberName = keyStorage.getActiveAccount(),
-            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<CreatemssgComnGalleryStruct>, GolosEosError> {
+            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<CreateComnGalleryStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<CreatemssgComnGalleryStruct>(CreatemssgComnGalleryAction(
-                    CreatemssgComnGalleryStruct(communCode,
+            pushTransaction<CreateComnGalleryStruct>(CreateComnGalleryAction(
+                    CreateComnGalleryStruct(communCode,
                             MssgidComnGalleryStruct(author, formatPostPermlink(header)),
                             MssgidComnGalleryStruct(CyberName(), ""),
                             header,
                             body,
                             tags,
                             metadata,
-                            curatorsPrcnt,
                             weight)
             ).toActionAbi(
                     listOf(TransactionAuthorizationAbi(author.name, "active"))
@@ -435,18 +434,17 @@ open class Commun4j @JvmOverloads constructor(
             weight: Short?,
             bandWidthRequest: BandWidthRequest? = null,
             author: CyberName = keyStorage.getActiveAccount(),
-            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<CreatemssgComnGalleryStruct>, GolosEosError> {
+            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<CreateComnGalleryStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<CreatemssgComnGalleryStruct>(CreatemssgComnGalleryAction(
-                    CreatemssgComnGalleryStruct(communCode,
+            pushTransaction<CreateComnGalleryStruct>(CreateComnGalleryAction(
+                    CreateComnGalleryStruct(communCode,
                             MssgidComnGalleryStruct(author, formatPostPermlink(header)),
                             parentMssgId,
                             header,
                             body,
                             tags,
                             metadata,
-                            curatorsPrcnt,
                             weight)
             ).toActionAbi(
                     listOf(TransactionAuthorizationAbi(author.name, "active"))
@@ -465,11 +463,11 @@ open class Commun4j @JvmOverloads constructor(
             metadata: String,
             bandWidthRequest: BandWidthRequest? = null,
             author: CyberName = keyStorage.getActiveAccount(),
-            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<UpdatemssgComnGalleryStruct>, GolosEosError> {
+            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<UpdateComnGalleryStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<UpdatemssgComnGalleryStruct>(UpdatemssgComnGalleryAction(
-                    UpdatemssgComnGalleryStruct(communCode,
+            pushTransaction<UpdateComnGalleryStruct>(UpdateComnGalleryAction(
+                    UpdateComnGalleryStruct(communCode,
                             messageId,
                             header,
                             body,
@@ -488,11 +486,11 @@ open class Commun4j @JvmOverloads constructor(
             communCode: CyberSymbolCode,
             bandWidthRequest: BandWidthRequest? = null,
             author: CyberName = keyStorage.getActiveAccount(),
-            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<DeletemssgComnGalleryStruct>, GolosEosError> {
+            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<RemoveComnGalleryStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<DeletemssgComnGalleryStruct>(DeletemssgComnGalleryAction(
-                    DeletemssgComnGalleryStruct(communCode,
+            pushTransaction<RemoveComnGalleryStruct>(RemoveComnGalleryAction(
+                    RemoveComnGalleryStruct(communCode,
                             messageId)
             ).toActionAbi(
                     listOf(TransactionAuthorizationAbi(author.name, "active"))
