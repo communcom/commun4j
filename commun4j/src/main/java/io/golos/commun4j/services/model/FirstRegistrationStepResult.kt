@@ -5,5 +5,5 @@ import java.util.Date
 
 @JsonClass(generateAdapter = true)
 data class FirstRegistrationStepResult(val code: Int?,
-                                       val strategy: RegistrationStrategy,
+                                       val currentState: UserRegistrationState,
                                        val nextSmsRetry: Date)

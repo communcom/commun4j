@@ -400,15 +400,15 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     }
 
     override fun writeUserToBlockchain(
+            phone: String,
             userName: String,
+            userId: String,
             owner: String,
-            active: String,
-            posting: String,
-            memo: String
+            active: String
     ): Either<RegisterResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_WRITE_TO_BLOCKCHAIN.toString(),
-                WriteUserToBlockchainRequest(userName, owner, active, posting, memo),
+                WriteUserToBlockchainRequest(phone, userName, userId, owner, active),
                 RegisterResult::class.java
         )
     }

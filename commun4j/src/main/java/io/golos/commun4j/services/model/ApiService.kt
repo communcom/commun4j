@@ -61,7 +61,7 @@ interface ApiService {
 
     fun setVerifiedUserName(user: String, phone: String): Either<ResultOk, ApiResponseError>
 
-    fun writeUserToBlockchain(userName: String, owner: String, active: String, posting: String, memo: String): Either<RegisterResult, ApiResponseError>
+    fun writeUserToBlockchain(phone: String, userId: String, userName: String, owner: String, active: String): Either<RegisterResult, ApiResponseError>
 
     fun resendSmsCode(name: String?, phone: String?): Either<ResultOk, ApiResponseError>
 

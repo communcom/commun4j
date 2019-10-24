@@ -873,12 +873,12 @@ open class Commun4j @JvmOverloads constructor(
      *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
      * */
     fun writeUserToBlockChain(
+            phone: String,
+            userId: String,
             userName: String,
             owner: String,
-            active: String,
-            posting: String,
-            memo: String
-    ) = apiService.writeUserToBlockchain(userName, owner, active, posting, memo)
+            active: String
+    ) = apiService.writeUserToBlockchain(phone, userId, userName, owner, active)
 
 
     /** method used to resend sms code to user during phone verification
