@@ -27,7 +27,7 @@ class RegistrationTest {
 
     @Test
     fun testAccCreationThroughGate() {
-        val accName = "vasyan_rulez-az99"
+        val accName = "vasyzazazaz"
 
         val firstStepSuccess = client.firstUserRegistrationStep("any12", unExistingPhone, pass)
 
@@ -50,10 +50,11 @@ class RegistrationTest {
 
         val keys = AuthUtils.generatePublicWiFs(accName, generatePass(), AuthType.values())
 
-        val lastStep = client.writeUserToBlockChain(accName, keys[AuthType.OWNER]!!,
-                keys[AuthType.ACTIVE]!!,
-                keys[AuthType.POSTING]!!,
-                keys[AuthType.MEMO]!!)
+        val lastStep = client.writeUserToBlockChain(unExistingPhone,
+                thirdStep.getOrThrow().userId.name,
+                accName,
+                keys[AuthType.OWNER]!!,
+                keys[AuthType.ACTIVE]!!)
 
         assertTrue(lastStep is Either.Success)
 

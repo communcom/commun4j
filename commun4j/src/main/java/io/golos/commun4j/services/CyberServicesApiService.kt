@@ -401,8 +401,8 @@ internal class CyberServicesApiService @JvmOverloads constructor(
 
     override fun writeUserToBlockchain(
             phone: String,
-            userName: String,
             userId: String,
+            userName: String,
             owner: String,
             active: String
     ): Either<WriteToBlockChainStepResult, ApiResponseError> {
