@@ -9,7 +9,7 @@ import org.junit.Test
 import java.util.*
 
 class RegistrationTest {
-    private val client = getClient()
+    private val client = getClient(setActiveUser = false, authInServices = false)
     val unExistingPhone = generatePhone()
     private val pass = BuildConfig.PHONE_REG_KEY
 
@@ -36,7 +36,7 @@ class RegistrationTest {
         println(firstStepSuccess)
 
 
-        val secondStep = client.verifyPhoneForUserRegistration(unExistingPhone, (firstStepSuccess as Either.Success).value.code!!)
+        val secondStep = client.verifyPhoneForUserRegistration(unExistingPhone, 1234)
 
         assertTrue(secondStep is Either.Success)
 

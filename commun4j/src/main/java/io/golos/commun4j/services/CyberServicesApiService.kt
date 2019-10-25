@@ -385,17 +385,17 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun verifyPhoneForUserRegistration(phone: String, code: Int): Either<ResultOk, ApiResponseError> {
+    override fun verifyPhoneForUserRegistration(phone: String, code: Int): Either<VerifyStepResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_VERIFY_PHONE.toString(),
-                VerifyPhoneRequest(phone, code), ResultOk::class.java
+                VerifyPhoneRequest(phone, code), VerifyStepResult::class.java
         )
     }
 
-    override fun setVerifiedUserName(user: String, phone: String): Either<ResultOk, ApiResponseError> {
+    override fun setVerifiedUserName(user: String, phone: String): Either<SetUserNameStepResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_SET_USER_NAME.toString(),
-                RegistrationStateRequest(user, phone), ResultOk::class.java
+                RegistrationStateRequest(user, phone), SetUserNameStepResult::class.java
         )
     }
 
@@ -405,11 +405,11 @@ internal class CyberServicesApiService @JvmOverloads constructor(
             userId: String,
             owner: String,
             active: String
-    ): Either<RegisterResult, ApiResponseError> {
+    ): Either<WriteToBlockChainStepResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_WRITE_TO_BLOCKCHAIN.toString(),
                 WriteUserToBlockchainRequest(phone, userName, userId, owner, active),
-                RegisterResult::class.java
+                WriteToBlockChainStepResult::class.java
         )
     }
 
