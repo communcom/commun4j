@@ -16,19 +16,6 @@ import io.golos.commun4j.sharedmodel.GolosEosError
 
 interface ApiService {
 
-    fun getDiscussions(feedType: PostsFeedType,
-                       sort: FeedSort,
-                       timeFrame: FeedTimeFrame?,
-                       parsingType: ContentParsingType,
-                       sequenceKey: String?,
-                       limit: Int,
-                       userId: String?,
-                       communityId: String?,
-                       tags: List<String>?,
-                       username: String?,
-                       app: String): Either<DiscussionsResult, ApiResponseError>
-
-
 
     fun getComment(userId: String?,
                    permlink: String,
@@ -107,7 +94,7 @@ interface ApiService {
 
     fun getCommunitiesList(name: String, offset: Int, limit: Int): Either<GetCommunitiesResponse, ApiResponseError>
 
-    fun getCommunity(communityId: String, userId: String): Either<GetCommunitiesItem, ApiResponseError>
+    fun getCommunity(communityId: String): Either<GetCommunitiesItem, ApiResponseError>
 
     fun shutDown()
 
@@ -115,12 +102,33 @@ interface ApiService {
                 communityId: String,
                 permlink: String): Either<CyberDiscussion, ApiResponseError>
 
-    fun getPosts(): Either<GetDiscussionsResult, ApiResponseError>
+    fun getPosts(userId: String?,
+                 communityId: String?,
+                 communityAlias: String?,
+                 allowNsfw: Boolean?,
+                 type: String?,
+                 sortBy: String?,
+                 timeframe: String?,
+                 limit: Int?,
+                 offset: Int?): Either<GetDiscussionsResult, ApiResponseError>
 
-    abstract fun getPostRaw(userId: CyberName, communityId: String, permlink: String): Either<CyberDiscussionRaw, ApiResponseError>
+    fun getPostRaw(userId: CyberName, communityId: String, permlink: String): Either<CyberDiscussionRaw, ApiResponseError>
 
-    abstract fun getPostsRaw(): Either<GetDiscussionsResultRaw, ApiResponseError>
+    fun getPostsRaw(userId: String?,
+                    communityId: String?,
+                    communityAlias: String?,
+                    allowNsfw: Boolean?,
+                    type: String?,
+                    sortBy: String?,
+                    timeframe: String?,
+                    limit: Int?,
+                    offset: Int?): Either<GetDiscussionsResultRaw, ApiResponseError>
 
+    fun getBalance(name: String): Either<UserBalance, ApiResponseError>
+
+    fun getTransferHistory(userId: String, direction: String?, sequenceKey: String?, limit: Int?): Either<GetTransferHistoryResponse, ApiResponseError>
+
+    fun getTokensInfo(list: List<String>): Either<GetTokensInfoResponse, ApiResponseError>
 
 }
 

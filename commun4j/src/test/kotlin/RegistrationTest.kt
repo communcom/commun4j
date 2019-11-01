@@ -1,7 +1,7 @@
 import io.golos.commun4j.BuildConfig
 import io.golos.commun4j.model.AuthType
-import io.golos.commun4j.utils.AuthUtils
 import io.golos.commun4j.sharedmodel.Either
+import io.golos.commun4j.utils.AuthUtils
 import junit.framework.Assert.assertNotNull
 import junit.framework.Assert.assertTrue
 import org.junit.Before
@@ -20,14 +20,14 @@ class RegistrationTest {
 
     @Test
     fun testGetState() {
-        val state = client.getRegistrationState(null, "+773217337584")
+        val state = client.getRegistrationState("+773217337584")
 
         assertTrue(state is Either.Success)
     }
 
     @Test
     fun testAccCreationThroughGate() {
-        val accName = "vasyzazazaz"
+        val accName = generateRandomCommunName()
 
         val firstStepSuccess = client.firstUserRegistrationStep("any12", unExistingPhone, pass)
 
@@ -35,16 +35,20 @@ class RegistrationTest {
 
         println(firstStepSuccess)
 
-
+        assertTrue(client.getRegistrationState(unExistingPhone) is Either.Success)
         val secondStep = client.verifyPhoneForUserRegistration(unExistingPhone, 1234)
 
         assertTrue(secondStep is Either.Success)
+
+        println(client.getRegistrationState(unExistingPhone).getOrThrow())
 
         println(secondStep)
 
         val thirdStep = client.setVerifiedUserName(accName, unExistingPhone)
 
         assertTrue(thirdStep is Either.Success)
+
+        println(client.getRegistrationState(unExistingPhone).getOrThrow())
 
         println(thirdStep)
 
@@ -57,6 +61,8 @@ class RegistrationTest {
                 keys[AuthType.ACTIVE]!!)
 
         assertTrue(lastStep is Either.Success)
+
+        assertTrue(client.getRegistrationState(unExistingPhone) is Either.Success)
 
         assertNotNull(lastStep.getOrThrow().userId)
         assertNotNull(lastStep.getOrThrow().username)

@@ -8,11 +8,13 @@ data class GetCommunitiesResponse(val items: List<GetCommunitiesItem>)
 
 @JsonClass(generateAdapter = true)
 data class GetCommunitiesItem(val subscribersCount: Int,
-                              val id: String,
+                              val communityId: String,
+                              val alias: String?,
                               val name:String,
-                              val code: String,
                               val avatarUrl: String?,
                               val coverImageLink: String?,
                               val language: String?,
                               val description: String?,
-                              val rules: String?)
+                              val postsCount: Int?,
+                              val isSubscribed: Boolean?,
+                              val isBlocked: Boolean?)

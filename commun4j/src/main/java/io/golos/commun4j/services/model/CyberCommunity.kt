@@ -1,3 +1,6 @@
 package io.golos.commun4j.services.model
 
-data class CyberCommunity(val id: String, val name: String?, val avatarUrl: String?)
+import com.squareup.moshi.JsonClass
+
+@JsonClass(generateAdapter = true)
+data class CyberCommunity(val communityId: String, val name: String?, val avatarUrl: String?, val alias: String?)

@@ -73,40 +73,40 @@ fun generateActions(eosAbi: EosAbi,
             transactionAuth, struct.toHex())""".trimMargin())
                                 .build())
 
-                        .addFunction(
-                                FunSpec.builder("createSignedTransactionForProvideBw")
-                                        .addAnnotation(JvmOverloads::class.java)
-                                        .addParameter("transactionAuth",
-                                                List::class.asClassName().parameterizedBy(TransactionAuthorizationAbi::class.asClassName()))
-                                        .addParameter("key", EosPrivateKey::class)
-                                        .addParameter(
-                                                ParameterSpec.builder("withConfig", Commun4jConfig::class)
-                                                        .build())
-                                        .addParameter(
-                                                ParameterSpec.builder("provideBandwidth",
-                                                        ClassName("io.golos.commun4j.abi.implementation", "BandWidthProvideOption"))
-                                                        .build())
-                                        .addParameter(
-                                                ParameterSpec.builder("contractName", String::class)
-                                                        .defaultValue("Companion.$contractNameProperty")
-                                                        .build())
-                                        .addParameter(
-                                                ParameterSpec.builder("actionName", String::class)
-                                                        .defaultValue("Companion.$actionNameProperty")
-                                                        .build())
-                                        .addCode("""return TransactionPusher.createSignedTransaction(
-            listOf(toActionAbi(transactionAuth, contractName, actionName),
-                    createBandwidthActionAbi(transactionAuth[0].actor, provideBandwidth.provider)),
-            listOf(key),
-            withConfig.blockChainHttpApiUrl,
-            withConfig.logLevel,
-            withConfig.httpLogger)""")
-                                        .build()
-                        )
+//                        .addFunction(
+//                                FunSpec.builder("createSignedTransactionForProvideBw")
+//                                        .addAnnotation(JvmOverloads::class.java)
+//                                        .addParameter("transactionAuth",
+//                                                List::class.asClassName().parameterizedBy(TransactionAuthorizationAbi::class.asClassName()))
+//                                        .addParameter("key", EosPrivateKey::class)
+//                                        .addParameter(
+//                                                ParameterSpec.builder("withConfig", Commun4jConfig::class)
+//                                                        .build())
+//                                        .addParameter(
+//                                                ParameterSpec.builder("provideBandwidth",
+//                                                        ClassName("io.golos.commun4j.abi.implementation", "BandWidthProvideOption"))
+//                                                        .build())
+//                                        .addParameter(
+//                                                ParameterSpec.builder("contractName", String::class)
+//                                                        .defaultValue("Companion.$contractNameProperty")
+//                                                        .build())
+//                                        .addParameter(
+//                                                ParameterSpec.builder("actionName", String::class)
+//                                                        .defaultValue("Companion.$actionNameProperty")
+//                                                        .build())
+//                                        .addCode("""return TransactionPusher.createSignedTransaction(
+//            listOf(toActionAbi(transactionAuth, contractName, actionName),
+//                    createBandwidthActionAbi(transactionAuth[0].actor, provideBandwidth.provider)),
+//            listOf(key),
+//            withConfig.blockChainHttpApiUrl,
+//            withConfig.logLevel,
+//            withConfig.httpLogger)""")
+//                                        .build()
+//                        )
                         .addFunction(FunSpec.builder("push")
                                 .addAnnotation(JvmOverloads::class.java)
                                 .addParameter("transactionAuth", List::class.asClassName().parameterizedBy(TransactionAuthorizationAbi::class.asClassName()))
-                                .addParameter("key", EosPrivateKey::class)
+                                .addParameter("keys",  List::class.asClassName().parameterizedBy(EosPrivateKey::class.asClassName()))
                                 .addParameter(
                                         ParameterSpec.builder("withConfig", Commun4jConfig::class)
                                                 .build())
@@ -117,11 +117,6 @@ fun generateActions(eosAbi: EosAbi,
                                                 .defaultValue("null")
                                                 .build())
                                 .addParameter(
-                                        ParameterSpec.builder("bandwidthProviderKey", EosPrivateKey::class.asTypeName().copy(true))
-                                                .defaultValue("null")
-                                                .build()
-                                )
-                                .addParameter(
                                         ParameterSpec.builder("contractName", String::class)
                                                 .defaultValue("Companion.$contractNameProperty")
                                                 .build())
@@ -131,9 +126,16 @@ fun generateActions(eosAbi: EosAbi,
                                                 .build())
 
                                 .addCode("""return TransactionPusher.pushTransaction(arrayListOf(toActionAbi(transactionAuth,
-            contractName, actionName)).apply { if (provideBandwidth != null) this.add(createBandwidthActionAbi(transactionAuth[0].actor, provideBandwidth.provider)) },
-            key, struct::class.java,
-            withConfig.blockChainHttpApiUrl, provideBandwidth != null, bandwidthProviderKey,
+            contractName, actionName)).apply {
+        if (provideBandwidth != null)
+            this.addAll(provideBandwidth.providers.map {
+                createBandwidthActionAbi(transactionAuth[0].actor,
+                        it)
+            })
+    },
+            (keys + provideBandwidth?.provideBwKeys.orEmpty()).toSet(),
+            struct::class.java,
+            withConfig.blockChainHttpApiUrl,
             withConfig.logLevel,
             withConfig.httpLogger)""".trimIndent())
 

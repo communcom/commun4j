@@ -15,12 +15,14 @@
  */
 package io.golos.commun4j.chain.actions.transaction.abi
 
+import com.squareup.moshi.JsonClass
 import io.golos.commun4j.abi.writer.Abi
 import io.golos.commun4j.abi.writer.ChainIdCompress
 import io.golos.commun4j.abi.writer.ChildCompress
 import io.golos.commun4j.abi.writer.HexCollectionCompress
 
 @Abi
+@JsonClass(generateAdapter = true)
 data class SignedTransactionAbi(
         val chainId: String,
         val transaction: TransactionAbi,

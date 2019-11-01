@@ -7,12 +7,21 @@ enum class BandWidthSource {
     COMN_SERVICES, USING_KEY
 }
 
+data class ClientAuthRequest(val clientName: CyberName, val key: EosPrivateKey) {
+    companion object {
+        @JvmStatic
+        fun createComnAuthRequest(key: EosPrivateKey) = ClientAuthRequest(CyberName("c"), key)
+    }
+}
+
 data class BandWidthRequest @JvmOverloads constructor(val source: BandWidthSource,
                                                       val actor: CyberName,
                                                       val key: EosPrivateKey? = null) {
     companion object {
-        val bandWidthFromGolosRequest = BandWidthRequest(BandWidthSource.COMN_SERVICES, CyberName("comn"))
+        @JvmStatic
+        val bandWidthFromComn = BandWidthRequest(BandWidthSource.COMN_SERVICES, CyberName("c"))
 
-        fun EosPrivateKey.glsBandWidthRequest() = BandWidthRequest(BandWidthSource.USING_KEY, CyberName("comn"), this)
+        @JvmStatic
+        fun bandwidthFromComnUsingItsKey(commProvideBwKey: EosPrivateKey) = BandWidthRequest(BandWidthSource.USING_KEY, CyberName("c"), commProvideBwKey)
     }
 }

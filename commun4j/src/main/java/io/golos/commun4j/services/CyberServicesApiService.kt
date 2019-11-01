@@ -24,7 +24,7 @@ private enum class ServicesGateMethods {
     GET_REGISTRATION_STATE, REG_FIRST_STEP, REG_VERIFY_PHONE, REG_SET_USER_NAME, REG_WRITE_TO_BLOCKCHAIN,
     REG_RESEND_SMS, WAIT_BLOCK, WAIT_FOR_TRANSACTION, PUSH_SUBSCRIBE, PUSH_UNSUBSCRIBE, GET_NOTIFS_HISTORY, MARK_VIEWED,
     GET_UNREAD_COUNT, MARK_VIEWED_ALL, SET_SETTINGS, GET_SETTINGS, GET_SUBSCRIPTIONS, GET_SUBSCRIBERS,
-    RESOLVE_USERNAME, PROVIDE_BANDWIDTH, GET_COMMUNITIES, GET_COMMUNITIY, GET_POSTS;
+    RESOLVE_USERNAME, PROVIDE_BANDWIDTH, GET_COMMUNITIES, GET_COMMUNITIY, GET_POSTS, GET_BALANCE, GET_TRANSFER_HISTORY, GET_TOKENS_INFO;
 
     override fun toString(): String {
         return when (this) {
@@ -59,6 +59,9 @@ private enum class ServicesGateMethods {
             PROVIDE_BANDWIDTH -> "bandwidth.provide"
             GET_COMMUNITIES -> "content.getCommunities"
             GET_COMMUNITIY -> "content.getCommunity"
+            GET_BALANCE -> "wallet.getBalance"
+            GET_TRANSFER_HISTORY -> "wallet.getTransferHistory"
+            GET_TOKENS_INFO -> "wallet.getTokensInfo"
         }
     }
 }
@@ -78,11 +81,12 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                                 .withSubtype(Attachments::class.java, "attachments")
                 )
                 .add(EventType::class.java, EventTypeAdapter())
+                .add(CyberAsset::class.java, CyberAssetAdapter())
+                .add(CyberSymbolCode::class.java, CyberSymbolCodeAdapter())
                 .add(CyberName::class.java, CyberNameAdapter())
                 .add(ServiceSettingsLanguage::class.java, ServiceSettingsLanguageAdapter())
                 .add(EventsAdapter())
                 .add(ToStringAdaptper())
-                .add(CyberAsset::class.java, CyberAssetAdapter())
                 .add(KotlinJsonAdapterFactory())
                 .build(),
         private val apiClient: io.golos.commun4j.http.rpc.SocketClient = SocketClientImpl(
@@ -129,11 +133,10 @@ internal class CyberServicesApiService @JvmOverloads constructor(
             hashMapOf<Any, Any>("userId" to name, "offset" to offset, "limit" to limit),
             GetCommunitiesResponse::class.java)
 
-    override fun getCommunity(communityId: String, userId: String) = apiClient.send(
+    override fun getCommunity(communityId: String) = apiClient.send(
             ServicesGateMethods.GET_COMMUNITIY.toString(),
             hashMapOf(
-                    "communityId" to communityId,
-                    "userId" to userId),
+                    "communityId" to communityId),
             GetCommunitiesItem::class.java)
 
 
@@ -200,38 +203,6 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         }
     }
 
-    override fun getDiscussions(
-            feedType: PostsFeedType,
-            sort: FeedSort,
-            timeFrame: FeedTimeFrame?,
-            parsingType: ContentParsingType,
-            sequenceKey: String?,
-            limit: Int,
-            userId: String?,
-            communityId: String?,
-            tags: List<String>?,
-            username: String?,
-            app: String
-    ): Either<DiscussionsResult, ApiResponseError> {
-
-        return apiClient.send(
-                ServicesGateMethods.GET_FEED.toString(),
-                DiscussionsRequests(
-                        feedType.toString(),
-                        sort.toString(),
-                        timeFrame?.toString(),
-                        sequenceKey,
-                        limit,
-                        userId,
-                        communityId,
-                        tags,
-                        parsingType.asContentType(),
-                        username,
-                        app
-                ), DiscussionsResult::class.java
-        )
-    }
-
     override fun getPost(userId: CyberName,
                          communityId: String,
                          permlink: String
@@ -251,20 +222,58 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun getPosts(): Either<GetDiscussionsResult, ApiResponseError> {
+    override fun getPosts(userId: String?,
+                          communityId: String?,
+                          communityAlias: String?,
+                          allowNsfw: Boolean?,
+                          type: String?,
+                          sortBy: String?,
+                          timeframe: String?,
+                          limit: Int?,
+                          offset: Int?): Either<GetDiscussionsResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_POSTS.toString(),
-                Any(),
+                GetPostsRequest(userId, communityId, communityAlias,
+                        allowNsfw, type, sortBy, timeframe, limit, offset),
                 GetDiscussionsResult::class.java
         )
     }
 
-    override fun getPostsRaw(): Either<GetDiscussionsResultRaw, ApiResponseError> {
+    override fun getPostsRaw(userId: String?,
+                             communityId: String?,
+                             communityAlias: String?,
+                             allowNsfw: Boolean?,
+                             type: String?,
+                             sortBy: String?,
+                             timeframe: String?,
+                             limit: Int?,
+                             offset: Int?): Either<GetDiscussionsResultRaw, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_POSTS.toString(),
-                Any(),
+                GetPostsRequest(userId, communityId, communityAlias,
+                        allowNsfw, type, sortBy, timeframe, limit, offset),
                 GetDiscussionsResultRaw::class.java
         )
+    }
+
+    override fun getBalance(name: String): Either<UserBalance, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.GET_BALANCE.toString(),
+                mapOf<String, Any>("userId" to name),
+                UserBalance::class.java
+        )
+    }
+
+    override fun getTransferHistory(userId: String, direction: String?, sequenceKey: String?, limit: Int?): Either<GetTransferHistoryResponse, ApiResponseError> {
+        return apiClient.send(ServicesGateMethods.GET_TRANSFER_HISTORY.toString(),
+                GetTransferHistoryRequest(userId, direction, sequenceKey, limit),
+                GetTransferHistoryResponse::class.java)
+    }
+
+    override fun getTokensInfo(list: List<String>): Either<GetTokensInfoResponse, ApiResponseError> {
+        return apiClient.send(ServicesGateMethods.GET_TOKENS_INFO.toString(),
+                mapOf("tokens" to list),
+                GetTokensInfoResponse::class.java)
     }
 
     override fun waitBlock(blockNum: Long): Either<ResultOk, ApiResponseError> {

@@ -25,6 +25,7 @@ class CyberNameAdapter : JsonAdapter<CyberName>() {
         writer.value(value?.name)
     }
 }
+
 class BigIntegerAdapter : JsonAdapter<BigInteger>() {
 
     override fun fromJson(reader: JsonReader): BigInteger? {
@@ -60,6 +61,18 @@ class CyberAssetAdapter : JsonAdapter<CyberAsset>() {
 
     override fun toJson(writer: JsonWriter, value: CyberAsset?) {
         writer.value(value?.amount)
+    }
+}
+
+class CyberSymbolCodeAdapter : JsonAdapter<CyberSymbolCode>() {
+
+    override fun fromJson(reader: JsonReader): CyberSymbolCode? {
+        val nextToken = reader.nextString() ?: return null
+        return CyberSymbolCode(nextToken)
+    }
+
+    override fun toJson(writer: JsonWriter, value: CyberSymbolCode?) {
+        writer.value(value?.value)
     }
 }
 

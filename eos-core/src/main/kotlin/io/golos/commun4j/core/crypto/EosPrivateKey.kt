@@ -22,7 +22,7 @@ import org.bitcoinj.core.Sha256Hash
 import java.math.BigInteger
 import java.util.Arrays
 
-class EosPrivateKey internal constructor(
+data class EosPrivateKey internal constructor(
     private val key: ECKey,
     private val base58: String = base58Encode(key)
 ) {

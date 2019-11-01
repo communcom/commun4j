@@ -31,12 +31,12 @@ run {
             "cyber.govern",
             "cyber.stake",
             "cyber.msig",
-            "comn.point", 
-            "comn.ctrl", 
-            "comn.emit",
-            "comn.list",
-            "comn.gallery", 
-            "comn.social"]
+            "c.point", 
+            "c.ctrl", 
+            "c.emit",
+            "c.list",
+            "c.gallery", 
+            "c.social"]
 }
 
 assemble.dependsOn run

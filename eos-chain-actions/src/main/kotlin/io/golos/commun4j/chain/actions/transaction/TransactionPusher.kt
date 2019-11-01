@@ -1,5 +1,10 @@
 package io.golos.commun4j.chain.actions.transaction
 
+import com.squareup.moshi.JsonDataException
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.golos.commun4j.abi.writer.compression.CompressionType
 import io.golos.commun4j.chain.actions.transaction.abi.ActionAbi
 import io.golos.commun4j.chain.actions.transaction.abi.SignedTransactionAbi
@@ -10,11 +15,6 @@ import io.golos.commun4j.core.crypto.signature.PrivateKeySigning
 import io.golos.commun4j.http.rpc.model.info.Info
 import io.golos.commun4j.http.rpc.model.signing.PushTransaction
 import io.golos.commun4j.http.rpc.model.transaction.response.TransactionCommitted
-import com.squareup.moshi.JsonDataException
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.Types
-import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.golos.commun4j.sharedmodel.*
 import okhttp3.*
 import okhttp3.logging.HttpLoggingInterceptor
@@ -51,20 +51,15 @@ object TransactionPusher {
             .build()
 
     @JvmOverloads
-    fun <T : Any> pushTransaction(action: List<ActionAbi>,
-                                  key: EosPrivateKey,
+    fun <T : Any> pushTransaction(actions: List<ActionAbi>,
+                                  keys: Set<EosPrivateKey>,
                                   traceType: Class<T>,
                                   blockChainUrl: String,
-                                  provideBandWidth: Boolean = false,
-                                  bandwidthProviderKey: EosPrivateKey? = null,
                                   logLevel: LogLevel? = null,
                                   logger: HttpLoggingInterceptor.Logger? = null): Either<TransactionCommitted<T>, GolosEosError> {
 
         val signatureResult =
-                createSignedTransaction(action, arrayListOf(key).apply {
-                    if (provideBandWidth) this.add(bandwidthProviderKey
-                            ?: throw IllegalArgumentException("bandwidthProviderKey must be not null"))
-                }, blockChainUrl, logLevel, logger)
+                createSignedTransaction(actions, keys.toList(), blockChainUrl, logLevel, logger)
 
         if (signatureResult is Either.Failure) return Either.Failure(signatureResult.value)
 
@@ -78,7 +73,7 @@ object TransactionPusher {
                                 "none",
                                 "",
                                 AbiBinaryGenTransactionWriter(CompressionType.NONE)
-                                        .squishTransactionAbi(signatureResult.value.transaction , false).toHex()
+                                        .squishTransactionAbi(signatureResult.value.transaction, false).toHex()
                         ))))
                 .url("${blockChainUrl.removeSuffix("/")}/v1/chain/push_transaction")
                 .build()
@@ -206,7 +201,7 @@ object TransactionPusher {
 
         return PrivateKeySigning()
                 .sign(AbiBinaryGenTransactionWriter(CompressionType.NONE)
-                        .squishSignedTransactionAbi(st , false)
+                        .squishSignedTransactionAbi(st, false)
                         .toBytes(), privateKey)
 
     }

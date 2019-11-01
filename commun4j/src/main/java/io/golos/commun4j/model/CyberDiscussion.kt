@@ -13,7 +13,7 @@ data class GetDiscussionsResult(val items: List<CyberDiscussion>)
 data class GetDiscussionsResultRaw(val items: List<CyberDiscussionRaw>)
 
 @JsonClass(generateAdapter = true)
-data class CyberDiscussion(val content: CyberDiscussionContent,
+data class CyberDiscussion(val document: CyberDiscussionContent?,
                            val votes: DiscussionVotes,
                            val meta: DiscussionMetadata,
                            val contentId: DiscussionId,
@@ -23,7 +23,7 @@ data class CyberDiscussion(val content: CyberDiscussionContent,
 @JsonClass(generateAdapter = true)
 data class CyberDiscussionRaw(
         @ToStringParseable
-        val content: String,
+        val document: String?,
         val votes: DiscussionVotes,
         val meta: DiscussionMetadata,
         val contentId: DiscussionId,
@@ -35,7 +35,8 @@ data class DiscussionAuthor(val userId: CyberName, val username: String?, val av
 
 @JsonClass(generateAdapter = true)
 data class DiscussionId(
-        val userId: String,
+        val userId: CyberName,
+        val communityId: String,
         val permlink: String
 )
 
@@ -59,7 +60,7 @@ data class CyberDiscussionContent(
 @JsonClass(generateAdapter = true)
 data class CyberAttributes(val type: String,
                            val version: Double,
-                           val title: String)
+                           val title: String?)
 
 
 @JsonClass(generateAdapter = true)

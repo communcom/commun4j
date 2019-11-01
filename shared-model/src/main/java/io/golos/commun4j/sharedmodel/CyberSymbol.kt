@@ -1,5 +1,6 @@
 package io.golos.commun4j.sharedmodel
 
+
 data class CyberSymbolCode(val value: String){
     @Transient
     val symbolCode = ByteArray(8).apply {

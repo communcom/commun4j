@@ -4,16 +4,10 @@ package io.golos.commun4j
 
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
-import io.golos.commun4j.abi.implementation.comn.gallery.*
-import io.golos.commun4j.abi.implementation.comn.social.*
-import io.golos.commun4j.abi.implementation.cyber.AuthorityCyberStruct
-import io.golos.commun4j.abi.implementation.cyber.KeyWeightCyberStruct
-import io.golos.commun4j.abi.implementation.cyber.NewaccountCyberAction
-import io.golos.commun4j.abi.implementation.cyber.NewaccountCyberStruct
+import io.golos.commun4j.abi.implementation.c.gallery.*
+import io.golos.commun4j.abi.implementation.c.social.*
 import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainAction
 import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainStruct
-import io.golos.commun4j.abi.implementation.cyber.token.OpenCyberTokenAction
-import io.golos.commun4j.abi.implementation.cyber.token.OpenCyberTokenStruct
 import io.golos.commun4j.abi.implementation.cyber.token.TransferCyberTokenAction
 import io.golos.commun4j.abi.implementation.cyber.token.TransferCyberTokenStruct
 import io.golos.commun4j.abi.writer.compression.CompressionType
@@ -24,15 +18,14 @@ import io.golos.commun4j.chain.actions.transaction.abi.TransactionAbi
 import io.golos.commun4j.chain.actions.transaction.abi.TransactionAuthorizationAbi
 import io.golos.commun4j.chain.actions.transaction.misc.ProvideBandwichAbi
 import io.golos.commun4j.core.crypto.EosPrivateKey
-import io.golos.commun4j.core.crypto.EosPublicKey
 import io.golos.commun4j.http.rpc.model.ApiResponseError
 import io.golos.commun4j.http.rpc.model.account.request.AccountName
 import io.golos.commun4j.http.rpc.model.transaction.response.TransactionCommitted
 import io.golos.commun4j.model.*
+import io.golos.commun4j.model.FeedTimeFrame
 import io.golos.commun4j.services.CyberServicesApiService
 import io.golos.commun4j.services.model.*
 import io.golos.commun4j.sharedmodel.*
-import io.golos.commun4j.utils.AuthUtils
 import io.golos.commun4j.utils.StringSigner
 import io.golos.commun4j.utils.toCyberName
 import net.gcardone.junidecode.Junidecode
@@ -109,40 +102,53 @@ open class Commun4j @JvmOverloads constructor(
 
     private inline fun <reified T : Any> pushTransaction(
             actions: List<ActionAbi>,
-            key: String,
-            bandWidthRequest: BandWidthRequest?): Either<TransactionCommitted<T>, GolosEosError> {
+            actorKey: String,
+            bandWidthRequest: BandWidthRequest?,
+            clientAuthRequest: ClientAuthRequest?): Either<TransactionCommitted<T>, GolosEosError> {
+        var resolvedActions = actions
+        if (clientAuthRequest != null) {
+            resolvedActions = resolvedActions.map {
+                ActionAbi(it.account,
+                        it.name,
+                        it.authorization + TransactionAuthorizationAbi("c.gallery", "clients"),
+                        it.data)
+            }
+        }
 
         return if (bandWidthRequest?.source == BandWidthSource.COMN_SERVICES) {
 
             val signedTrx =
-                    TransactionPusher.createSignedTransaction(actions + createProvideBw(actions.first().authorization.first().actor.toCyberName(), bandWidthRequest.actor),
-                            listOf(EosPrivateKey(key)), config.blockChainHttpApiUrl,
+                    TransactionPusher.createSignedTransaction(resolvedActions + createProvideBw(resolvedActions.first().authorization.first().actor.toCyberName(), bandWidthRequest.actor),
+                            listOf(EosPrivateKey(actorKey)), config.blockChainHttpApiUrl,
                             config.logLevel, config.httpLogger)
 
             if (signedTrx is Either.Failure) return Either.Failure(signedTrx.value)
 
             signedTrx as Either.Success
-
             return pushTransactionWithProvidedBandwidth(signedTrx.value.usedChainInfo.chain_id,
                     signedTrx.value.transaction,
                     signedTrx.value.signedTransactionSignatures.first(),
                     T::class.java)
 
-        } else transactionPusher.pushTransaction(actions.let {
-            if (bandWidthRequest != null) it + createProvideBw(actions.first().authorization.first().actor.toCyberName(), bandWidthRequest.actor)
+        } else transactionPusher.pushTransaction(resolvedActions.let {
+            if (bandWidthRequest != null) it + createProvideBw(resolvedActions.first().authorization.first().actor.toCyberName(), bandWidthRequest.actor)
             else it
         },
-                EosPrivateKey(key),
-                T::class.java, bandWidthRequest)
+                EosPrivateKey(actorKey),
+                T::class.java,
+                if (clientAuthRequest != null && bandWidthRequest == null) listOf(clientAuthRequest.key) else null,
+                bandWidthRequest)
     }
 
     private inline fun <reified T : Any> pushTransaction(
             action: ActionAbi,
             key: String,
-            bandWidthRequest: BandWidthRequest?): Either<TransactionCommitted<T>, GolosEosError> {
+            bandWidthRequest: BandWidthRequest?,
+            clientAuthRequest: ClientAuthRequest?): Either<TransactionCommitted<T>, GolosEosError> {
         return pushTransaction(listOf(action),
                 key,
-                bandWidthRequest)
+                bandWidthRequest,
+                clientAuthRequest)
     }
 
 
@@ -163,41 +169,41 @@ open class Commun4j @JvmOverloads constructor(
 //     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
 //     * */
 
-    @JvmOverloads
-    fun createAccount(
-            newAccountName: String,
-            newAccountMasterPassword: String,
-            actor: CyberName,
-            cyberCreatePermissionKey: String,
-            bandWidthRequest: BandWidthRequest? = null
-    ): Either<TransactionCommitted<NewaccountCyberStruct>, GolosEosError> {
-        CyberName(newAccountName)
-
-        val keys = AuthUtils.generatePublicWiFs(newAccountName, newAccountMasterPassword, AuthType.values())
-
-        val callable = Callable {
-            pushTransaction<NewaccountCyberStruct>(NewaccountCyberAction(NewaccountCyberStruct(
-                    actor,
-                    CyberName(newAccountName),
-                    AuthorityCyberStruct(
-                            1,
-                            listOf(KeyWeightCyberStruct(EosPublicKey(keys[AuthType.OWNER]!!), 1)),
-                            emptyList(), emptyList()
-                    ),
-                    AuthorityCyberStruct(
-                            1,
-                            listOf(KeyWeightCyberStruct(EosPublicKey(keys[AuthType.ACTIVE]!!), 1)),
-                            emptyList(),
-                            emptyList()
-                    )
-            ))
-                    .toActionAbi(listOf(TransactionAuthorizationAbi(actor.name,
-                            "active"))),
-
-                    cyberCreatePermissionKey,
-                    bandWidthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(callable)
+//    @JvmOverloads
+//    fun createAccount(
+//            newAccountName: String,
+//            newAccountMasterPassword: String,
+//            actor: CyberName,
+//            cyberCreatePermissionKey: String,
+//            bandWidthRequest: BandWidthRequest? = null
+//    ): Either<TransactionCommitted<NewaccountCyberStruct>, GolosEosError> {
+//        CyberName(newAccountName)
+//
+//        val keys = AuthUtils.generatePublicWiFs(newAccountName, newAccountMasterPassword, AuthType.values())
+//
+//        val callable = Callable {
+//            pushTransaction<NewaccountCyberStruct>(NewaccountCyberAction(NewaccountCyberStruct(
+//                    actor,
+//                    CyberName(newAccountName),
+//                    AuthorityCyberStruct(
+//                            1,
+//                            listOf(KeyWeightCyberStruct(EosPublicKey(keys[AuthType.OWNER]!!), 1)),
+//                            emptyList(), emptyList()
+//                    ),
+//                    AuthorityCyberStruct(
+//                            1,
+//                            listOf(KeyWeightCyberStruct(EosPublicKey(keys[AuthType.ACTIVE]!!), 1)),
+//                            emptyList(),
+//                            emptyList()
+//                    )
+//            ))
+//                    .toActionAbi(listOf(TransactionAuthorizationAbi(actor.name,
+//                            "active"))),
+//
+//                    cyberCreatePermissionKey,
+//                    bandWidthRequest)
+//        }
+//        return callTilTimeoutExceptionVanishes(callable)
 
 
 //        if (createAnswer is Either.Failure) return createAnswer
@@ -217,7 +223,7 @@ open class Commun4j @JvmOverloads constructor(
 //        )
 //
 //        return createAnswer
-    }
+    //}
 
 //    /** method for opening vesting balance of account. used in [createAccount] as one of the steps of
 //     * new account creation
@@ -233,30 +239,30 @@ open class Commun4j @JvmOverloads constructor(
 //            bandWidthRequest: BandWidthRequest? = null
 //    ) = openBalance(forUser, UserBalance.VESTING, actor, cyberKey, bandWidthRequest)
 
-    /** method for opening token balance of account. used in [createAccount] as one of the steps of
-     * new account creation
-     * @param forUser account name
-     * @param cyberCreatePermissionKey key of "cyber" with "createuser" permission
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-
-    fun openTokenBalance(
-            forUser: CyberName,
-            actor: CyberName,
-            cyberCreatePermissionKey: String,
-            symbol: CyberSymbol,
-            bandWidthRequest: BandWidthRequest? = null
-    ): Either<TransactionCommitted<OpenCyberTokenStruct>, GolosEosError> {
-
-        val setUserNameCallable = Callable {
-            pushTransaction<OpenCyberTokenStruct>(OpenCyberTokenAction(
-                    OpenCyberTokenStruct(forUser, symbol, actor)
-            ).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(actor.name, "active"))
-            ), cyberCreatePermissionKey, bandWidthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(setUserNameCallable)
-    }
+//    /** method for opening token balance of account. used in [createAccount] as one of the steps of
+//     * new account creation
+//     * @param forUser account name
+//     * @param cyberCreatePermissionKey key of "cyber" with "createuser" permission
+//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+//     * */
+//
+//    fun openTokenBalance(
+//            forUser: CyberName,
+//            actor: CyberName,
+//            cyberCreatePermissionKey: String,
+//            symbol: CyberSymbol,
+//            bandWidthRequest: BandWidthRequest? = null
+//    ): Either<TransactionCommitted<OpenCyberTokenStruct>, GolosEosError> {
+//
+//        val setUserNameCallable = Callable {
+//            pushTransaction<OpenCyberTokenStruct>(OpenCyberTokenAction(
+//                    OpenCyberTokenStruct(forUser, symbol, actor)
+//            ).toActionAbi(
+//                    listOf(TransactionAuthorizationAbi(actor.name, "active"))
+//            ), cyberCreatePermissionKey, bandWidthRequest)
+//        }
+//        return callTilTimeoutExceptionVanishes(setUserNameCallable)
+//    }
 
 //    /** method for issuing vesting for [forUser] recipient. Also, used as part of new account creation in [createAccount]
 //     * @param forUser account name
@@ -387,7 +393,7 @@ open class Commun4j @JvmOverloads constructor(
                     NewusernameCyberDomainStruct(owner, forUser, newUserName)
             ).toActionAbi(
                     listOf(TransactionAuthorizationAbi(owner.name, "active"))
-            ), creatorKey, bandWidthRequest)
+            ), creatorKey, bandWidthRequest, null)
         }
         return callTilTimeoutExceptionVanishes(setUserNameCallable)
     }
@@ -399,17 +405,17 @@ open class Commun4j @JvmOverloads constructor(
             body: String,
             tags: List<String>,
             metadata: String,
-            curatorsPrcnt: Short,
             weight: Short?,
             bandWidthRequest: BandWidthRequest? = null,
+            clientAuthRequest: ClientAuthRequest? = null,
             author: CyberName = keyStorage.getActiveAccount(),
-            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<CreateComnGalleryStruct>, GolosEosError> {
+            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<CreateCGalleryStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<CreateComnGalleryStruct>(CreateComnGalleryAction(
-                    CreateComnGalleryStruct(communCode,
-                            MssgidComnGalleryStruct(author, formatPostPermlink(header)),
-                            MssgidComnGalleryStruct(CyberName(), ""),
+            pushTransaction<CreateCGalleryStruct>(CreateCGalleryAction(
+                    CreateCGalleryStruct(communCode,
+                            MssgidCGalleryStruct(author, formatPostPermlink(header)),
+                            MssgidCGalleryStruct(CyberName(), ""),
                             header,
                             body,
                             tags,
@@ -417,29 +423,29 @@ open class Commun4j @JvmOverloads constructor(
                             weight)
             ).toActionAbi(
                     listOf(TransactionAuthorizationAbi(author.name, "active"))
-            ), authorKey, bandWidthRequest)
+            ), authorKey, bandWidthRequest, clientAuthRequest)
         }
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
 
     @JvmOverloads
     fun createComment(
-            parentMssgId: MssgidComnGalleryStruct,
+            parentMssgId: MssgidCGalleryStruct,
             communCode: CyberSymbolCode,
             header: String,
             body: String,
             tags: List<String>,
             metadata: String,
-            curatorsPrcnt: Short,
             weight: Short?,
             bandWidthRequest: BandWidthRequest? = null,
+            clientAuthRequest: ClientAuthRequest? = null,
             author: CyberName = keyStorage.getActiveAccount(),
-            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<CreateComnGalleryStruct>, GolosEosError> {
+            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<CreateCGalleryStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<CreateComnGalleryStruct>(CreateComnGalleryAction(
-                    CreateComnGalleryStruct(communCode,
-                            MssgidComnGalleryStruct(author, formatPostPermlink(header)),
+            pushTransaction<CreateCGalleryStruct>(CreateCGalleryAction(
+                    CreateCGalleryStruct(communCode,
+                            MssgidCGalleryStruct(author, formatPostPermlink(header)),
                             parentMssgId,
                             header,
                             body,
@@ -448,26 +454,27 @@ open class Commun4j @JvmOverloads constructor(
                             weight)
             ).toActionAbi(
                     listOf(TransactionAuthorizationAbi(author.name, "active"))
-            ), authorKey, bandWidthRequest)
+            ), authorKey, bandWidthRequest, clientAuthRequest)
         }
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
 
     @JvmOverloads
     fun updatePostOrComment(
-            messageId: MssgidComnGalleryStruct,
+            messageId: MssgidCGalleryStruct,
             communCode: CyberSymbolCode,
             header: String,
             body: String,
             tags: List<String>,
             metadata: String,
             bandWidthRequest: BandWidthRequest? = null,
+            clientAuthRequest: ClientAuthRequest? = null,
             author: CyberName = keyStorage.getActiveAccount(),
-            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<UpdateComnGalleryStruct>, GolosEosError> {
+            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<UpdateCGalleryStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<UpdateComnGalleryStruct>(UpdateComnGalleryAction(
-                    UpdateComnGalleryStruct(communCode,
+            pushTransaction<UpdateCGalleryStruct>(UpdateCGalleryAction(
+                    UpdateCGalleryStruct(communCode,
                             messageId,
                             header,
                             body,
@@ -475,26 +482,27 @@ open class Commun4j @JvmOverloads constructor(
                             metadata)
             ).toActionAbi(
                     listOf(TransactionAuthorizationAbi(author.name, "active"))
-            ), authorKey, bandWidthRequest)
+            ), authorKey, bandWidthRequest, clientAuthRequest)
         }
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
 
     @JvmOverloads
     fun deletePostOrComment(
-            messageId: MssgidComnGalleryStruct,
+            messageId: MssgidCGalleryStruct,
             communCode: CyberSymbolCode,
             bandWidthRequest: BandWidthRequest? = null,
+            clientAuthRequest: ClientAuthRequest? = null,
             author: CyberName = keyStorage.getActiveAccount(),
-            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<RemoveComnGalleryStruct>, GolosEosError> {
+            authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<RemoveCGalleryStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<RemoveComnGalleryStruct>(RemoveComnGalleryAction(
-                    RemoveComnGalleryStruct(communCode,
+            pushTransaction<RemoveCGalleryStruct>(RemoveCGalleryAction(
+                    RemoveCGalleryStruct(communCode,
                             messageId)
             ).toActionAbi(
                     listOf(TransactionAuthorizationAbi(author.name, "active"))
-            ), authorKey, bandWidthRequest)
+            ), authorKey, bandWidthRequest, clientAuthRequest)
         }
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
@@ -502,56 +510,59 @@ open class Commun4j @JvmOverloads constructor(
 
     @JvmOverloads
     fun upVote(communCode: CyberSymbolCode,
-               messageId: MssgidComnGalleryStruct,
+               messageId: MssgidCGalleryStruct,
                weight: Short,
                bandWidthRequest: BandWidthRequest? = null,
+               clientAuthRequest: ClientAuthRequest? = null,
                voter: CyberName = keyStorage.getActiveAccount(),
                key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<VoteComnGalleryStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<VoteCGalleryStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<VoteComnGalleryStruct>(UpvoteComnGalleryAction(VoteComnGalleryStruct(communCode,
+            pushTransaction<VoteCGalleryStruct>(UpvoteCGalleryAction(VoteCGalleryStruct(communCode,
                     voter, messageId, weight)
             ).toActionAbi(
                     listOf(TransactionAuthorizationAbi(voter.name, "active"))
-            ), key, bandWidthRequest)
+            ), key, bandWidthRequest, clientAuthRequest)
         }
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
 
     @JvmOverloads
     fun downVote(communCode: CyberSymbolCode,
-                 messageId: MssgidComnGalleryStruct,
+                 messageId: MssgidCGalleryStruct,
                  weight: Short,
                  bandWidthRequest: BandWidthRequest? = null,
+                 clientAuthRequest: ClientAuthRequest? = null,
                  voter: CyberName = keyStorage.getActiveAccount(),
                  key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<VoteComnGalleryStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<VoteCGalleryStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<VoteComnGalleryStruct>(DownvoteComnGalleryAction(VoteComnGalleryStruct(communCode,
+            pushTransaction<VoteCGalleryStruct>(DownvoteCGalleryAction(VoteCGalleryStruct(communCode,
                     voter, messageId, weight)
             ).toActionAbi(
                     listOf(TransactionAuthorizationAbi(voter.name, "active"))
-            ), key, bandWidthRequest)
+            ), key, bandWidthRequest, clientAuthRequest)
         }
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
 
     @JvmOverloads
     fun unVote(communCode: CyberSymbolCode,
-               messageId: MssgidComnGalleryStruct,
+               messageId: MssgidCGalleryStruct,
                bandWidthRequest: BandWidthRequest? = null,
+               clientAuthRequest: ClientAuthRequest? = null,
                voter: CyberName = keyStorage.getActiveAccount(),
                key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<UnvoteComnGalleryStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<UnvoteCGalleryStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<UnvoteComnGalleryStruct>(UnvoteComnGalleryAction(UnvoteComnGalleryStruct(
+            pushTransaction<UnvoteCGalleryStruct>(UnvoteCGalleryAction(UnvoteCGalleryStruct(
                     communCode, voter, messageId
             )).toActionAbi(
                     listOf(TransactionAuthorizationAbi(voter.name, "active"))
-            ), key, bandWidthRequest)
+            ), key, bandWidthRequest, clientAuthRequest)
         }
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
@@ -559,16 +570,17 @@ open class Commun4j @JvmOverloads constructor(
     @JvmOverloads
     fun pinUser(pinning: CyberName,
                 bandWidthRequest: BandWidthRequest? = null,
+                clientAuthRequest: ClientAuthRequest? = null,
                 pinner: CyberName = keyStorage.getActiveAccount(),
                 key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<PinComnSocialStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<PinCSocialStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<PinComnSocialStruct>(PinComnSocialAction(PinComnSocialStruct(
+            pushTransaction<PinCSocialStruct>(PinCSocialAction(PinCSocialStruct(
                     pinner, pinning
             )).toActionAbi(
                     listOf(TransactionAuthorizationAbi(pinner.name, "active"))
-            ), key, bandWidthRequest)
+            ), key, bandWidthRequest, clientAuthRequest)
         }
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
@@ -576,16 +588,17 @@ open class Commun4j @JvmOverloads constructor(
     @JvmOverloads
     fun unpinUser(unpinning: CyberName,
                   bandWidthRequest: BandWidthRequest? = null,
+                  clientAuthRequest: ClientAuthRequest? = null,
                   pinner: CyberName = keyStorage.getActiveAccount(),
                   key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<PinComnSocialStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<PinCSocialStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<PinComnSocialStruct>(UnpinComnSocialAction(PinComnSocialStruct(
+            pushTransaction<PinCSocialStruct>(UnpinCSocialAction(PinCSocialStruct(
                     pinner, unpinning
             )).toActionAbi(
                     listOf(TransactionAuthorizationAbi(pinner.name, "active"))
-            ), key, bandWidthRequest)
+            ), key, bandWidthRequest, clientAuthRequest)
         }
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
@@ -593,16 +606,17 @@ open class Commun4j @JvmOverloads constructor(
     @JvmOverloads
     fun block(blocking: CyberName,
               bandWidthRequest: BandWidthRequest? = null,
+              clientAuthRequest: ClientAuthRequest? = null,
               blocker: CyberName = keyStorage.getActiveAccount(),
               key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<BlockComnSocialStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<BlockCSocialStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<BlockComnSocialStruct>(BlockComnSocialAction(BlockComnSocialStruct(
+            pushTransaction<BlockCSocialStruct>(BlockCSocialAction(BlockCSocialStruct(
                     blocker, blocking
             )).toActionAbi(
                     listOf(TransactionAuthorizationAbi(blocker.name, "active"))
-            ), key, bandWidthRequest)
+            ), key, bandWidthRequest, clientAuthRequest)
         }
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
@@ -610,16 +624,17 @@ open class Commun4j @JvmOverloads constructor(
     @JvmOverloads
     fun unBlock(blocking: CyberName,
                 bandWidthRequest: BandWidthRequest? = null,
+                clientAuthRequest: ClientAuthRequest? = null,
                 blocker: CyberName = keyStorage.getActiveAccount(),
                 key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<BlockComnSocialStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<BlockCSocialStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<BlockComnSocialStruct>(UnblockComnSocialAction(BlockComnSocialStruct(
+            pushTransaction<BlockCSocialStruct>(UnblockCSocialAction(BlockCSocialStruct(
                     blocker, blocking
             )).toActionAbi(
                     listOf(TransactionAuthorizationAbi(blocker.name, "active"))
-            ), key, bandWidthRequest)
+            ), key, bandWidthRequest, clientAuthRequest)
         }
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
@@ -634,19 +649,20 @@ open class Commun4j @JvmOverloads constructor(
             whatsapp: String?,
             wechat: String?,
             bandWidthRequest: BandWidthRequest? = null,
+            clientAuthRequest: ClientAuthRequest? = null,
             user: CyberName = keyStorage.getActiveAccount(),
             key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<UpdatemetaComnSocialStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<UpdatemetaCSocialStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<UpdatemetaComnSocialStruct>(UpdatemetaComnSocialAction(UpdatemetaComnSocialStruct(
+            pushTransaction<UpdatemetaCSocialStruct>(UpdatemetaCSocialAction(UpdatemetaCSocialStruct(
                     user,
-                    AccountmetaComnSocialStruct(
+                    AccountmetaCSocialStruct(
                             avatarUrl, coverUrl, biography, facebook, telegram, whatsapp, wechat
                     )
             )).toActionAbi(
                     listOf(TransactionAuthorizationAbi(user.name, "active"))
-            ), key, bandWidthRequest)
+            ), key, bandWidthRequest, clientAuthRequest)
         }
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
@@ -654,16 +670,17 @@ open class Commun4j @JvmOverloads constructor(
     @JvmOverloads
     fun DeleteUserMetadata(
             bandWidthRequest: BandWidthRequest? = null,
+            clientAuthRequest: ClientAuthRequest? = null,
             user: CyberName = keyStorage.getActiveAccount(),
             key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<DeletemetaComnSocialStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<DeletemetaCSocialStruct>, GolosEosError> {
 
         val newPostCallable = Callable {
-            pushTransaction<DeletemetaComnSocialStruct>(DeletemetaComnSocialAction(DeletemetaComnSocialStruct(
+            pushTransaction<DeletemetaCSocialStruct>(DeletemetaCSocialAction(DeletemetaCSocialStruct(
                     user
             )).toActionAbi(
                     listOf(TransactionAuthorizationAbi(user.name, "active"))
-            ), key, bandWidthRequest)
+            ), key, bandWidthRequest, clientAuthRequest)
         }
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
@@ -673,8 +690,7 @@ open class Commun4j @JvmOverloads constructor(
                            offset: Int,
                            limit: Int) = apiService.getCommunitiesList(user.name, offset, limit)
 
-    fun getCommunity(communityId: String,
-                     userId: CyberName) = apiService.getCommunity(communityId, userId.name)
+    fun getCommunity(communityId: String) = apiService.getCommunity(communityId)
 
 
     fun getPost(
@@ -689,12 +705,50 @@ open class Commun4j @JvmOverloads constructor(
             permlink: String
     ) = apiService.getPostRaw(userId, communityId, permlink)
 
-    fun getPosts() = apiService.getPosts()
+    fun getPosts(userId: CyberName? = null,
+                 communityId: String? = null,
+                 communityAlias: String? = null,
+                 allowNsfw: Boolean? = null,
+                 type: FeedType? = null,
+                 sortBy: FeedSortByType? = null,
+                 timeframe: FeedTimeFrame? = null,
+                 limit: Int? = null,
+                 offset: Int? = null) = apiService.getPosts(userId?.name,
+            communityId, communityAlias,
+            allowNsfw, type?.toString(),
+            sortBy?.toString(),
+            timeframe?.toString(), limit, offset)
 
-    fun getPostsRaw() = apiService.getPostsRaw()
+    fun getPostsRaw(userId: CyberName? = null,
+                    communityId: String? = null,
+                    communityAlias: String? = null,
+                    allowNsfw: Boolean? = null,
+                    type: FeedType? = null,
+                    sortBy: FeedSortByType? = null,
+                    timeframe: FeedTimeFrame? = null,
+                    limit: Int? = null,
+                    offset: Int? = null) = apiService.getPostsRaw(userId?.name,
+            communityId, communityAlias,
+            allowNsfw, type?.toString(),
+            sortBy?.toString(),
+            timeframe?.toString(), limit, offset)
 
     fun getUserProfile(user: CyberName?, userName: String?): Either<GetProfileResult, ApiResponseError> =
             apiService.getProfile(user?.name, userName)
+
+    fun getBalance(userId: CyberName) =
+            apiService.getBalance(userId.name)
+
+    @JvmOverloads
+    fun getTransferHistory(userId: CyberName,
+                           direction: TransactionDirection? = null,
+                           sequenceKey: String? = null,
+                           limit: Int? = null) = apiService.getTransferHistory(userId.name,
+            direction?.toString(),
+            sequenceKey,
+            limit)
+
+    fun getTokensInfo(codes: List<CyberSymbolCode>) = apiService.getTokensInfo(codes.map { it.value })
 
 
     /** method will block thread until [blockNum] would consumed by prism services
@@ -712,116 +766,117 @@ open class Commun4j @JvmOverloads constructor(
     fun waitForTransaction(transactionId: String): Either<ResultOk, ApiResponseError> = apiService.waitForTransaction(transactionId)
 
 
-    /**get processed embed link for some raw "https://site.com/content" using iframely service
-     * @param forLink raw link of site content
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun getEmbedIframely(forLink: String): Either<IFramelyEmbedResult, ApiResponseError> =
-            apiService.getIframelyEmbed(forLink)
-
-    /**get processed embed link for some raw "https://site.com/content" using oembed service
-     * @param forLink raw link of site content
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun getEmbedOembed(forLink: String): Either<OEmbedResult, ApiResponseError> = apiService.getOEmdedEmbed(forLink)
-
-
-    /** method subscribes mobile device for push notifications in FCM.
-     * method requires authorization
-     * @param deviceId userId of device or installation.
-     * @param fcmToken token of app installation in FCM.
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun subscribeOnMobilePushNotifications(deviceId: String,
-                                           fcmToken: String,
-                                           appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.subscribeOnMobilePushNotifications(deviceId, appName, fcmToken)
-
-    /** method unSubscribes mobile device from push notifications in FCM.
-     *  method requires authorization
-     * @param deviceId userId of device or installation.
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun unSubscribeOnNotifications(userId: CyberName,
-                                   deviceId: String,
-                                   appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.unSubscribeOnNotifications(userId.name, deviceId, appName)
-
-    /**method for setting various settings for user. If any of setting param is null, this settings will not change.
-     * All setting are individual for every [deviceId]
-     * method requires authorization
-     * @param deviceId userId of device or installation.
-     * @param newBasicSettings schema-free settings, used for saving app personalization.
-     * @param newWebNotifySettings settings of online web notifications.
-     * @param newMobilePushSettings settings of mobile push notifications. Uses FCM.
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun setUserSettings(deviceId: String,
-                        newBasicSettings: Any?,
-                        newWebNotifySettings: WebShowSettings?,
-                        newMobilePushSettings: MobileShowSettings?,
-                        appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.setNotificationSettings(deviceId, appName, newBasicSettings, newWebNotifySettings, newMobilePushSettings)
-
-    /**method for retreiving user setting. Personal for evert [deviceId]
-     * method requires authorization
-     * @param deviceId userId of device or installation.
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun getUserSettings(deviceId: String, appName: String = "gls"): Either<UserSettings, ApiResponseError> = apiService.getNotificationSettings(deviceId, appName)
-
-    /**method for retreiving history of notifications.
-     * method requires authorization
-     * @param userProfile name of user which notifications to retreive.
-     * @param afterId userId of next page of events. Set null if you want first page.
-     * @param limit number of event to retreive
-     * @param markAsViewed set true, if you want to set all retreived notifications as viewed
-     * @param freshOnly set true, if you want get only fresh notifcaitons
-     * @param types list of types of notifcaitons you want to get
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun getEvents(userProfile: String,
-                  afterId: String?,
-                  limit: Int?,
-                  markAsViewed: Boolean?,
-                  freshOnly: Boolean?,
-                  types: List<EventType>,
-                  appName: String = "gls"): Either<EventsData, ApiResponseError> =
-            apiService.getEvents(userProfile, appName, afterId, limit, markAsViewed, freshOnly, types)
-
-    /**mark certain events as unfresh, eg returning 'fresh' property as false
-     * method requires authorization
-     * @param ids list of userId's to set as read
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun markEventsAsNotFresh(ids: List<String>, appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.markEventsAsRead(ids, appName)
-
-    /**mark certain all events history of authorized user as not fresh
-     * method requires authorization
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun markAllEventsAsNotFresh(appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.markAllEventsAsRead(appName)
-
-    /**method for retreving count of fresh events of authorized user.
-     * method requires authorization
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun getFreshNotificationCount(profileId: String, appName: String = "gls"): Either<FreshResult, ApiResponseError> = apiService.getUnreadCount(profileId, appName)
-
-    /**method returns current state of user registration process, user gets identified by [user] or
-     * by [phone]
-     *  @param user name of user, which registration state get fetched.
-     *  @param phone  of user, which registration state get fetched.
-     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
+//    /**get processed embed link for some raw "https://site.com/content" using iframely service
+//     * @param forLink raw link of site content
+//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+//     * */
+//    fun getEmbedIframely(forLink: String): Either<IFramelyEmbedResult, ApiResponseError> =
+//            apiService.getIframelyEmbed(forLink)
+//
+//    /**get processed embed link for some raw "https://site.com/content" using oembed service
+//     * @param forLink raw link of site content
+//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+//     * */
+//    fun getEmbedOembed(forLink: String): Either<OEmbedResult, ApiResponseError> = apiService.getOEmdedEmbed(forLink)
+//
+//
+//    /** method subscribes mobile device for push notifications in FCM.
+//     * method requires authorization
+//     * @param deviceId userId of device or installation.
+//     * @param fcmToken token of app installation in FCM.
+//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+//     * */
+//    fun subscribeOnMobilePushNotifications(deviceId: String,
+//                                           fcmToken: String,
+//                                           appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.subscribeOnMobilePushNotifications(deviceId, appName, fcmToken)
+//
+//    /** method unSubscribes mobile device from push notifications in FCM.
+//     *  method requires authorization
+//     * @param deviceId userId of device or installation.
+//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+//     * */
+//    fun unSubscribeOnNotifications(userId: CyberName,
+//                                   deviceId: String,
+//                                   appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.unSubscribeOnNotifications(userId.name, deviceId, appName)
+//
+//    /**method for setting various settings for user. If any of setting param is null, this settings will not change.
+//     * All setting are individual for every [deviceId]
+//     * method requires authorization
+//     * @param deviceId userId of device or installation.
+//     * @param newBasicSettings schema-free settings, used for saving app personalization.
+//     * @param newWebNotifySettings settings of online web notifications.
+//     * @param newMobilePushSettings settings of mobile push notifications. Uses FCM.
+//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+//     * */
+//    fun setUserSettings(deviceId: String,
+//                        newBasicSettings: Any?,
+//                        newWebNotifySettings: WebShowSettings?,
+//                        newMobilePushSettings: MobileShowSettings?,
+//                        appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.setNotificationSettings(deviceId, appName, newBasicSettings, newWebNotifySettings, newMobilePushSettings)
+//
+//    /**method for retreiving user setting. Personal for evert [deviceId]
+//     * method requires authorization
+//     * @param deviceId userId of device or installation.
+//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+//     * */
+//    fun getUserSettings(deviceId: String, appName: String = "gls"): Either<UserSettings, ApiResponseError> = apiService.getNotificationSettings(deviceId, appName)
+//
+//    /**method for retreiving history of notifications.
+//     * method requires authorization
+//     * @param userProfile name of user which notifications to retreive.
+//     * @param afterId userId of next page of events. Set null if you want first page.
+//     * @param limit number of event to retreive
+//     * @param markAsViewed set true, if you want to set all retreived notifications as viewed
+//     * @param freshOnly set true, if you want get only fresh notifcaitons
+//     * @param types list of types of notifcaitons you want to get
+//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+//     * */
+//    fun getEvents(userProfile: String,
+//                  afterId: String?,
+//                  limit: Int?,
+//                  markAsViewed: Boolean?,
+//                  freshOnly: Boolean?,
+//                  types: List<EventType>,
+//                  appName: String = "gls"): Either<EventsData, ApiResponseError> =
+//            apiService.getEvents(userProfile, appName, afterId, limit, markAsViewed, freshOnly, types)
+//
+//    /**mark certain events as unfresh, eg returning 'fresh' property as false
+//     * method requires authorization
+//     * @param ids list of userId's to set as read
+//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+//     * */
+//    fun markEventsAsNotFresh(ids: List<String>, appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.markEventsAsRead(ids, appName)
+//
+//    /**mark certain all events history of authorized user as not fresh
+//     * method requires authorization
+//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+//     * */
+//    fun markAllEventsAsNotFresh(appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.markAllEventsAsRead(appName)
+//
+//    /**method for retreving count of fresh events of authorized user.
+//     * method requires authorization
+//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+//     * */
+//
+//    fun getFreshNotificationCount(profileId: String, appName: String = "gls"): Either<FreshResult, ApiResponseError> = apiService.getUnreadCount(profileId, appName)
+//
+//    /**method returns current state of user registration process, user gets identified by [user] or
+//     * by [phone]
+//     *  @param user name of user, which registration state get fetched.
+//     *  @param phone  of user, which registration state get fetched.
+//     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+//     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+//     * */
 
     fun <T : Any> pushTransactionWithProvidedBandwidth(chainId: String,
                                                        transactionAbi: TransactionAbi,
@@ -829,10 +884,9 @@ open class Commun4j @JvmOverloads constructor(
                                                        traceType: Class<T>): Either<TransactionCommitted<T>, GolosEosError> = apiService.pushTransactionWithProvidedBandwidth(chainId, transactionAbi, signature, traceType)
 
     fun getRegistrationState(
-            user: String?,
             phone: String?
     ): Either<UserRegistrationStateResult, ApiResponseError> =
-            apiService.getRegistrationStateOf(userId = user, phone = phone)
+            apiService.getRegistrationStateOf(userId = null, phone = phone)
 
 
     /** method leads to sending sms code to user's [phone]. proper [testingPass] makes backend to omit this check
@@ -908,29 +962,29 @@ open class Commun4j @JvmOverloads constructor(
      * 1. getting secret string using method [getAuthSecret]
      * 2. signing it with [StringSigner]
      * 3. sending result using [authWithSecret] method
-     *  @param user userid, userName, domain name, or whateve current version of services willing to accept
+     *  @param userName userid, userName, domain name, or whatever current version of services willing to accept
      *  @param secret secret string, obtained from [getAuthSecret] method
      *  @param signedSecret [secret] signed with [StringSigner]
      *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
      * */
 
-    fun authWithSecret(user: String,
+    fun authWithSecret(userName: String,
                        secret: String,
-                       signedSecret: String): Either<AuthResult, ApiResponseError> = apiService.authWithSecret(user, secret, signedSecret)
+                       signedSecret: String): Either<AuthResult, ApiResponseError> = apiService.authWithSecret(userName, secret, signedSecret)
 
     /**disconnects from microservices, effectively unaithing
      * Method will result  throwing all pending socket requests.
      * */
     fun unAuth() = apiService.unAuth()
 
-    fun isUserAuthed(): Either<Boolean, java.lang.Exception> {
-        return try {
-            val resp = markEventsAsNotFresh(emptyList())
-            Either.Success(resp is Either.Success)
-        } catch (e: java.lang.Exception) {
-            Either.Failure(e)
-        }
-    }
+//    fun isUserAuthed(): Either<Boolean, java.lang.Exception> {
+//        return try {
+//            val resp = markEventsAsNotFresh(emptyList())
+//            Either.Success(resp is Either.Success)
+//        } catch (e: java.lang.Exception) {
+//            Either.Failure(e)
+//        }
+//    }
 
 
     /** method for fetching  account of some user
@@ -1034,7 +1088,7 @@ open class Commun4j @JvmOverloads constructor(
                     )
             ).toActionAbi(
                     listOf(TransactionAuthorizationAbi(from.name, "active"))
-            ), key, bandWidthRequest)
+            ), key, bandWidthRequest, null)
         }
         return callTilTimeoutExceptionVanishes(callable)
     }
@@ -1057,4 +1111,4 @@ private fun createProvideBw(forUser: CyberName, actor: CyberName): ActionAbi = A
                         ProvideBandwichAbi(
                                 actor,
                                 forUser)
-                , false).toHex())
+                        , false).toHex())
