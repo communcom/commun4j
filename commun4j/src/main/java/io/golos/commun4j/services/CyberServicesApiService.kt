@@ -86,7 +86,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                 .add(CyberName::class.java, CyberNameAdapter())
                 .add(ServiceSettingsLanguage::class.java, ServiceSettingsLanguageAdapter())
                 .add(EventsAdapter())
-                .add(ToStringAdaptper())
+                .add(ToStringAdapter())
                 .add(KotlinJsonAdapterFactory())
                 .build(),
         private val apiClient: io.golos.commun4j.http.rpc.SocketClient = SocketClientImpl(

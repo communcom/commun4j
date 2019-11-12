@@ -128,11 +128,11 @@ fun generateActions(eosAbi: EosAbi,
                                 .addCode("""return TransactionPusher.pushTransaction(arrayListOf(toActionAbi(transactionAuth,
             contractName, actionName)).apply {
         if (provideBandwidth != null)
-            this.addAll(provideBandwidth.providers.map {
-                createBandwidthActionAbi(transactionAuth[0].actor,
-                        it)
-            })
-    },
+              this.addAll(provideBandwidth.providers.map {
+                  createBandwidthActionAbi(it.to.name,
+                          it.from)
+              })
+      },
             (keys + provideBandwidth?.provideBwKeys.orEmpty()).toSet(),
             struct::class.java,
             withConfig.blockChainHttpApiUrl,

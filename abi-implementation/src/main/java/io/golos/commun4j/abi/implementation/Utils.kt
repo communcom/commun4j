@@ -16,6 +16,8 @@ fun createBandwidthActionAbi(forUser: String, actor: CyberName) = ActionAbi("cyb
                         ProvideBandwichAbi(
                                 CyberName(actor.name),
                                 CyberName(forUser))
-                ,false).toHex())
+                        , false).toHex())
 
-data class BandWidthProvideOption(val providers: List<CyberName>, val provideBwKeys: List<EosPrivateKey>)
+data class BandwidthProviding(val from: CyberName, val to: CyberName)
+
+data class BandWidthProvideOption(val providers: List<BandwidthProviding>, val provideBwKeys: List<EosPrivateKey>)

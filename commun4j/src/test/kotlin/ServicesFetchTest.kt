@@ -52,7 +52,7 @@ class ServicesFetchTest {
     @Test
     fun getPost() {
         val posts = client.getPosts(type = FeedType.TOP_LIKES,
-                allowNsfw = true, timeframe = FeedTimeFrame.MONTH, limit = 100) as Either.Success
+                allowNsfw = true, timeframe = FeedTimeFrame.MONTH, limit = 1) as Either.Success
         val firstItem = posts.value.items.first()
 
         val getPostResp = client.getPost(firstItem.author.userId, firstItem.community.communityId, firstItem.contentId.permlink)
@@ -62,7 +62,8 @@ class ServicesFetchTest {
                 allowNsfw = true, timeframe = FeedTimeFrame.MONTH, limit = 100) as Either.Success
 
         val firstItemRaw = postsRaw.value.items.first()
-
+        val doc = firstItemRaw.document
+        println(firstItemRaw.document)
         val getPostRespRaw = client.getPostRaw(firstItemRaw.author.userId, firstItemRaw.community.communityId, firstItemRaw.contentId.permlink)
         assertTrue(getPostRespRaw is Either.Success)
     }

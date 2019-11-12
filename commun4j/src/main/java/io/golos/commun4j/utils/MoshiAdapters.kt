@@ -1,6 +1,7 @@
 package io.golos.commun4j.utils
 
 import com.squareup.moshi.*
+import io.golos.commun4j.http.rpc.model.contract.response.AbiAction
 import io.golos.commun4j.services.model.*
 
 
@@ -24,15 +25,23 @@ class UserRegistrationStateAdapter : JsonAdapter<UserRegistrationState>() {
     }
 }
 
-
 annotation class ToStringParseable
 
-class ToStringAdaptper {
+class ToStringAdapter {
+
     @FromJson
     @ToStringParseable
-     fun fromJson(reader: JsonReader): String {
-        val data = reader.readJsonValue()
-        return data?.toString().orEmpty()
+    fun fromJson(reader: JsonReader): String? {
+        val token = reader.peek()
+        if (token == JsonReader.Token.STRING) return reader.nextString()
+
+        val data = reader.readJsonValue() ?: return null
+        return moshi.adapter(Map::class.java).toJson(data as Map<*, *>)
+    }
+
+    companion object {
+
+        private val moshi = Moshi.Builder().build()
     }
 }
 
