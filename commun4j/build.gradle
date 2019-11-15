@@ -86,8 +86,11 @@ dependencies {
         exclude group: "com.lambdaworks", module: "scrypt"
     }
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
+    
 
     testImplementation 'junit:junit:4.12'
+    testImplementation "com.squareup.moshi:moshi-kotlin:$moshiKotlinVersion"
+    testImplementation "com.squareup.okhttp3:okhttp:$okttpVersion"
 }
 
 apply from: '../publish.gradle'

@@ -17,8 +17,18 @@ data class GetProfileResult(val username: String?,
                             val isSubscribed: Boolean?,
                             val isSubscription: Boolean?,
                             val isBlocked: Boolean?,
-                            val commonCommunitiesCount: Int?,
-                            val commonCommunities: List<CommunityItem>?) {
+                            val highlightCommunities: List<ProfileHighlightedCommunities>?,
+                            val highlightCommunitiesCount: Int?) {
+
+    @JsonClass(generateAdapter = true)
+    data class ProfileHighlightedCommunities(val communityId: String,
+                                             val alias: String?,
+                                             val name: String?,
+                                             val avatarUrl: String?,
+                                             val coverUrl: String?,
+                                             val postsCount: Int?,
+                                             val isSubscribed: Boolean?,
+                                             val subscribersCount: Int?)
 
     @JsonClass(generateAdapter = true)
     data class Personal(val avatarUrl: String?, val biography: String?, val contacts: Contacts?, val coverUrl: String?)

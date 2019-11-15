@@ -34,7 +34,6 @@ import java.net.SocketTimeoutException
 import java.util.*
 import java.util.concurrent.Callable
 
-
 open class Commun4j @JvmOverloads constructor(
         val config: Commun4jConfig,
         chainApiProvider: ChainApiProvider? = null,
@@ -686,9 +685,8 @@ open class Commun4j @JvmOverloads constructor(
     }
 
 
-    fun getCommunitiesList(user: CyberName,
-                           offset: Int,
-                           limit: Int) = apiService.getCommunitiesList(user.name, offset, limit)
+    fun getCommunitiesList(offset: Int? = null,
+                           limit: Int? = null) = apiService.getCommunitiesList(offset, limit)
 
     fun getCommunity(communityId: String) = apiService.getCommunity(communityId)
 
@@ -749,6 +747,41 @@ open class Commun4j @JvmOverloads constructor(
             limit)
 
     fun getTokensInfo(codes: List<CyberSymbolCode>) = apiService.getTokensInfo(codes.map { it.value })
+
+    fun getLeaders(communityId: String, limit: Int? = null, offset: Int? = null): Either<LeadersResponse, ApiResponseError> = apiService.getLeaders(communityId, limit, offset, null)
+
+//    fun getCommunityBlacklist(communityId: String?, communityAlias: String? = null, offset: Int? = null, limit: Int? = null) =
+//            apiService.getCommunityBlacklist(communityId, communityAlias, offset, limit)
+
+    fun getBlacklistedUsers(userId: CyberName): Either<BlacklistedUsersResponse, ApiResponseError> =
+            apiService.getBlacklistedUsers(userId)
+
+    fun getBlacklistedCommunities(userId: CyberName): Either<BlacklistedCommunitiesResponse, ApiResponseError> = apiService.getBlacklistedCommunities(userId)
+
+    fun getSubscribers(userId: CyberName?,
+                       communityId: String?,
+                       limit: Int? = null,
+                       offset: Int? = null): Either<SubscribedUsersResponse, ApiResponseError> = apiService.getSubscribers(userId, communityId, limit, offset)
+
+    fun getUserSubscriptions(ofUser: CyberName, limit: Int? = null, offset: Int? = null): Either<UserSubscriptionsResponse, ApiResponseError> = apiService.getUserSubscriptions(ofUser, limit, offset)
+
+    fun getCommunitySubscriptions(ofUser: CyberName, limit: Int? = null, offset: Int? = null): Either<CommunitySubscriptionsResponse, ApiResponseError> = apiService.getCommunitySubscriptions(ofUser, limit, offset)
+
+    fun getReports(communityIds: List<String>?,
+                   status: ReportsRequestStatus?,
+                   contentType: ReportRequestContentType?,
+                   sortBy: ReportsRequestTimeSort? = null,
+                   limit: Int? = null,
+                   offset: Int? = null): Either<GetReportsResponse, ApiResponseError> = apiService.getReports(communityIds, status, contentType, sortBy, limit, offset)
+
+    fun getReportsRaw(communityIds: List<String>?,
+                      status: ReportsRequestStatus?,
+                      contentType: ReportRequestContentType?,
+                      sortBy: ReportsRequestTimeSort? = null,
+                      limit: Int? = null,
+                      offset: Int? = null): Either<GetReportsResponseRaw, ApiResponseError> = apiService.getReportsRaw(communityIds, status, contentType, sortBy, limit, offset)
+
+    fun suggestNames(text: String): Either<SuggestNameResponse, ApiResponseError> = apiService.suggestNames(text)
 
 
     /** method will block thread until [blockNum] would consumed by prism services

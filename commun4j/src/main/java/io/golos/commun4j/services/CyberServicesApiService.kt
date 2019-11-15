@@ -24,7 +24,9 @@ private enum class ServicesGateMethods {
     GET_REGISTRATION_STATE, REG_FIRST_STEP, REG_VERIFY_PHONE, REG_SET_USER_NAME, REG_WRITE_TO_BLOCKCHAIN,
     REG_RESEND_SMS, WAIT_BLOCK, WAIT_FOR_TRANSACTION, PUSH_SUBSCRIBE, PUSH_UNSUBSCRIBE, GET_NOTIFS_HISTORY, MARK_VIEWED,
     GET_UNREAD_COUNT, MARK_VIEWED_ALL, SET_SETTINGS, GET_SETTINGS, GET_SUBSCRIPTIONS, GET_SUBSCRIBERS,
-    RESOLVE_USERNAME, PROVIDE_BANDWIDTH, GET_COMMUNITIES, GET_COMMUNITIY, GET_POSTS, GET_BALANCE, GET_TRANSFER_HISTORY, GET_TOKENS_INFO;
+    RESOLVE_USERNAME, PROVIDE_BANDWIDTH, GET_COMMUNITIES, GET_COMMUNITIY, GET_POSTS, GET_BALANCE, GET_TRANSFER_HISTORY, GET_TOKENS_INFO,
+    GET_LEADERS, GET_COMMUNITY_BLACKLIST, GET_BLACKLIST, GET_COMMENT_VOTES, GET_POST_VOTES, GET_NOTIFY_META,
+    GET_ENTITY_REPORTS, GET_REPORTS, SUGGEST_NAMES;
 
     override fun toString(): String {
         return when (this) {
@@ -62,6 +64,15 @@ private enum class ServicesGateMethods {
             GET_BALANCE -> "wallet.getBalance"
             GET_TRANSFER_HISTORY -> "wallet.getTransferHistory"
             GET_TOKENS_INFO -> "wallet.getTokensInfo"
+            GET_LEADERS -> "content.getLeaders"
+            GET_COMMUNITY_BLACKLIST -> "content.getCommunityBlacklist"
+            GET_BLACKLIST -> "content.getBlacklist"
+            GET_COMMENT_VOTES -> "content.getCommentVotes"
+            GET_POST_VOTES -> "content.getPostVotes"
+            GET_NOTIFY_META -> "content.getNotifyMeta"
+            GET_ENTITY_REPORTS -> "content.getEntityReports"
+            GET_REPORTS -> "content.getReportsList"
+            SUGGEST_NAMES->"content.suggestNames"
         }
     }
 }
@@ -78,6 +89,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                 .add(
                         PolymorphicJsonAdapterFactory.of(Content::class.java, "type")
                                 .withSubtype(Paragraph::class.java, "paragraph")
+                                .withSubtype(ImageContent::class.java, "image")
                                 .withSubtype(Attachments::class.java, "attachments")
                 )
                 .add(EventType::class.java, EventTypeAdapter())
@@ -128,9 +140,12 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                 ), ResolvedProfile::class.java)
     }
 
-    override fun getCommunitiesList(name: String, offset: Int, limit: Int) = apiClient.send(
+    override fun getCommunitiesList(offset: Int?, limit: Int?) = apiClient.send(
             ServicesGateMethods.GET_COMMUNITIES.toString(),
-            hashMapOf<Any, Any>("userId" to name, "offset" to offset, "limit" to limit),
+            hashMapOf<Any, Any>().apply {
+                if (offset != null) this["offset"] = offset
+                if (limit != null) this["limit"] = limit
+            },
             GetCommunitiesResponse::class.java)
 
     override fun getCommunity(communityId: String) = apiClient.send(
@@ -292,6 +307,38 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
+    override fun getLeaders(communityId: String, limit: Int?, skip: Int?, query: String?): Either<LeadersResponse, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.GET_LEADERS.toString(),
+                LeadersRequest(communityId, limit, skip, query),
+                LeadersResponse::class.java
+        )
+    }
+
+    override fun getCommunityBlacklist(communityId: String?, communityAlias: String?, offset: Int?, limit: Int?): Either<CommunityBlacklistResponse, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.GET_COMMUNITY_BLACKLIST.toString(),
+                CommunityBlacklistRequest(communityId, communityAlias, offset, limit),
+                CommunityBlacklistResponse::class.java
+        )
+    }
+
+    override fun getBlacklistedUsers(userId: CyberName): Either<BlacklistedUsersResponse, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.GET_BLACKLIST.toString(),
+                BlacklistRequest(userId, BlacklistType.USER.toString()),
+                BlacklistedUsersResponse::class.java
+        )
+    }
+
+    override fun getBlacklistedCommunities(userId: CyberName): Either<BlacklistedCommunitiesResponse, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.GET_BLACKLIST.toString(),
+                BlacklistRequest(userId, BlacklistType.COMMUNITIES.toString()),
+                BlacklistedCommunitiesResponse::class.java
+        )
+    }
+
     override fun getComment(
             userId: String?,
             permlink: String,
@@ -336,20 +383,48 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun getSubscriptions(ofUser: CyberName,
-                                  limit: Int,
-                                  type: SubscriptionType,
-                                  sequenceKey: String?,
-                                  appName: String): Either<SubscriptionsResponse, ApiResponseError> {
+    override fun getUserSubscriptions(ofUser: CyberName, limit: Int?, offset: Int?): Either<UserSubscriptionsResponse, ApiResponseError> {
         return apiClient.send(ServicesGateMethods.GET_SUBSCRIPTIONS.toString(),
-                SubscriptionsRequest(ofUser, limit, type.toString(), sequenceKey, appName),
-                SubscriptionsResponse::class.java)
+                SubscriptionsRequest(ofUser, SubscriptionType.USER.toString(), limit, offset),
+                UserSubscriptionsResponse::class.java)
     }
 
-    override fun getSubscribers(ofUser: CyberName, limit: Int, type: SubscriptionType,
-                                sequenceKey: String?, appName: String): Either<SubscribersResponse, ApiResponseError> {
+    override fun getCommunitySubscriptions(ofUser: CyberName, limit: Int?, offset: Int?): Either<CommunitySubscriptionsResponse, ApiResponseError> {
+        return apiClient.send(ServicesGateMethods.GET_SUBSCRIPTIONS.toString(),
+                SubscriptionsRequest(ofUser, SubscriptionType.COMMUNITY.toString(), limit, offset),
+                CommunitySubscriptionsResponse::class.java)
+    }
+
+    override fun getSubscribers(userId: CyberName?,
+                                communityId: String?,
+                                limit: Int?,
+                                offset: Int?): Either<SubscribedUsersResponse, ApiResponseError> {
         return apiClient.send(ServicesGateMethods.GET_SUBSCRIBERS.toString(),
-                SubscribersRequest(ofUser, limit, type.toString(), sequenceKey, appName), SubscribersResponse::class.java)
+                SubscribersRequest(userId, communityId, limit, offset), SubscribedUsersResponse::class.java)
+    }
+
+    override fun getReports(communityIds: List<String>?,
+                            status: ReportsRequestStatus?,
+                            contentType: ReportRequestContentType?,
+                            sortBy: ReportsRequestTimeSort?,
+                            limit: Int?,
+                            offset: Int?): Either<GetReportsResponse, ApiResponseError> {
+
+        return apiClient.send(ServicesGateMethods.GET_REPORTS.toString(),
+                GetReportsRequest(communityIds, status?.toString(), contentType?.toString(),
+                        sortBy?.toString(), limit, offset), GetReportsResponse::class.java)
+    }
+
+    override fun getReportsRaw(communityIds: List<String>?,
+                               status: ReportsRequestStatus?,
+                               contentType: ReportRequestContentType?,
+                               sortBy: ReportsRequestTimeSort?,
+                               limit: Int?,
+                               offset: Int?): Either<GetReportsResponseRaw, ApiResponseError> {
+
+        return apiClient.send(ServicesGateMethods.GET_REPORTS.toString(),
+                GetReportsRequest(communityIds, status?.toString(), contentType?.toString(),
+                        sortBy?.toString(), limit, offset), GetReportsResponseRaw::class.java)
     }
 
     override fun getIframelyEmbed(forLink: String): Either<IFramelyEmbedResult, ApiResponseError> {
@@ -437,6 +512,13 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         return apiClient.send(
                 ServicesGateMethods.PUSH_SUBSCRIBE.toString(),
                 request, ResultOk::class.java
+        )
+    }
+
+    override fun suggestNames(text: String): Either<SuggestNameResponse, ApiResponseError>{
+        return apiClient.send(
+                ServicesGateMethods.SUGGEST_NAMES.toString(),
+                SuggestNameRequest(text), SuggestNameResponse::class.java
         )
     }
 

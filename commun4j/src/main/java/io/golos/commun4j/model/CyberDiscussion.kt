@@ -18,6 +18,7 @@ data class CyberDiscussion(val document: CyberDiscussionContent?,
                            val meta: DiscussionMetadata,
                            val contentId: DiscussionId,
                            val author: DiscussionAuthor,
+                           val reports: CyberDiscussionReports?,
                            val community: CyberCommunity)
 
 @JsonClass(generateAdapter = true)
@@ -28,7 +29,11 @@ data class CyberDiscussionRaw(
         val meta: DiscussionMetadata,
         val contentId: DiscussionId,
         val author: DiscussionAuthor,
+        val reports: CyberDiscussionReports?,
         val community: CyberCommunity)
+
+@JsonClass(generateAdapter = true)
+data class CyberDiscussionReports(val reportsCount:Int?)
 
 @JsonClass(generateAdapter = true)
 data class DiscussionAuthor(val userId: CyberName, val username: String?, val avatarUrl: String?)
@@ -104,17 +109,26 @@ data class PayoutAmount(val name: String?, val value: String?)
 @JsonClass(generateAdapter = true)
 data class DiscussionVotes(
         val upCount: Long,
-        val downCount: Long
+        val downCount: Long,
+        val hasUpVote: Boolean?,
+        val hasDownVote: Boolean?
 )
 
 sealed class Content(id: Long, type: String)
 
+@JsonClass(generateAdapter = true)
 data class Paragraph(val id: Long, val type: String, val content: List<ParagraphContent>) : Content(id, type)
+
+//[{"id":14,"type":"image","content":"https://bloximages.newyork1.vip.townnews.com/omaha.com/content/tncms/assets/v3/editorial/9/ab/9abaecf1-6f92-5bfd-9e9b-2236572ee247/5d0bef05bd0c4.image.jpg"}
+@JsonClass(generateAdapter = true)
+data class ImageContent(val id: Long?, val type: String, val content: String?) : Content(id?: Long.MAX_VALUE, type)
+@JsonClass(generateAdapter = true)
+data class VideContent(val id: Long, val type: String, val content: String?, val attributes: Map<String, Any>?) : Content(id, type)
 
 @JsonClass(generateAdapter = true)
 data class ParagraphContent(val id: Long, val type: String, val content: String)
 
-
+@JsonClass(generateAdapter = true)
 data class Attachments(val id: Long, val type: String, val content: List<AttachmentsContent>) : Content(id, type)
 
 @JsonClass(generateAdapter = true)

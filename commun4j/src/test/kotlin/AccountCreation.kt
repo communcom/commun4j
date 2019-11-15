@@ -1,55 +1,33 @@
+import com.squareup.moshi.Moshi
 import io.golos.commun4j.BuildConfig
-import io.golos.commun4j.model.AuthType
 import io.golos.commun4j.sharedmodel.Commun4jConfig
 import io.golos.commun4j.sharedmodel.CyberName
-import io.golos.commun4j.sharedmodel.Either
-import io.golos.commun4j.utils.AuthUtils
-import org.junit.Assert.assertTrue
-import org.junit.Test
-import java.util.*
+import io.golos.commun4j.sharedmodel.CyberNameAdapter
+import okhttp3.OkHttpClient
+import okhttp3.Request
 
+internal data class CommonUser(val userid: CyberName, val username: String, val active_key: String)
 
 class AccountCreationTest {
-
-
-    @Test
-    fun testAccountCreation() {
-        val client = getClient()
-        val pass = UUID.randomUUID().toString()
-        val newUser = generateRandomCommunName()
-        //val accCreationResult = client
-          //      .createAccount(newUser, pass, CyberName("gls"), eosCreateKey)
-
-        //assertTrue("account creation failure on main net for user $newUser", "sdf" is Either.Success)
-
-    }
-
-    @Test
-    fun createAccountAndPrintIt() {
-        val client = getClient()
-        val pass = UUID.randomUUID().toString()
-        val newUser = generateRandomCommunName()
-        val activeKey = AuthUtils.generatePrivateWiFs(newUser, pass, arrayOf(AuthType.ACTIVE))[AuthType.ACTIVE]!!
-
-      //  val accCreationResult = client.createAccount(newUser, pass, "gls".toCyberName(), eosCreateKey)
-
-      //  assertTrue("account creation failure on main net for user $newUser", "sdg" is Either.Success)
-
-        print("name = $newUser activeKey = $activeKey")
-
-    }
 
     companion object {
         private const val eosCreateKey = BuildConfig.CREATE_KEY
 
+        private val moshi = Moshi.Builder().add(CyberName::class.java, CyberNameAdapter()).build()
+        private val okHttpClient = OkHttpClient.Builder().build();
+
         fun createNewAccount(forConfig: Commun4jConfig): Pair<CyberName, String> {
-            val client = io.golos.commun4j.Commun4j(forConfig)
-            val pass = UUID.randomUUID().toString()
-            val newUser = generateRandomCommunName()
+            val respo = okHttpClient.newCall(
+                    Request.Builder()
+                            .get()
+                            .url("http://116.203.39.126:7777/generateCommunUser/5")
+                            .build()
+            ).execute()
 
-          //  client.createAccount(newUser, pass, "gls".toCyberName(), eosCreateKey) as Either.Success
-
-            return Pair(CyberName(newUser), AuthUtils.generatePrivateWiFs(newUser, pass, arrayOf(AuthType.ACTIVE))[AuthType.ACTIVE]!!)
+            respo.body!!.string().let {
+                val usr = moshi.adapter(CommonUser::class.java).fromJson(it)
+                return Pair(usr!!.userid, usr.active_key)
+            }
         }
     }
 }

@@ -73,9 +73,11 @@ interface ApiService {
 
     fun getUnreadCount(profileId: String, appName: String): Either<FreshResult, ApiResponseError>
 
-    fun getSubscriptions(ofUser: CyberName, limit: Int, type: SubscriptionType, sequenceKey: String?, appName: String): Either<SubscriptionsResponse, ApiResponseError>
 
-    fun getSubscribers(ofUser: CyberName, limit: Int, type: SubscriptionType, sequenceKey: String?, appName: String): Either<SubscribersResponse, ApiResponseError>
+    fun getSubscribers(userId: CyberName?,
+                       communityId: String?,
+                       limit: Int?,
+                       offset: Int?): Either<SubscribedUsersResponse, ApiResponseError>
 
     fun getAuthSecret(): Either<AuthSecret, ApiResponseError>
 
@@ -92,7 +94,7 @@ interface ApiService {
                                                        signature: String,
                                                        traceType: Class<T>): Either<TransactionCommitted<T>, GolosEosError>
 
-    fun getCommunitiesList(name: String, offset: Int, limit: Int): Either<GetCommunitiesResponse, ApiResponseError>
+    fun getCommunitiesList(offset: Int?, limit: Int?): Either<GetCommunitiesResponse, ApiResponseError>
 
     fun getCommunity(communityId: String): Either<GetCommunitiesItem, ApiResponseError>
 
@@ -130,5 +132,39 @@ interface ApiService {
 
     fun getTokensInfo(list: List<String>): Either<GetTokensInfoResponse, ApiResponseError>
 
+    fun getLeaders(communityId: String, limit: Int?, skip: Int?, query: String?): Either<LeadersResponse, ApiResponseError>
+
+    fun getCommunityBlacklist(communityId: String?,        // Id сообщества
+                              communityAlias: String?,// Алиас сообщества
+                              offset: Int?,              // Сдвиг пагинации
+                              limit: Int?): Either<CommunityBlacklistResponse, ApiResponseError>
+
+    fun getBlacklistedUsers(userId: CyberName): Either<BlacklistedUsersResponse, ApiResponseError>
+
+    fun getBlacklistedCommunities(userId: CyberName): Either<BlacklistedCommunitiesResponse, ApiResponseError>
+
+    fun getUserSubscriptions(ofUser: CyberName,
+                             limit: Int?,
+                             offset: Int?): Either<UserSubscriptionsResponse, ApiResponseError>
+
+    fun getCommunitySubscriptions(ofUser: CyberName,
+                                  limit: Int?,
+                                  offset: Int?): Either<CommunitySubscriptionsResponse, ApiResponseError>
+
+    fun getReports(communityIds: List<String>?,
+                   status: ReportsRequestStatus?,
+                   contentType: ReportRequestContentType?,
+                   sortBy: ReportsRequestTimeSort?,
+                   limit: Int?,
+                   offset: Int?): Either<GetReportsResponse, ApiResponseError>
+
+    fun getReportsRaw(communityIds: List<String>?,
+                      status: ReportsRequestStatus?,
+                      contentType: ReportRequestContentType?,
+                      sortBy: ReportsRequestTimeSort?,
+                      limit: Int?,
+                      offset: Int?): Either<GetReportsResponseRaw, ApiResponseError>
+
+    fun suggestNames(text: String): Either<SuggestNameResponse, ApiResponseError>
 }
 

@@ -8,7 +8,7 @@ publishing {
 
             pom.withXml {
                 asNode().appendNode('name', "${project.name}")
-                asNode().appendNode('description', "${description}")
+                asNode().appendNode('description', "\n${new File('./releaseNotes.md').getText('UTF-8')}\n")
                 def dependenciesNode = asNode().appendNode('dependencies')
 
                 def adder = {

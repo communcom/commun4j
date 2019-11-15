@@ -8,6 +8,7 @@ import io.golos.commun4j.utils.StringSigner
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
+
 enum class CONFIG_TYPE {
     DEV
 }
@@ -85,7 +86,9 @@ fun getClient(ofType: CONFIG_TYPE = CONFIG_TYPE.DEV,
                 if (authInServices) {
                     val secret = getAuthSecret().getOrThrow().secret
 
-                    val authResult = authWithSecret(activeAccountPair.first.name,
+                    val profile = getUserProfile(activeAccountPair.first, null).getOrThrow()
+
+                    val authResult = authWithSecret(profile.username!!,
                             secret,
                             StringSigner.signString(secret,
                                     activeAccountPair.second))
