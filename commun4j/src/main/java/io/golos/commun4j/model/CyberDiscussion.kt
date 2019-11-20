@@ -19,7 +19,10 @@ data class CyberDiscussion(val document: CyberDiscussionContent?,
                            val contentId: DiscussionId,
                            val author: DiscussionAuthor,
                            val reports: CyberDiscussionReports?,
-                           val community: CyberCommunity)
+                           val community: CyberCommunity,
+                           val url:String?,
+                           val type: String?,
+                           val textLength: Int?)
 
 @JsonClass(generateAdapter = true)
 data class CyberDiscussionRaw(
@@ -30,7 +33,10 @@ data class CyberDiscussionRaw(
         val contentId: DiscussionId,
         val author: DiscussionAuthor,
         val reports: CyberDiscussionReports?,
-        val community: CyberCommunity)
+        val community: CyberCommunity,
+        val url:String?,
+        val type: String?,
+        val textLength: Int?)
 
 @JsonClass(generateAdapter = true)
 data class CyberDiscussionReports(val reportsCount:Int?)

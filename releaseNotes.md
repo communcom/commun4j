@@ -1,9 +1,3 @@
-methods implemented
-* getLeaders
-* getBlacklist
-* getSubscribers
-* getSubscriptions
-* getReportsList
-* suggestNames
-
-added to `GetCommunitiesItem` missing fields
+added  fields to `CyberDiscussion` and `CyberDiscussionRaw`:
+`type`, `textLength`.
+Also new `FeedType` - `HOT`

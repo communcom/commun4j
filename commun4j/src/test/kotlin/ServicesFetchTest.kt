@@ -89,6 +89,17 @@ class ServicesFetchTest {
     }
 
     @Test
+    fun getPostsTest(){
+        val communityId = client.getCommunitiesList(null, 1).getOrThrow().items.first().communityId
+        val res = client.getPosts(type = FeedType.HOT, limit = 1).getOrThrow()
+        client.getPosts(type = FeedType.NEW, limit = 1).getOrThrow()
+        client.getPosts(type = FeedType.TOP_LIKES, limit = 1).getOrThrow()
+        client.getPosts(type = FeedType.TOP_REWARDS, limit = 1).getOrThrow()
+        client.getPosts(type = FeedType.TOP_COMENTS, limit = 1).getOrThrow()
+        client.getPosts(communityId = communityId, type = FeedType.COMMUNITY, limit = 1).getOrThrow()
+    }
+
+    @Test
     fun walletTest() {
         val getWalletResult = client.getBalance(CyberName("tst5vmhjuxie"))
         assertTrue(getWalletResult is Either.Success)
