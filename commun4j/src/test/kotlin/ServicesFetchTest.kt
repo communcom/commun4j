@@ -31,12 +31,13 @@ class ServicesFetchTest {
 
     @Test
     fun getCommunitiesTest() {
-        val getCommunitiesResult = client.getCommunitiesList(0, 20)
+        val getCommunitiesResult = client.getCommunitiesList(limit = 20)
         assertTrue(getCommunitiesResult is Either.Success)
 
-        client.getCommunitiesList(null, null).getOrThrow()
-        client.getCommunitiesList(null, 1).getOrThrow()
-        client.getCommunitiesList(1, null).getOrThrow()
+        client.getCommunitiesList().getOrThrow()
+        client.getCommunitiesList(limit = 1).getOrThrow()
+        client.getCommunitiesList(offset = 1).getOrThrow()
+        client.getCommunitiesList(search = "CATS").getOrThrow()
 
 
         val community = (getCommunitiesResult as Either.Success).value.items[0]
@@ -117,7 +118,7 @@ class ServicesFetchTest {
 
     @Test
     fun leadersTest() {
-        val getCommunitiesResult = client.getCommunitiesList(0, 20).getOrThrow()
+        val getCommunitiesResult = client.getCommunitiesList(limit = 20).getOrThrow()
         getCommunitiesResult.items.forEach {
             client.getLeaders(it.communityId, getRandomNullableInt(), null).getOrThrow()
         }

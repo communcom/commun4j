@@ -1,3 +1,1 @@
-added  fields to `CyberDiscussion` and `CyberDiscussionRaw`:
-`type`, `textLength`.
-Also new `FeedType` - `HOT`
+now transactions w/providebw in `Commun4j` working

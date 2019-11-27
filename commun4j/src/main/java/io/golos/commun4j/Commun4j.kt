@@ -5,6 +5,9 @@ package io.golos.commun4j
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
 import io.golos.commun4j.abi.implementation.c.gallery.*
+import io.golos.commun4j.abi.implementation.c.list.FollowCListAction
+import io.golos.commun4j.abi.implementation.c.list.FollowCListStruct
+import io.golos.commun4j.abi.implementation.c.list.UnfollowCListAction
 import io.golos.commun4j.abi.implementation.c.social.*
 import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainAction
 import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainStruct
@@ -104,20 +107,10 @@ open class Commun4j @JvmOverloads constructor(
             actorKey: String,
             bandWidthRequest: BandWidthRequest?,
             clientAuthRequest: ClientAuthRequest?): Either<TransactionCommitted<T>, GolosEosError> {
-        var resolvedActions = actions
-        if (clientAuthRequest != null) {
-            resolvedActions = resolvedActions.map {
-                ActionAbi(it.account,
-                        it.name,
-                        it.authorization + TransactionAuthorizationAbi("c.gallery", "clients"),
-                        it.data)
-            }
-        }
-
         return if (bandWidthRequest?.source == BandWidthSource.COMN_SERVICES) {
 
             val signedTrx =
-                    TransactionPusher.createSignedTransaction(resolvedActions + createProvideBw(resolvedActions.first().authorization.first().actor.toCyberName(), bandWidthRequest.actor),
+                    TransactionPusher.createSignedTransaction(actions + createProvideBw(actions.first().authorization.first().actor.toCyberName(), bandWidthRequest.actor),
                             listOf(EosPrivateKey(actorKey)), config.blockChainHttpApiUrl,
                             config.logLevel, config.httpLogger)
 
@@ -129,13 +122,13 @@ open class Commun4j @JvmOverloads constructor(
                     signedTrx.value.signedTransactionSignatures.first(),
                     T::class.java)
 
-        } else transactionPusher.pushTransaction(resolvedActions.let {
-            if (bandWidthRequest != null) it + createProvideBw(resolvedActions.first().authorization.first().actor.toCyberName(), bandWidthRequest.actor)
+        } else transactionPusher.pushTransaction(actions.let {
+            if (bandWidthRequest != null) it + createProvideBw(actions.first().authorization.first().actor.toCyberName(), bandWidthRequest.actor)
             else it
         },
                 EosPrivateKey(actorKey),
                 T::class.java,
-                if (clientAuthRequest != null && bandWidthRequest == null) listOf(clientAuthRequest.key) else null,
+                if (clientAuthRequest != null && bandWidthRequest == null) clientAuthRequest.keys else null,
                 bandWidthRequest)
     }
 
@@ -144,7 +137,21 @@ open class Commun4j @JvmOverloads constructor(
             key: String,
             bandWidthRequest: BandWidthRequest?,
             clientAuthRequest: ClientAuthRequest?): Either<TransactionCommitted<T>, GolosEosError> {
-        return pushTransaction(listOf(action),
+        return pushTransaction(action.let { action ->
+            var resolvedAction = action
+            if (clientAuthRequest != null) {
+                resolvedAction = resolvedAction.copy(
+                        authorization = resolvedAction.authorization + TransactionAuthorizationAbi(action.account, "clients")
+                )
+            }
+            val actions = arrayListOf(resolvedAction)
+            if (bandWidthRequest != null) {
+                actions += createProvideBw(action.account.toCyberName(), "c".toCyberName(), "c".toCyberName()
+                )
+            }
+            actions
+
+        },
                 key,
                 bandWidthRequest,
                 clientAuthRequest)
@@ -222,7 +229,7 @@ open class Commun4j @JvmOverloads constructor(
 //        )
 //
 //        return createAnswer
-    //}
+//}
 
 //    /** method for opening vesting balance of account. used in [createAccount] as one of the steps of
 //     * new account creation
@@ -603,6 +610,41 @@ open class Commun4j @JvmOverloads constructor(
     }
 
     @JvmOverloads
+    fun followCommunity(communityCode: CyberSymbolCode,
+                        bandWidthRequest: BandWidthRequest? = null,
+                        clientAuthRequest: ClientAuthRequest? = null,
+                        follower: CyberName = keyStorage.getActiveAccount(),
+                        key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<FollowCListStruct>, GolosEosError> {
+
+        val followCallable = Callable {
+            pushTransaction<FollowCListStruct>(FollowCListAction(FollowCListStruct(
+                    communityCode, follower
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(follower.name, "active"))
+            ), key, bandWidthRequest, clientAuthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(followCallable)
+    }
+    @JvmOverloads
+    fun unFollowCommunity(communityCode: CyberSymbolCode,
+                        bandWidthRequest: BandWidthRequest? = null,
+                        clientAuthRequest: ClientAuthRequest? = null,
+                        follower: CyberName = keyStorage.getActiveAccount(),
+                        key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<FollowCListStruct>, GolosEosError> {
+
+        val followCallable = Callable {
+            pushTransaction<FollowCListStruct>(UnfollowCListAction(FollowCListStruct(
+                    communityCode, follower
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(follower.name, "active"))
+            ), key, bandWidthRequest, clientAuthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(followCallable)
+    }
+
+    @JvmOverloads
     fun block(blocking: CyberName,
               bandWidthRequest: BandWidthRequest? = null,
               clientAuthRequest: ClientAuthRequest? = null,
@@ -685,8 +727,10 @@ open class Commun4j @JvmOverloads constructor(
     }
 
 
-    fun getCommunitiesList(offset: Int? = null,
-                           limit: Int? = null) = apiService.getCommunitiesList(offset, limit)
+    @JvmOverloads
+    fun getCommunitiesList(search: String? = null,
+                           offset: Int? = null,
+                           limit: Int? = null) = apiService.getCommunitiesList(search, offset, limit)
 
     fun getCommunity(communityId: String) = apiService.getCommunity(communityId)
 
@@ -1136,12 +1180,14 @@ open class Commun4j @JvmOverloads constructor(
     }
 }
 
-private fun createProvideBw(forUser: CyberName, actor: CyberName): ActionAbi = ActionAbi("cyber",
+private fun createProvideBw(forUser: CyberName, provider: CyberName, actor: CyberName = provider): ActionAbi = ActionAbi("cyber",
         "providebw",
         listOf(TransactionAuthorizationAbi(actor.name, "providebw")),
         AbiBinaryGenTransactionWriter(CompressionType.NONE)
                 .squishProvideBandwichAbi(
                         ProvideBandwichAbi(
-                                actor,
-                                forUser)
+                                provider,
+                                forUser).apply {
+                            println("pbw $this")
+                        }
                         , false).toHex())

@@ -29,19 +29,19 @@ class PostingTest {
 
     @Test
     fun postingTest() {
-        client.createPost(CyberSymbolCode(client.getCommunitiesList( 0, 1).getOrThrow().items.first().communityId),
+        client.createPost(CyberSymbolCode(client.getCommunitiesList(limit = 1).getOrThrow().items.first().communityId),
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
                 emptyList(),
                 "",
-                1.toShort(),
+                10.toShort(),
                 BandWidthRequest.bandWidthFromComn,
                 null).getOrThrow()
     }
 
     @Test
     fun postingWithProvideBwKey() {
-        client.createPost(CyberSymbolCode(client.getCommunitiesList( 0, 1).getOrThrow().items.first().communityId),
+        client.createPost(CyberSymbolCode(client.getCommunitiesList(limit = 1).getOrThrow().items.first().communityId),
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
                 emptyList(),

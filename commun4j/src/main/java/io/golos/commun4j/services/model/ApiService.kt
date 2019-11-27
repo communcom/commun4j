@@ -94,7 +94,7 @@ interface ApiService {
                                                        signature: String,
                                                        traceType: Class<T>): Either<TransactionCommitted<T>, GolosEosError>
 
-    fun getCommunitiesList(offset: Int?, limit: Int?): Either<GetCommunitiesResponse, ApiResponseError>
+    fun getCommunitiesList(search: String?, offset: Int?, limit: Int?): Either<GetCommunitiesResponse, ApiResponseError>
 
     fun getCommunity(communityId: String): Either<GetCommunitiesItem, ApiResponseError>
 

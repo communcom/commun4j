@@ -7,10 +7,9 @@ enum class BandWidthSource {
     COMN_SERVICES, USING_KEY
 }
 
-data class ClientAuthRequest(val clientName: CyberName, val key: EosPrivateKey) {
+data class ClientAuthRequest(val keys: List<EosPrivateKey>){
     companion object {
-        @JvmStatic
-        fun createComnAuthRequest(key: EosPrivateKey) = ClientAuthRequest(CyberName("c"), key)
+        val empty = ClientAuthRequest(emptyList())
     }
 }
 
