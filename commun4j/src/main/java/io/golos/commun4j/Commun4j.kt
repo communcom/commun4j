@@ -726,6 +726,27 @@ open class Commun4j @JvmOverloads constructor(
         return callTilTimeoutExceptionVanishes(newPostCallable)
     }
 
+    @JvmOverloads
+    fun reportContent(
+            communityCode: CyberSymbolCode,
+            messageId: MssgidCGalleryStruct,
+            reason: String,
+            bandWidthRequest: BandWidthRequest? = null,
+            clientAuthRequest: ClientAuthRequest? = null,
+            reporter: CyberName = keyStorage.getActiveAccount(),
+            key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<ReportCGalleryStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<ReportCGalleryStruct>(ReportCGalleryAction(ReportCGalleryStruct(
+                    communityCode, reporter, messageId, reason
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(reporter.name, "active"))
+            ), key, bandWidthRequest, clientAuthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
 
     @JvmOverloads
     fun getCommunitiesList(search: String? = null,

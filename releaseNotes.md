@@ -1,1 +1,1 @@
-now transactions w/providebw in `Commun4j` working
+`reportContent` method added to `Commun4j`
