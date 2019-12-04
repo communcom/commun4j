@@ -1,13 +1,12 @@
 package io.golos.commun4j.services.model
 
-import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import io.golos.commun4j.sharedmodel.CyberName
 import java.util.*
 
 
 @JsonClass(generateAdapter = true)
-data class GetCommunitiesResponse(val items: List<GetCommunitiesItem>)
+data class GetCommunitiesResponse(val items: List<GetCommunitiesItem>): List<GetCommunitiesItem> by items
 
 @JsonClass(generateAdapter = true)
 data class GetCommunitiesItem(val subscribersCount: Int,
@@ -26,10 +25,10 @@ data class GetCommunitiesItem(val subscribersCount: Int,
                               val friendsCount: Int?,
                               val isSubscribed: Boolean?,
                               val isBlocked: Boolean?,
-                              val friends: List<GetCommunitiesItemFriendItem>?)
+                              val friends: List<CommunityFriendItem>?)
 
 @JsonClass(generateAdapter = true)
-data class CommunityRuleItem(val _id: String?, val id: String,val title: String?, val text: String? )
+data class CommunityRuleItem(val _id: String?, val id: String, val title: String?, val text: String?)
 
 @JsonClass(generateAdapter = true)
-data class GetCommunitiesItemFriendItem(val userId: CyberName, val username: String?, val avatarUrl: String?)
+data class CommunityFriendItem(val userId: CyberName, val username: String?, val avatarUrl: String?)

@@ -24,4 +24,4 @@ internal data class CommunityBlacklistRequest(val communityId: String?,
 data class CommunityBlacklistItem(val userId:CyberName, val username: String?, val avatarUrl: String?)
 
 @JsonClass(generateAdapter = true)
-data class CommunityBlacklistResponse(val items: List<CommunityBlacklistItem>)
+data class CommunityBlacklistResponse(val items: List<CommunityBlacklistItem>): List<CommunityBlacklistItem> by items

@@ -47,7 +47,7 @@ data class GetTransferHistoryRequest(val userId: String,
                                      val limit: Int?)
 
 @JsonClass(generateAdapter = true)
-data class GetTransferHistoryResponse(val items: List<TransferHistoryItem>)
+data class GetTransferHistoryResponse(val items: List<TransferHistoryItem>): List<TransferHistoryItem> by items
 
 @JsonClass(generateAdapter = true)
 data class TransferHistoryItem(val id: String, val sender: Sender, val receiver: Receiver,
@@ -60,7 +60,7 @@ data class TransferHistoryItem(val id: String, val sender: Sender, val receiver:
 }
 
 @JsonClass(generateAdapter = true)
-data class GetTokensInfoResponse(val tokens: List<TokenItem>)
+data class GetTokensInfoResponse(val items: List<TokenItem>): List<TokenItem> by items
 
 @JsonClass(generateAdapter = true)
 data class TokenItem(val issuer: CyberName, @Json(name = "max_supply") val maxSupply: CyberAsset,

@@ -34,10 +34,10 @@ internal data class GetReportsRequest(val communityIds: List<String>?,
                                       val offset: Int?)
 
 @JsonClass(generateAdapter = true)
-data class GetReportsResponse(val items: List<CyberDiscussion>)
+data class GetReportsResponse(val items: List<CyberDiscussion>): List<CyberDiscussion> by items
 
 @JsonClass(generateAdapter = true)
-data class GetReportsResponseRaw(val items: List<CyberDiscussionRaw>)
+data class GetReportsResponseRaw(val items: List<CyberDiscussionRaw>): List<CyberDiscussionRaw> by items
 
 enum class ReportsRequestStatus {
     OPEN, CLOSED;

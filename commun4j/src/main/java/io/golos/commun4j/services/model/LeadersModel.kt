@@ -7,7 +7,7 @@ import io.golos.commun4j.sharedmodel.CyberName
 internal data class LeadersRequest(val communityId: String, val limit: Int?, val offset: Int?, val query: String?)
 
 @JsonClass(generateAdapter = true)
-data class LeadersResponse(val items: List<LeaderItem>)
+data class LeadersResponse(val items: List<LeaderItem>): List<LeaderItem> by items
 //
 //url": "xsQn8gK12,_x.CVd",
 //"rating": "18",

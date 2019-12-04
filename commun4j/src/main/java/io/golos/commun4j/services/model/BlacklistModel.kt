@@ -25,14 +25,14 @@ internal enum class BlacklistType {
 internal data class BlacklistRequest(val userId: CyberName, val type: String)
 
 @JsonClass(generateAdapter = true)
-data class BlacklistedUsersResponse(val items: List<BlacklistUsersItem>)
+data class BlacklistedUsersResponse(val items: List<BlacklistUserItem>): List<BlacklistUserItem> by items
 
 @JsonClass(generateAdapter = true)
-data class BlacklistUsersItem(val userId: CyberName, val username: String?, val avatarUrl: String?,
-                              val isSubscribed: Boolean?)
+data class BlacklistUserItem(val userId: CyberName, val username: String?, val avatarUrl: String?,
+                             val isSubscribed: Boolean?)
 
 @JsonClass(generateAdapter = true)
-data class BlacklistedCommunitiesResponse(val items: List<BlacklistCommunityItem>)
+data class BlacklistedCommunitiesResponse(val items: List<BlacklistCommunityItem>): List<BlacklistCommunityItem>  by items
 
 @JsonClass(generateAdapter = true)
 data class BlacklistCommunityItem(val communityId: String, val alias: String?, val name: String?,

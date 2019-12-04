@@ -21,17 +21,19 @@ internal class SubscriptionsRequest(val userId: CyberName,
                                     val offset: Int?)
 
 @JsonClass(generateAdapter = true)
-data class UserSubscriptionsResponse(val items: List<UserSubscriptionItem>)
+data class UserSubscriptionsResponse(val items: List<UserSubscriptionItem>): List<UserSubscriptionItem> by items
 
 @JsonClass(generateAdapter = true)
 data class UserSubscriptionItem(
         val userId: CyberName,
         val username: String?,
         val avatarUrl: String?,
-        val isSubscribed: Boolean?)
+        val isSubscribed: Boolean?,
+        val subscribersCount: Int?,
+        val postsCount: Int?)
 
 @JsonClass(generateAdapter = true)
-data class CommunitySubscriptionsResponse(val items: List<CommunitySubscriptionItem>)
+data class CommunitySubscriptionsResponse(val items: List<CommunitySubscriptionItem>): List<CommunitySubscriptionItem> by items
 
 @JsonClass(generateAdapter = true)
 data class CommunitySubscriptionItem(val communityId: String, val alias: String?, val name: String?,

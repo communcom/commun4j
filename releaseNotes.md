@@ -1,1 +1,1 @@
-`reportContent` method added to `Commun4j`
+added missing fields in `GetProfileResult` and `UserSubscriptionItem`

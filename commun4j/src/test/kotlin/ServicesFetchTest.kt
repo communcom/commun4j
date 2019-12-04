@@ -39,7 +39,6 @@ class ServicesFetchTest {
         client.getCommunitiesList(offset = 1).getOrThrow()
         client.getCommunitiesList(search = "CATS").getOrThrow()
 
-
         val community = (getCommunitiesResult as Either.Success).value.items[0]
 
         val getComnityResult = client.getCommunity(community.communityId)
@@ -63,7 +62,7 @@ class ServicesFetchTest {
         val secret = client.getAuthSecret().getOrThrow().secret
         client.authWithSecret(profile.username!!, secret, StringSigner.signString(secret, key)).getOrThrow()
 
-        val posts = client.getPosts(type = FeedType.TOP_LIKES, timeframe = FeedTimeFrame.MONTH, limit = 10).getOrThrow()
+        val posts = client.getPosts(type = FeedType.NEW, timeframe = FeedTimeFrame.MONTH, limit = 20).getOrThrow()
         posts.items.forEach {
             client.getUserProfile(it.author.userId, null)
         }

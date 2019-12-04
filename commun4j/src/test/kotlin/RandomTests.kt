@@ -1,6 +1,9 @@
 import io.golos.commun4j.Commun4j
+import io.golos.commun4j.abi.implementation.c.gallery.MssgidCGalleryStruct
 import io.golos.commun4j.model.BandWidthRequest
 import io.golos.commun4j.model.ClientAuthRequest
+import io.golos.commun4j.model.FeedType
+import io.golos.commun4j.sharedmodel.CyberSymbolCode
 import org.junit.Before
 import org.junit.Test
 import java.util.*
@@ -25,5 +28,14 @@ class RandomTests {
                 wechat = null,
                 bandWidthRequest = BandWidthRequest.bandWidthFromComn,
                 clientAuthRequest = ClientAuthRequest.empty).getOrThrow()
+    }
+    @Test
+    fun testReport(){
+        val post = client.getPosts(type = FeedType.NEW, limit = 1).getOrThrow().first()
+        client.reportContent(CyberSymbolCode( post.community.communityId),
+                MssgidCGalleryStruct(post.author.userId, post.contentId.permlink),
+                "[\"NSFW\"]",
+                BandWidthRequest.bandWidthFromComn,
+                ClientAuthRequest(emptyList())).getOrThrow()
     }
 }

@@ -91,6 +91,8 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                                 .withSubtype(Paragraph::class.java, "paragraph")
                                 .withSubtype(ImageContent::class.java, "image")
                                 .withSubtype(Attachments::class.java, "attachments")
+                                .withSubtype(VideoContent::class.java, "video")
+                                .withSubtype(EmbedContent::class.java, "embed")
                 )
                 .add(EventType::class.java, EventTypeAdapter())
                 .add(CyberAsset::class.java, CyberAssetAdapter())

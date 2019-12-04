@@ -8,9 +8,9 @@ import java.math.BigInteger
 import java.util.*
 
 @JsonClass(generateAdapter = true)
-data class GetDiscussionsResult(val items: List<CyberDiscussion>)
+data class GetDiscussionsResult(val items: List<CyberDiscussion>): List<CyberDiscussion> by items
 
-data class GetDiscussionsResultRaw(val items: List<CyberDiscussionRaw>)
+data class GetDiscussionsResultRaw(val items: List<CyberDiscussionRaw>) :List<CyberDiscussionRaw> by items
 
 @JsonClass(generateAdapter = true)
 data class CyberDiscussion(val document: CyberDiscussionContent?,
@@ -125,11 +125,15 @@ sealed class Content(id: Long, type: String)
 @JsonClass(generateAdapter = true)
 data class Paragraph(val id: Long, val type: String, val content: List<ParagraphContent>) : Content(id, type)
 
+@JsonClass(generateAdapter = true)
+data class EmbedContent(val id: Long, val type: String, val content: String?, val attributes: Map<String, Any>) : Content(id, type)
+
+
 //[{"id":14,"type":"image","content":"https://bloximages.newyork1.vip.townnews.com/omaha.com/content/tncms/assets/v3/editorial/9/ab/9abaecf1-6f92-5bfd-9e9b-2236572ee247/5d0bef05bd0c4.image.jpg"}
 @JsonClass(generateAdapter = true)
 data class ImageContent(val id: Long?, val type: String, val content: String?) : Content(id?: Long.MAX_VALUE, type)
 @JsonClass(generateAdapter = true)
-data class VideContent(val id: Long, val type: String, val content: String?, val attributes: Map<String, Any>?) : Content(id, type)
+data class VideoContent(val id: Long, val type: String, val content: String?, val attributes: Map<String, Any>?) : Content(id, type)
 
 @JsonClass(generateAdapter = true)
 data class ParagraphContent(val id: Long, val type: String, val content: String)

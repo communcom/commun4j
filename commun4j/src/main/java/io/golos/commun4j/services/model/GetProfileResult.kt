@@ -17,25 +17,30 @@ data class GetProfileResult(val username: String?,
                             val isSubscribed: Boolean?,
                             val isSubscription: Boolean?,
                             val isBlocked: Boolean?,
-                            val highlightCommunities: List<ProfileHighlightedCommunities>?,
-                            val highlightCommunitiesCount: Int?) {
+                            val highlightCommunities: List<ProfileHighlightedCommunitiesItem>?,
+                            val highlightCommunitiesCount: Int?,
+                            val commonFriendsCount: Int?,
+                            val commonFriends: List<ProfileCommonFriendItem>?,
+                            val isInBlacklist: Boolean?,
+                            val avatarUrl: String?,
+                            val coverUrl: String?) {
 
     @JsonClass(generateAdapter = true)
-    data class ProfileHighlightedCommunities(val communityId: String,
-                                             val alias: String?,
-                                             val name: String?,
-                                             val avatarUrl: String?,
-                                             val coverUrl: String?,
-                                             val postsCount: Int?,
-                                             val isSubscribed: Boolean?,
-                                             val subscribersCount: Int?)
+    data class ProfileHighlightedCommunitiesItem(val communityId: String,
+                                                 val alias: String?,
+                                                 val name: String?,
+                                                 val avatarUrl: String?,
+                                                 val coverUrl: String?,
+                                                 val postsCount: Int?,
+                                                 val isSubscribed: Boolean?,
+                                                 val subscribersCount: Int?)
 
     @JsonClass(generateAdapter = true)
-    data class Personal(val avatarUrl: String?, val biography: String?, val contacts: Contacts?, val coverUrl: String?)
+    data class Personal(val biography: String?, val contacts: Contacts?)
 
     @JsonClass(generateAdapter = true)
     data class Contacts(val facebook: String?, val telegram: String?, val weChat: String?, val whatsApp: String?, val vkontakte: String?,
-                        val instagram: String)
+                        val instagram: String?)
 
     @JsonClass(generateAdapter = true)
     data class Subscribers(val usersCount: Int,
@@ -56,5 +61,8 @@ data class GetProfileResult(val username: String?,
 
     @JsonClass(generateAdapter = true)
     data class CommunityItem(val communityId: String, val alias: String?, val name: String?)
+
+    @JsonClass(generateAdapter = true)
+    data class ProfileCommonFriendItem(val userId: CyberName, val username: String?, val avatarUrl: String?, val subscribersCount: Int?)
 }
 

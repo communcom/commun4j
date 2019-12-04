@@ -18,8 +18,8 @@ internal class SubscribersRequest(val userId: CyberName?,
 //}
 @JsonClass(generateAdapter = true)
 data class SubscriberItem(val userId: CyberName, val username: String?, val avatarUrl: String?,
-                              val subscribersCount: Int?, val postsCount: Int?, val isSubscribed: Boolean?)
+                          val subscribersCount: Int?, val postsCount: Int?, val isSubscribed: Boolean?)
 
 @JsonClass(generateAdapter = true)
-data class SubscribedUsersResponse(val items: List<SubscriberItem>)
+data class SubscribedUsersResponse(val items: List<SubscriberItem>) : List<SubscriberItem> by items
 
