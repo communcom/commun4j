@@ -67,7 +67,8 @@ class RegistrationTest {
         assertNotNull(lastStep.getOrThrow().userId)
         assertNotNull(lastStep.getOrThrow().username)
 
-        println(lastStep)
+        client.onBoardingCommunitySubscriptions(lastStep.getOrThrow().userId,
+                client.getCommunitiesList(limit = 3).getOrThrow().items.map { it.communityId })
 
     }
 }

@@ -166,5 +166,7 @@ interface ApiService {
                       offset: Int?): Either<GetReportsResponseRaw, ApiResponseError>
 
     fun suggestNames(text: String): Either<SuggestNameResponse, ApiResponseError>
+
+    fun onBoardingCommunitySubscriptions(name: String, communityIds: List<String>): Either<ResultOk, ApiResponseError>
 }
 

@@ -1,1 +1,1 @@
-added missing fields in `GetProfileResult` and `UserSubscriptionItem`
+added method onBoardingCommunitySubscriptions to `Commun4j`

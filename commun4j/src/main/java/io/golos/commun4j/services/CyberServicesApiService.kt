@@ -26,7 +26,7 @@ private enum class ServicesGateMethods {
     GET_UNREAD_COUNT, MARK_VIEWED_ALL, SET_SETTINGS, GET_SETTINGS, GET_SUBSCRIPTIONS, GET_SUBSCRIBERS,
     RESOLVE_USERNAME, PROVIDE_BANDWIDTH, GET_COMMUNITIES, GET_COMMUNITIY, GET_POSTS, GET_BALANCE, GET_TRANSFER_HISTORY, GET_TOKENS_INFO,
     GET_LEADERS, GET_COMMUNITY_BLACKLIST, GET_BLACKLIST, GET_COMMENT_VOTES, GET_POST_VOTES, GET_NOTIFY_META,
-    GET_ENTITY_REPORTS, GET_REPORTS, SUGGEST_NAMES;
+    GET_ENTITY_REPORTS, GET_REPORTS, SUGGEST_NAMES, ONBOARDING_COMMUNITY_SUBSCRIPTION;
 
     override fun toString(): String {
         return when (this) {
@@ -46,6 +46,7 @@ private enum class ServicesGateMethods {
             REG_VERIFY_PHONE -> "registration.verify"
             REG_SET_USER_NAME -> "registration.setUsername"
             REG_WRITE_TO_BLOCKCHAIN -> "registration.toBlockChain"
+            ONBOARDING_COMMUNITY_SUBSCRIPTION -> "registration.onboardingCommunitySubscriptions"
             REG_RESEND_SMS -> "registration.resendSmsCode"
             PUSH_SUBSCRIBE -> "push.notifyOn"
             PUSH_UNSUBSCRIBE -> "push.notifyOff"
@@ -72,7 +73,7 @@ private enum class ServicesGateMethods {
             GET_NOTIFY_META -> "content.getNotifyMeta"
             GET_ENTITY_REPORTS -> "content.getEntityReports"
             GET_REPORTS -> "content.getReportsList"
-            SUGGEST_NAMES->"content.suggestNames"
+            SUGGEST_NAMES -> "content.suggestNames"
         }
     }
 }
@@ -142,7 +143,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                 ), ResolvedProfile::class.java)
     }
 
-    override fun getCommunitiesList(search: String? ,offset: Int?, limit: Int?) = apiClient.send(
+    override fun getCommunitiesList(search: String?, offset: Int?, limit: Int?) = apiClient.send(
             ServicesGateMethods.GET_COMMUNITIES.toString(),
             hashMapOf<Any, Any>().apply {
                 if (offset != null) this["offset"] = offset
@@ -518,10 +519,20 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun suggestNames(text: String): Either<SuggestNameResponse, ApiResponseError>{
+    override fun suggestNames(text: String): Either<SuggestNameResponse, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.SUGGEST_NAMES.toString(),
                 SuggestNameRequest(text), SuggestNameResponse::class.java
+        )
+    }
+
+    override fun onBoardingCommunitySubscriptions(name: String, communityIds: List<String>): Either<ResultOk, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.ONBOARDING_COMMUNITY_SUBSCRIPTION.toString(),
+                mapOf(
+                        "userId" to name,
+                        "communityIds" to communityIds
+                ), ResultOk::class.java
         )
     }
 

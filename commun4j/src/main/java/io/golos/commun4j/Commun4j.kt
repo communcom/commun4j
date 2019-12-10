@@ -1047,6 +1047,8 @@ open class Commun4j @JvmOverloads constructor(
      * */
     fun resendSmsCode(phone: String) = apiService.resendSmsCode(null, phone)
 
+    fun onBoardingCommunitySubscriptions(userId: CyberName, communityIds: List<String>) = apiService.onBoardingCommunitySubscriptions(userId.name, communityIds)
+
 
     /**part of auth process. It consists of 3 steps:
      * 1. getting secret string using method [getAuthSecret]

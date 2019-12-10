@@ -4,6 +4,7 @@ import io.golos.commun4j.model.BandWidthRequest
 import io.golos.commun4j.model.ClientAuthRequest
 import io.golos.commun4j.model.FeedType
 import io.golos.commun4j.sharedmodel.CyberSymbolCode
+import io.golos.commun4j.utils.StringSigner
 import org.junit.Before
 import org.junit.Test
 import java.util.*
@@ -13,7 +14,7 @@ class RandomTests {
 
     @Before
     fun before() {
-        client = getClient(authInServices = true)
+        client = getClient(authInServices = false)
     }
 
     @Test
@@ -31,11 +32,23 @@ class RandomTests {
     }
     @Test
     fun testReport(){
+        val reporter = "cmn5bzqfmjtw".toCyberName()
+        val userName = "kirlin-lenita-iii"
+        val activeKey = "5JAGy2NbZTgDYMb59QKA5YdbSkzvhg9Y4YhriudPk8nvGFr8acs"
+
+        val secret = client.getAuthSecret().getOrThrow().secret
+
+        client.authWithSecret(userName, secret, StringSigner.signString(secret, activeKey)).getOrThrow()
+
         val post = client.getPosts(type = FeedType.NEW, limit = 1).getOrThrow().first()
+
         client.reportContent(CyberSymbolCode( post.community.communityId),
                 MssgidCGalleryStruct(post.author.userId, post.contentId.permlink),
                 "[\"NSFW\"]",
                 BandWidthRequest.bandWidthFromComn,
-                ClientAuthRequest(emptyList())).getOrThrow()
+                ClientAuthRequest.empty,
+                reporter,
+                activeKey)
+                .getOrThrow()
     }
 }
