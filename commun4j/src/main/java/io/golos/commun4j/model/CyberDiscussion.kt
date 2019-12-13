@@ -4,13 +4,12 @@ import com.squareup.moshi.JsonClass
 import io.golos.commun4j.services.model.CyberCommunity
 import io.golos.commun4j.sharedmodel.CyberName
 import io.golos.commun4j.utils.ToStringParseable
-import java.math.BigInteger
 import java.util.*
 
 @JsonClass(generateAdapter = true)
-data class GetDiscussionsResult(val items: List<CyberDiscussion>): List<CyberDiscussion> by items
+data class GetDiscussionsResult(val items: List<CyberDiscussion>) : List<CyberDiscussion> by items
 
-data class GetDiscussionsResultRaw(val items: List<CyberDiscussionRaw>) :List<CyberDiscussionRaw> by items
+data class GetDiscussionsResultRaw(val items: List<CyberDiscussionRaw>) : List<CyberDiscussionRaw> by items
 
 @JsonClass(generateAdapter = true)
 data class CyberDiscussion(val document: CyberDiscussionContent?,
@@ -20,7 +19,8 @@ data class CyberDiscussion(val document: CyberDiscussionContent?,
                            val author: DiscussionAuthor,
                            val reports: CyberDiscussionReports?,
                            val community: CyberCommunity,
-                           val url:String?,
+                           val url: String?,
+                           val stats: DiscussionStats?,
                            val type: String?,
                            val textLength: Int?)
 
@@ -34,12 +34,13 @@ data class CyberDiscussionRaw(
         val author: DiscussionAuthor,
         val reports: CyberDiscussionReports?,
         val community: CyberCommunity,
-        val url:String?,
+        val url: String?,
+        val stats: DiscussionStats?,
         val type: String?,
         val textLength: Int?)
 
 @JsonClass(generateAdapter = true)
-data class CyberDiscussionReports(val reportsCount:Int?)
+data class CyberDiscussionReports(val reportsCount: Int?)
 
 @JsonClass(generateAdapter = true)
 data class DiscussionAuthor(val userId: CyberName, val username: String?, val avatarUrl: String?)
@@ -50,13 +51,6 @@ data class DiscussionId(
         val communityId: String,
         val permlink: String
 )
-
-@JsonClass(generateAdapter = true)
-data class DiscussionStats(val commentsCount: Long?,
-                           val rShares: BigInteger?,
-                           val hot: Double?,
-                           val trending: Double?,
-                           val viewCount: Long?)
 
 @JsonClass(generateAdapter = true)
 data class DiscussionWilson(val hot: Double, val trending: Double)
@@ -128,10 +122,15 @@ data class Paragraph(val id: Long, val type: String, val content: List<Paragraph
 @JsonClass(generateAdapter = true)
 data class EmbedContent(val id: Long, val type: String, val content: String?, val attributes: Map<String, Any>) : Content(id, type)
 
+@JsonClass(generateAdapter = true)
+data class Website(val id: Long, val type: String, val content: String?) : Content(id, type)
+
 
 //[{"id":14,"type":"image","content":"https://bloximages.newyork1.vip.townnews.com/omaha.com/content/tncms/assets/v3/editorial/9/ab/9abaecf1-6f92-5bfd-9e9b-2236572ee247/5d0bef05bd0c4.image.jpg"}
 @JsonClass(generateAdapter = true)
-data class ImageContent(val id: Long?, val type: String, val content: String?) : Content(id?: Long.MAX_VALUE, type)
+data class ImageContent(val id: Long?, val type: String, val content: String?) : Content(id
+        ?: Long.MAX_VALUE, type)
+
 @JsonClass(generateAdapter = true)
 data class VideoContent(val id: Long, val type: String, val content: String?, val attributes: Map<String, Any>?) : Content(id, type)
 
@@ -144,6 +143,9 @@ data class Attachments(val id: Long, val type: String, val content: List<Attachm
 @JsonClass(generateAdapter = true)
 data class AttachmentsContent(val id: Long, val type: String, val content: String,
                               val attributes: AttachmentsAttributes?)
+
+@JsonClass(generateAdapter = true)
+data class DiscussionStats(val commentsCount: Int?)
 
 @JsonClass(generateAdapter = true)
 data class AttachmentsAttributes(val title: String?, val url: String?, val author: String?,

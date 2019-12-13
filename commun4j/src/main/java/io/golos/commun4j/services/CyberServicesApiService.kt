@@ -94,6 +94,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                                 .withSubtype(Attachments::class.java, "attachments")
                                 .withSubtype(VideoContent::class.java, "video")
                                 .withSubtype(EmbedContent::class.java, "embed")
+                                .withSubtype(Website::class.java, "website")
                 )
                 .add(EventType::class.java, EventTypeAdapter())
                 .add(CyberAsset::class.java, CyberAssetAdapter())
@@ -343,48 +344,35 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun getComment(
-            userId: String?,
-            permlink: String,
-            parsingType: ContentParsingType,
-            username: String?,
-            app: String
-    ): Either<CyberDiscussion, ApiResponseError> {
-
+    override fun getComment(name: String, communityId: String, permlink: String): Either<CyberComment, ApiResponseError> {
         return apiClient.send(
-                ServicesGateMethods.GET_COMMENT.toString(), DiscussionRequests(
-                userId!!,
-                permlink,
-                ""
-        ), CyberDiscussion::class.java)
+                ServicesGateMethods.GET_COMMENT.toString(),
+                GetCommentRequest(name, communityId, permlink),
+                CyberComment::class.java)
     }
 
-    override fun getComments(
-            sort: FeedSort?,
-            sequenceKey: String?,
-            limit: Int?, origin: CommentsOrigin?,
-            parsingType: ContentParsingType,
-            userId: String?,
-            permlink: String?,
-            username: String?,
-            appName: String
-    ): Either<DiscussionsResult, ApiResponseError> {
+    override fun getCommentRaw(name: String, communityId: String, permlink: String): Either<CyberCommentRaw, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.GET_COMMENT.toString(),
+                GetCommentRequest(name, communityId, permlink),
+                CyberCommentRaw::class.java)
+    }
 
-
+    override fun getComments(sortBy: String?, offset: Int?, limit: Int?, type: String?, userId: String?,
+                             permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponse, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_COMMENTS.toString(),
-                CommentsRequest(
-                        sort.toString(),
-                        sequenceKey,
-                        limit,
-                        parsingType.asContentType(),
-                        origin.toString(),
-                        userId,
-                        permlink,
-                        username,
-                        appName
-                ), DiscussionsResult::class.java
-        )
+                GetCommentsRequest(sortBy, offset, limit, type, userId, permlink, communityId, communityAlias,
+                        parentComment, resolveNestedComments),
+                GetCommentsResponse::class.java)
+    }
+
+    override fun getCommentsRaw(sortBy: String?, offset: Int?, limit: Int?, type: String?, userId: String?, permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponseRaw, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.GET_COMMENTS.toString(),
+                GetCommentsRequest(sortBy, offset, limit, type, userId, permlink, communityId, communityAlias,
+                        parentComment, resolveNestedComments),
+                GetCommentsResponseRaw::class.java)
     }
 
     override fun getUserSubscriptions(ofUser: CyberName, limit: Int?, offset: Int?): Either<UserSubscriptionsResponse, ApiResponseError> {

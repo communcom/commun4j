@@ -1,9 +1,6 @@
 import io.golos.commun4j.model.FeedTimeFrame
 import io.golos.commun4j.model.FeedType
-import io.golos.commun4j.services.model.ReportRequestContentType
-import io.golos.commun4j.services.model.ReportsRequestStatus
-import io.golos.commun4j.services.model.ReportsRequestTimeSort
-import io.golos.commun4j.services.model.TransactionDirection
+import io.golos.commun4j.services.model.*
 import io.golos.commun4j.sharedmodel.CyberName
 import io.golos.commun4j.sharedmodel.Either
 import io.golos.commun4j.utils.StringSigner
@@ -69,7 +66,6 @@ class ServicesFetchTest {
     }
 
 
-
     @Test
     fun getPost() {
         val posts = client.getPosts(type = FeedType.TOP_LIKES,
@@ -89,13 +85,36 @@ class ServicesFetchTest {
     }
 
     @Test
-    fun getPostsTest(){
+    fun getCommentsTest() {
+        client.getPosts(type = FeedType.TOP_COMMENTS, limit = 10)
+                .getOrThrow()
+                .items
+                .filter { it.stats?.commentsCount ?: 0 > 0 }
+                .forEach {
+                    val item = client.getComments(userId = it.contentId.userId, communityId = it.contentId.communityId, permlink = it.contentId.permlink).getOrThrow().items.first()
+                    client.getComment(item.contentId.userId, item.contentId.communityId, item.contentId.permlink).getOrThrow()
+                    client.getCommentRaw(item.contentId.userId, item.contentId.communityId, item.contentId.permlink).getOrThrow()
+                    client.getCommentsRaw(userId = it.contentId.userId, communityId = it.contentId.communityId, permlink = it.contentId.permlink).getOrThrow()
+                }
+        client.getComments(type = CommentsSortType.USER,
+                userId = client.getPosts(type = FeedType.TOP_COMMENTS, limit = 1)
+                        .getOrThrow()
+                        .items
+                        .first()
+                        .author
+                        .userId)
+                .getOrThrow()
+    }
+
+    @Test
+    fun getPostsTest() {
         val communityId = client.getCommunitiesList(null, 1).getOrThrow().items.first().communityId
         val res = client.getPosts(type = FeedType.HOT, limit = 1).getOrThrow()
         client.getPosts(type = FeedType.NEW, limit = 1).getOrThrow()
         client.getPosts(type = FeedType.TOP_LIKES, limit = 1).getOrThrow()
         client.getPosts(type = FeedType.TOP_REWARDS, limit = 1).getOrThrow()
-        client.getPosts(type = FeedType.TOP_COMENTS, limit = 1).getOrThrow()
+        client.getPosts(type = FeedType.TOP_COMMENTS, limit = 1).getOrThrow()
+        client.getPosts(type = FeedType.VOTED, limit = 1).getOrThrow()
         client.getPosts(communityId = communityId, type = FeedType.COMMUNITY, limit = 1).getOrThrow()
     }
 
@@ -179,6 +198,6 @@ class ServicesFetchTest {
     }
 
     private fun getRandomNullableInt() = if (Random.nextDouble() > 0.5) (100 * Random.nextDouble()).toInt().let {
-        if (it == 0)1 else it
+        if (it == 0) 1 else it
     } else null
 }

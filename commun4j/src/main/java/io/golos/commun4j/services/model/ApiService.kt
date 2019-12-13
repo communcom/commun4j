@@ -10,29 +10,11 @@ import io.golos.commun4j.sharedmodel.CyberName
 import io.golos.commun4j.sharedmodel.Either
 import io.golos.commun4j.sharedmodel.GolosEosError
 
-/** listener interface for auth state in cyber microservices.
+/**
  *
  * */
 
 interface ApiService {
-
-
-    fun getComment(userId: String?,
-                   permlink: String,
-                   parsingType: ContentParsingType,
-                   username: String?,
-                   app: String): Either<CyberDiscussion, ApiResponseError>
-
-    fun getComments(sort: FeedSort?,
-                    sequenceKey: String?,
-                    limit: Int?,
-                    origin: CommentsOrigin?,
-                    parsingType: ContentParsingType,
-                    userId: String?,
-                    permlink: String?,
-                    username: String?,
-                    appName: String): Either<DiscussionsResult, ApiResponseError>
-
 
     fun getProfile(userId: String?, username: String?): Either<GetProfileResult, ApiResponseError>
 
@@ -168,5 +150,13 @@ interface ApiService {
     fun suggestNames(text: String): Either<SuggestNameResponse, ApiResponseError>
 
     fun onBoardingCommunitySubscriptions(name: String, communityIds: List<String>): Either<ResultOk, ApiResponseError>
+
+    fun getComment(name: String, communityId: String, permlink: String): Either<CyberComment, ApiResponseError>
+
+    fun getCommentRaw(name: String, communityId: String, permlink: String): Either<CyberCommentRaw, ApiResponseError>
+
+    fun getComments(sortBy: String?, offset: Int?, limit: Int?, type: String?, userId: String?, permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponse, ApiResponseError>
+
+    fun getCommentsRaw(sortBy: String?, offset: Int?, limit: Int?, type: String?, userId: String?, permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponseRaw, ApiResponseError>
 }
 

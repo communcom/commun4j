@@ -5,9 +5,7 @@ package io.golos.commun4j
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
 import io.golos.commun4j.abi.implementation.c.gallery.*
-import io.golos.commun4j.abi.implementation.c.list.FollowCListAction
-import io.golos.commun4j.abi.implementation.c.list.FollowCListStruct
-import io.golos.commun4j.abi.implementation.c.list.UnfollowCListAction
+import io.golos.commun4j.abi.implementation.c.list.*
 import io.golos.commun4j.abi.implementation.c.social.*
 import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainAction
 import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainStruct
@@ -96,7 +94,6 @@ open class Commun4j @JvmOverloads constructor(
 
     /**function tries to resolve canonical name from domain (..@golos for example) or username
      * @param name userName to resolve to
-     * @param appName app in which domain this name is. Currently there is 'cyber' and 'gls' apps
      * @throws IllegalArgumentException if name doesn't exist
      * */
     fun resolveCanonicalCyberName(name: String) = apiService.resolveProfile(name)
@@ -626,12 +623,13 @@ open class Commun4j @JvmOverloads constructor(
         }
         return callTilTimeoutExceptionVanishes(followCallable)
     }
+
     @JvmOverloads
     fun unFollowCommunity(communityCode: CyberSymbolCode,
-                        bandWidthRequest: BandWidthRequest? = null,
-                        clientAuthRequest: ClientAuthRequest? = null,
-                        follower: CyberName = keyStorage.getActiveAccount(),
-                        key: String = keyStorage.getActiveKeyOfActiveAccount()
+                          bandWidthRequest: BandWidthRequest? = null,
+                          clientAuthRequest: ClientAuthRequest? = null,
+                          follower: CyberName = keyStorage.getActiveAccount(),
+                          key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<FollowCListStruct>, GolosEosError> {
 
         val followCallable = Callable {
@@ -681,6 +679,82 @@ open class Commun4j @JvmOverloads constructor(
     }
 
     @JvmOverloads
+    fun banUserFromCommunity(communCode: CyberSymbolCode,
+                             reason: String,
+                             account: CyberName,
+                             leader: CyberName = keyStorage.getActiveAccount(),
+                             bandWidthRequest: BandWidthRequest? = null,
+                             clientAuthRequest: ClientAuthRequest? = null,
+                             key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<BanCListStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<BanCListStruct>(BanCListAction(BanCListStruct(
+                    communCode, leader, account, reason
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(leader.name, "active"))
+            ), key, bandWidthRequest, clientAuthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun unBanUserFromCommunity(communCode: CyberSymbolCode,
+                               reason: String,
+                               account: CyberName,
+                               leader: CyberName = keyStorage.getActiveAccount(),
+                               bandWidthRequest: BandWidthRequest? = null,
+                               clientAuthRequest: ClientAuthRequest? = null,
+                               key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<BanCListStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<BanCListStruct>(UnbanCListAction(BanCListStruct(
+                    communCode, leader, account, reason
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(account.name, "active"))
+            ), key, bandWidthRequest, clientAuthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun hide(communCode: CyberSymbolCode,
+             user: CyberName = keyStorage.getActiveAccount(),
+             bandWidthRequest: BandWidthRequest? = null,
+             clientAuthRequest: ClientAuthRequest? = null,
+             key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<FollowCListStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<FollowCListStruct>(HideCListAction(FollowCListStruct(
+                    communCode, user
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(user.name, "active"))
+            ), key, bandWidthRequest, clientAuthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
+    fun unHide(communCode: CyberSymbolCode,
+               user: CyberName = keyStorage.getActiveAccount(),
+               bandWidthRequest: BandWidthRequest? = null,
+               clientAuthRequest: ClientAuthRequest? = null,
+               key: String = keyStorage.getActiveKeyOfActiveAccount()
+    ): Either<TransactionCommitted<FollowCListStruct>, GolosEosError> {
+
+        val newPostCallable = Callable {
+            pushTransaction<FollowCListStruct>(UnhideCListAction(FollowCListStruct(
+                    communCode, user
+            )).toActionAbi(
+                    listOf(TransactionAuthorizationAbi(user.name, "active"))
+            ), key, bandWidthRequest, clientAuthRequest)
+        }
+        return callTilTimeoutExceptionVanishes(newPostCallable)
+    }
+
+    @JvmOverloads
     fun updateUserMetadata(
             avatarUrl: String?,
             coverUrl: String?,
@@ -709,7 +783,7 @@ open class Commun4j @JvmOverloads constructor(
     }
 
     @JvmOverloads
-    fun DeleteUserMetadata(
+    fun deleteUserMetadata(
             bandWidthRequest: BandWidthRequest? = null,
             clientAuthRequest: ClientAuthRequest? = null,
             user: CyberName = keyStorage.getActiveAccount(),
@@ -795,6 +869,26 @@ open class Commun4j @JvmOverloads constructor(
             allowNsfw, type?.toString(),
             sortBy?.toString(),
             timeframe?.toString(), limit, offset)
+
+    fun getComment(userId: CyberName, communityId: String, permlink: String): Either<CyberComment, ApiResponseError> =
+            apiService.getComment(userId.name, communityId, permlink)
+
+    fun getCommentRaw(userId: CyberName, communityId: String, permlink: String): Either<CyberCommentRaw, ApiResponseError> =
+            apiService.getCommentRaw(userId.name, communityId, permlink)
+
+    @JvmOverloads
+    fun getComments(sortBy: CommentsSortBy? = null, offset: Int? = null, limit: Int? = null, type: CommentsSortType? = null,
+                    userId: CyberName? = null, permlink: String? = null, communityId: String? = null,
+                    communityAlias: String? = null, parentComment: ParentComment? = null, resolveNestedComments: Boolean? = null): Either<GetCommentsResponse, ApiResponseError> =
+            apiService.getComments(sortBy?.toString(), offset, limit, type?.toString(), userId?.name, permlink,
+                    communityId, communityAlias, parentComment, resolveNestedComments)
+
+    @JvmOverloads
+    fun getCommentsRaw(sortBy: CommentsSortBy? = null, offset: Int? = null, limit: Int? = null, type: CommentsSortType? = null,
+                    userId: CyberName? = null, permlink: String? = null, communityId: String? = null,
+                    communityAlias: String? = null, parentComment: ParentComment? = null, resolveNestedComments: Boolean? = null): Either<GetCommentsResponseRaw, ApiResponseError> =
+            apiService.getCommentsRaw(sortBy?.toString(), offset, limit, type?.toString(), userId?.name, permlink,
+                    communityId, communityAlias, parentComment, resolveNestedComments)
 
     fun getUserProfile(user: CyberName?, userName: String?): Either<GetProfileResult, ApiResponseError> =
             apiService.getProfile(user?.name, userName)
@@ -1019,8 +1113,6 @@ open class Commun4j @JvmOverloads constructor(
      *  @param userName name of user
      *  @param owner public owner key of user
      *  @param active public active key of user
-     *  @param posting public posting key of user
-     *  @param memo public memo key of user
      *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
      *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
      * */
@@ -1076,15 +1168,6 @@ open class Commun4j @JvmOverloads constructor(
      * Method will result  throwing all pending socket requests.
      * */
     fun unAuth() = apiService.unAuth()
-
-//    fun isUserAuthed(): Either<Boolean, java.lang.Exception> {
-//        return try {
-//            val resp = markEventsAsNotFresh(emptyList())
-//            Either.Success(resp is Either.Success)
-//        } catch (e: java.lang.Exception) {
-//            Either.Failure(e)
-//        }
-//    }
 
 
     /** method for fetching  account of some user

@@ -36,4 +36,4 @@ data class BlacklistedCommunitiesResponse(val items: List<BlacklistCommunityItem
 
 @JsonClass(generateAdapter = true)
 data class BlacklistCommunityItem(val communityId: String, val alias: String?, val name: String?,
-                              val isSubscribed: Boolean?)
+                              val isSubscribed: Boolean?, val avatarUrl: String?)
