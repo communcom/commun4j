@@ -59,11 +59,13 @@ data class GetCommentsResponseRaw(val items: List<CyberCommentRaw>)
 
 @JsonClass(generateAdapter = true)
 data class CyberComment(val votes: DiscussionVotes, val meta: DiscussionMetadata, val childCommentsCount: Int,
+                        val isDeleted: Boolean?,
                         val contentId: DiscussionId, val parents: CyberCommentParent, val document: CyberDiscussionContent?,
                         val author: DiscussionAuthor,  val community: CyberCommunity, val type: String)
 
 @JsonClass(generateAdapter = true)
 data class CyberCommentRaw(val votes: DiscussionVotes, val meta: DiscussionMetadata, val childCommentsCount: Int,
+                           val isDeleted: Boolean?,
                            val contentId: DiscussionId, val parents: CyberCommentParent,
                            @ToStringParseable val document: String?,
                            val author: DiscussionAuthor,  val community: CyberCommunity, val type: String)

@@ -823,9 +823,9 @@ open class Commun4j @JvmOverloads constructor(
 
 
     @JvmOverloads
-    fun getCommunitiesList(search: String? = null,
-                           offset: Int? = null,
-                           limit: Int? = null) = apiService.getCommunitiesList(search, offset, limit)
+    fun getCommunitiesList(type: CommunitiesRequestType? = null, userId: CyberName? = null,
+                           search: String? = null, offset: Int? = null, limit: Int? = null)
+            = apiService.getCommunitiesList(type?.toString(), userId?.name, search, offset, limit)
 
     fun getCommunity(communityId: String) = apiService.getCommunity(communityId)
 

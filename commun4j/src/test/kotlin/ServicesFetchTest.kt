@@ -26,15 +26,20 @@ class ServicesFetchTest {
         ).getOrThrow()
     }
 
+
     @Test
     fun getCommunitiesTest() {
-        val getCommunitiesResult = client.getCommunitiesList(limit = 20)
+        val getCommunitiesResult = client.getCommunitiesList(limit = 1)
         assertTrue(getCommunitiesResult is Either.Success)
 
         client.getCommunitiesList().getOrThrow()
         client.getCommunitiesList(limit = 1).getOrThrow()
         client.getCommunitiesList(offset = 1).getOrThrow()
         client.getCommunitiesList(search = "CATS").getOrThrow()
+
+        val user = client.getPosts(type = FeedType.TOP_COMMENTS, limit = 1)
+                .getOrThrow().items.first().author.userId
+        client.getCommunitiesList(type = CommunitiesRequestType.USER, userId =user ).getOrThrow()
 
         val community = (getCommunitiesResult as Either.Success).value.items[0]
 
@@ -108,7 +113,7 @@ class ServicesFetchTest {
 
     @Test
     fun getPostsTest() {
-        val communityId = client.getCommunitiesList(null, 1).getOrThrow().items.first().communityId
+        val communityId = client.getCommunitiesList().getOrThrow().items.first().communityId
         val res = client.getPosts(type = FeedType.HOT, limit = 1).getOrThrow()
         client.getPosts(type = FeedType.NEW, limit = 1).getOrThrow()
         client.getPosts(type = FeedType.TOP_LIKES, limit = 1).getOrThrow()

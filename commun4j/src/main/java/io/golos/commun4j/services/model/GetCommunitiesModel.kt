@@ -4,6 +4,19 @@ import com.squareup.moshi.JsonClass
 import io.golos.commun4j.sharedmodel.CyberName
 import java.util.*
 
+enum class CommunitiesRequestType{
+    ALL, USER;
+
+    override fun toString(): String {
+        return when(this){
+            ALL -> "all"
+            USER -> "user"
+        }
+    }
+}
+
+@JsonClass(generateAdapter = true)
+internal data class GetCommunitiesRequest(val type: String?, val userId: String?, val search: String?, val offset: Int?, val limit: Int?)
 
 @JsonClass(generateAdapter = true)
 data class GetCommunitiesResponse(val items: List<GetCommunitiesItem>): List<GetCommunitiesItem> by items

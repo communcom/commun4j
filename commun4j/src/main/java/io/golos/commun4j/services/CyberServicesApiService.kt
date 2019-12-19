@@ -144,13 +144,9 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                 ), ResolvedProfile::class.java)
     }
 
-    override fun getCommunitiesList(search: String?, offset: Int?, limit: Int?) = apiClient.send(
+    override fun getCommunitiesList(type: String?, userId: String?, search: String?, offset: Int?, limit: Int?) = apiClient.send(
             ServicesGateMethods.GET_COMMUNITIES.toString(),
-            hashMapOf<Any, Any>().apply {
-                if (offset != null) this["offset"] = offset
-                if (search != null) this["search"] = search
-                if (limit != null) this["limit"] = limit
-            },
+            GetCommunitiesRequest(type, userId, search, offset, limit),
             GetCommunitiesResponse::class.java)
 
     override fun getCommunity(communityId: String) = apiClient.send(
