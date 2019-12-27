@@ -1,10 +1,10 @@
 package io.golos.commun4j.http.rpc
 
-import io.golos.commun4j.http.rpc.model.ApiResponseError
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
+import io.golos.commun4j.http.rpc.model.ApiResponseError
 import io.golos.commun4j.sharedmodel.Either
 import io.golos.commun4j.sharedmodel.LogLevel
 import okhttp3.*
@@ -13,6 +13,7 @@ import java.net.SocketTimeoutException
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 class SocketClientImpl(
@@ -25,19 +26,21 @@ class SocketClientImpl(
     private lateinit var webSocket: WebSocket
     private val latches = Collections.synchronizedMap<Long, CountDownLatch>(hashMapOf())
     private val responseMap = Collections.synchronizedMap<Long, String?>(hashMapOf())
+    private val isSocketConnected = AtomicBoolean(false)
 
     private fun connect() {
         synchronized(this) {
-            if (::webSocket.isInitialized) return
+            if (isSocketConnected.get()) return
+
+            webSocket = OkHttpClient
+                    .Builder()
+                    .addInterceptor(HttpLoggingInterceptor().also { logLevel = LogLevel.BODY })
+                    .connectionPool(io.golos.commun4j.http.rpc.SharedConnectionPool.pool)
+                    .build()
+                    .newWebSocket(Request.Builder()
+                            .url(socketUrl)
+                            .build(), this)
         }
-        webSocket = OkHttpClient
-                .Builder()
-                .addInterceptor(HttpLoggingInterceptor().also { logLevel = LogLevel.BODY })
-                .connectionPool(io.golos.commun4j.http.rpc.SharedConnectionPool.pool)
-                .build()
-                .newWebSocket(Request.Builder()
-                        .url(socketUrl)
-                        .build(), this)
     }
 
     override fun <R> send(
@@ -82,6 +85,7 @@ class SocketClientImpl(
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
         super.onFailure(webSocket, t, response)
         System.err.println("socket failure $response")
+        isSocketConnected.set(false)
         t.printStackTrace()
         latches.forEach(action = {
             it.value?.countDown()
@@ -94,6 +98,16 @@ class SocketClientImpl(
         latches.forEach(action = {
             it.value?.countDown()
         })
+    }
+
+    override fun onOpen(webSocket: WebSocket, response: Response) {
+        super.onOpen(webSocket, response)
+        isSocketConnected.set(true)
+    }
+
+    override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+        super.onClosed(webSocket, code, reason)
+        isSocketConnected.set(false)
     }
 
     override fun onMessage(webSocket: WebSocket, text: String) {
@@ -122,6 +136,7 @@ class SocketClientImpl(
         logger?.log(str)
         if (logger == null) println(str)
     }
+
 }
 
 @JsonClass(generateAdapter = true)

@@ -31,6 +31,7 @@ dependencies {
     implementation project(":shared-model")
     implementation project(":eos-abi-writer")
     implementation project(":eos-chain-actions")
+    implementation project(":eos-http-rpc")
     implementation project(":eos-core")
 
     implementation "com.squareup.moshi:moshi:$moshiVersion"

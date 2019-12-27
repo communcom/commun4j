@@ -1,0 +1,30 @@
+{
+  "code": 500,
+  "message": "Internal Service Error",
+  "error": {
+    "code": 3050003,
+    "name": "eosio_assert_message_exception",
+    "what": "eosio_assert_message assertion failure",
+    "details": [
+      {
+        "message": "assertion failure with message: balance does not exist",
+        "file": "wasm_interface.cpp",
+        "line_number": 948,
+        "method": "eosio_assert"
+      },
+      {
+        "message": "pending console output: ",
+        "file": "apply_context.cpp",
+        "line_number": 79,
+        "method": "exec_one"
+      },
+      {
+        "message": "Executed action {\"account\":\"c.gallery\",\"name\":\"create\",\"authorization\":[{\"actor\":\"cmn5koopmlev\",\"permission\":\"active\"},{\"actor\":\"c.gallery\",\"permission\":\"clients\"}],\"data\":\"41434f4d4d554e00b05594955258a6442438666666363232652d616237392d343266302d613434352d3539306361343764323361310000000000000000002438666666363232652d616237392d343266302d613434352d3539306361343764323361312439323665616464342d663166312d346539622d613939392d323063343663656331343230000000\"}",
+        "file": "apply_context.cpp",
+        "line_number": 84,
+        "method": "exec_one"
+      }
+    ]
+  }
+}
+

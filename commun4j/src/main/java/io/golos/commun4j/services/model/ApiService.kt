@@ -4,7 +4,10 @@ package io.golos.commun4j.services.model
 import io.golos.commun4j.chain.actions.transaction.abi.TransactionAbi
 import io.golos.commun4j.http.rpc.model.ApiResponseError
 import io.golos.commun4j.http.rpc.model.transaction.response.TransactionCommitted
-import io.golos.commun4j.model.*
+import io.golos.commun4j.model.CyberDiscussion
+import io.golos.commun4j.model.CyberDiscussionRaw
+import io.golos.commun4j.model.GetDiscussionsResult
+import io.golos.commun4j.model.GetDiscussionsResultRaw
 import io.golos.commun4j.sharedmodel.AuthSecret
 import io.golos.commun4j.sharedmodel.CyberName
 import io.golos.commun4j.sharedmodel.Either
@@ -14,7 +17,14 @@ import io.golos.commun4j.sharedmodel.GolosEosError
  *
  * */
 
-interface ApiService {
+interface ServicesTransactionPushService {
+    fun <T : Any> pushTransactionWithProvidedBandwidth(chainId: String,
+                                                       transactionAbi: TransactionAbi,
+                                                       signature: String,
+                                                       traceType: Class<T>): Either<TransactionCommitted<T>, GolosEosError>
+}
+
+interface ApiService : ServicesTransactionPushService {
 
     fun getProfile(userId: String?, username: String?): Either<GetProfileResult, ApiResponseError>
 
@@ -70,11 +80,6 @@ interface ApiService {
     fun unAuth()
 
     fun resolveProfile(username: String): Either<ResolvedProfile, ApiResponseError>
-
-    fun <T : Any> pushTransactionWithProvidedBandwidth(chainId: String,
-                                                       transactionAbi: TransactionAbi,
-                                                       signature: String,
-                                                       traceType: Class<T>): Either<TransactionCommitted<T>, GolosEosError>
 
     fun getCommunitiesList(type: String?, userId: String?, search: String?, offset: Int?, limit: Int?): Either<GetCommunitiesResponse, ApiResponseError>
 

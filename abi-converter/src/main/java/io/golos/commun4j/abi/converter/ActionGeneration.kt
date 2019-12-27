@@ -10,6 +10,7 @@ import io.golos.commun4j.chain.actions.transaction.abi.TransactionAuthorizationA
 import io.golos.commun4j.core.crypto.EosPrivateKey
 import io.golos.commun4j.sharedmodel.Commun4jConfig
 import io.golos.commun4j.sharedmodel.EosAbi
+import jdk.nashorn.internal.codegen.types.Type
 
 const val contractNameProperty = "contractName"
 
@@ -30,11 +31,13 @@ fun generateActions(eosAbi: EosAbi,
                 .addComment("class is generated, and would be overridden on compile")
                 .addImport(ActionAbi::class.asTypeName(), "")
                 .addImport(TransactionPusher::class.asTypeName(), "")
+                .addImport("io.golos.commun4j.abi.implementation", "IAction")
                 .addImport(CompressionType::class.asTypeName(), "")
                 .addImport(AbiBinaryGenTransactionWriter::class, "")
                 .addImport("io.golos.commun4j.abi.implementation", "createBandwidthActionAbi")
 
                 .addType(TypeSpec.classBuilder(actionName)
+                        .addSuperinterface(ClassName("io.golos.commun4j.abi.implementation", "IAction"))
                         .primaryConstructor(FunSpec.constructorBuilder()
                                 .addParameter(structParamName, abiType)
                                 .build())
@@ -72,41 +75,18 @@ fun generateActions(eosAbi: EosAbi,
                                 .addCode("""return  ActionAbi(contractName, actionName,
             transactionAuth, struct.toHex())""".trimMargin())
                                 .build())
-
-//                        .addFunction(
-//                                FunSpec.builder("createSignedTransactionForProvideBw")
-//                                        .addAnnotation(JvmOverloads::class.java)
-//                                        .addParameter("transactionAuth",
-//                                                List::class.asClassName().parameterizedBy(TransactionAuthorizationAbi::class.asClassName()))
-//                                        .addParameter("key", EosPrivateKey::class)
-//                                        .addParameter(
-//                                                ParameterSpec.builder("withConfig", Commun4jConfig::class)
-//                                                        .build())
-//                                        .addParameter(
-//                                                ParameterSpec.builder("provideBandwidth",
-//                                                        ClassName("io.golos.commun4j.abi.implementation", "BandWidthProvideOption"))
-//                                                        .build())
-//                                        .addParameter(
-//                                                ParameterSpec.builder("contractName", String::class)
-//                                                        .defaultValue("Companion.$contractNameProperty")
-//                                                        .build())
-//                                        .addParameter(
-//                                                ParameterSpec.builder("actionName", String::class)
-//                                                        .defaultValue("Companion.$actionNameProperty")
-//                                                        .build())
-//                                        .addCode("""return TransactionPusher.createSignedTransaction(
-//            listOf(toActionAbi(transactionAuth, contractName, actionName),
-//                    createBandwidthActionAbi(transactionAuth[0].actor, provideBandwidth.provider)),
-//            listOf(key),
-//            withConfig.blockChainHttpApiUrl,
-//            withConfig.logLevel,
-//            withConfig.httpLogger)""")
-//                                        .build()
-//                        )
+                        .addFunction(FunSpec
+                                .builder("asActionAbi")
+                                .addModifiers(KModifier.OVERRIDE)
+                                .addParameter("transactionAuth", List::class.asClassName().parameterizedBy(TransactionAuthorizationAbi::class.asClassName()))
+                                .addCode("""
+                                     return toActionAbi(transactionAuth)
+                                """.trimIndent())
+                                .build())
                         .addFunction(FunSpec.builder("push")
                                 .addAnnotation(JvmOverloads::class.java)
                                 .addParameter("transactionAuth", List::class.asClassName().parameterizedBy(TransactionAuthorizationAbi::class.asClassName()))
-                                .addParameter("keys",  List::class.asClassName().parameterizedBy(EosPrivateKey::class.asClassName()))
+                                .addParameter("keys", List::class.asClassName().parameterizedBy(EosPrivateKey::class.asClassName()))
                                 .addParameter(
                                         ParameterSpec.builder("withConfig", Commun4jConfig::class)
                                                 .build())

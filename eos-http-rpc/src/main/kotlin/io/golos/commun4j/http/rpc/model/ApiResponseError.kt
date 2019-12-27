@@ -7,8 +7,4 @@ data class ApiResponseError(val id: Long,
                             val error: ErrorDetails)
 
 @JsonClass(generateAdapter = true)
-class ErrorDetails(val code: Long, val message: String, val error: Any?) {
-    override fun toString(): String {
-        return "ErrorDetails(code=$code, message='$message')"
-    }
-}
+data class ErrorDetails(val code: Long, val message: String, val error: Any?, val data: Any?)

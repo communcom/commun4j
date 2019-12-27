@@ -16,3 +16,5 @@ data class GolosEosError(
     data class ErrorMessage(var message: String?, var file: String?,
                             var line_number: Int, var method: String?)
 }
+
+

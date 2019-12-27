@@ -6,6 +6,8 @@ import com.squareup.moshi.Types
 import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.golos.commun4j.abi.writer.compression.CompressionType
+import io.golos.commun4j.chain.actions.ITransactionPusher
+import io.golos.commun4j.chain.actions.SignedTransactionProvider
 import io.golos.commun4j.chain.actions.transaction.abi.ActionAbi
 import io.golos.commun4j.chain.actions.transaction.abi.SignedTransactionAbi
 import io.golos.commun4j.chain.actions.transaction.abi.TransactionAbi
@@ -24,7 +26,7 @@ import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-object TransactionPusher {
+object TransactionPusher: ITransactionPusher, SignedTransactionProvider {
     private val moshi: Moshi = Moshi
             .Builder()
             .add(CyberName::class.java, CyberNameAdapter())
@@ -49,6 +51,10 @@ object TransactionPusher {
             .addInterceptor(interceptor)
             .connectionPool(io.golos.commun4j.http.rpc.SharedConnectionPool.pool)
             .build()
+
+    override fun <T : Any> push(actions: List<ActionAbi>, keys: List<EosPrivateKey>, traceType: Class<T>, blockChainUrl: String, logLevel: LogLevel?, logger: HttpLoggingInterceptor.Logger?): Either<TransactionCommitted<T>, GolosEosError> {
+       return pushTransaction(actions, keys.toSet(), traceType, blockChainUrl, logLevel, logger)
+    }
 
     @JvmOverloads
     fun <T : Any> pushTransaction(actions: List<ActionAbi>,
@@ -123,12 +129,12 @@ object TransactionPusher {
         }
     }
 
-    fun createSignedTransaction(
+   override fun createSignedTransaction(
             action: List<ActionAbi>,
             keys: List<EosPrivateKey>,
             blockChainUrl: String,
-            logLevel: LogLevel? = null,
-            logger: HttpLoggingInterceptor.Logger? = null): Either<SignedTransactionResult, GolosEosError> {
+            logLevel: LogLevel?,
+            logger: HttpLoggingInterceptor.Logger?): Either<SignedTransactionResult, GolosEosError> {
 
         val infoResp = getInfo(okHttpClient, blockChainUrl, logLevel, logger)
 

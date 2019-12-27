@@ -4,6 +4,11 @@ package io.golos.commun4j
 
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
+import io.golos.commun4j.abi.implementation.IAction
+import io.golos.commun4j.abi.implementation.c.ctrl.UnvoteleadCCtrlAction
+import io.golos.commun4j.abi.implementation.c.ctrl.UnvoteleadCCtrlStruct
+import io.golos.commun4j.abi.implementation.c.ctrl.VoteleaderCCtrlAction
+import io.golos.commun4j.abi.implementation.c.ctrl.VoteleaderCCtrlStruct
 import io.golos.commun4j.abi.implementation.c.gallery.*
 import io.golos.commun4j.abi.implementation.c.list.*
 import io.golos.commun4j.abi.implementation.c.social.*
@@ -11,13 +16,10 @@ import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainA
 import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainStruct
 import io.golos.commun4j.abi.implementation.cyber.token.TransferCyberTokenAction
 import io.golos.commun4j.abi.implementation.cyber.token.TransferCyberTokenStruct
-import io.golos.commun4j.abi.writer.compression.CompressionType
-import io.golos.commun4j.chain.actions.transaction.AbiBinaryGenTransactionWriter
 import io.golos.commun4j.chain.actions.transaction.TransactionPusher
 import io.golos.commun4j.chain.actions.transaction.abi.ActionAbi
 import io.golos.commun4j.chain.actions.transaction.abi.TransactionAbi
 import io.golos.commun4j.chain.actions.transaction.abi.TransactionAuthorizationAbi
-import io.golos.commun4j.chain.actions.transaction.misc.ProvideBandwichAbi
 import io.golos.commun4j.core.crypto.EosPrivateKey
 import io.golos.commun4j.http.rpc.model.ApiResponseError
 import io.golos.commun4j.http.rpc.model.account.request.AccountName
@@ -28,7 +30,6 @@ import io.golos.commun4j.services.CyberServicesApiService
 import io.golos.commun4j.services.model.*
 import io.golos.commun4j.sharedmodel.*
 import io.golos.commun4j.utils.StringSigner
-import io.golos.commun4j.utils.toCyberName
 import net.gcardone.junidecode.Junidecode
 import java.io.File
 import java.net.SocketTimeoutException
@@ -41,9 +42,7 @@ open class Commun4j @JvmOverloads constructor(
         val keyStorage: KeyStorage = KeyStorage(),
         private val apiService: ApiService = CyberServicesApiService(config)) {
 
-    private val staleTransactionErrorCode = 3080006
-    private val resourceExceedErrorCode = 3080004
-    private val transactionPusher: TransactionPusherImpl = TransactionPusherImpl(config)
+    private val transactionPusher: ITransactionPusherBridge = TransactionPusherBridge(config, TransactionPusher, ServicesTransactionPusher(config, apiService, TransactionPusher))
     private val chainApi: CyberWayChainApi
     private val moshi: Moshi = Moshi
             .Builder()
@@ -57,16 +56,12 @@ open class Commun4j @JvmOverloads constructor(
             .add(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory())
             .build()
 
+    private val actionsResolver = ::resolveActions
+    private val transactionRecovers: List<RecoverFunction> = listOf(::recoverFromBalanceDoesNotExistError,
+            ::recoverFromStaleError)
+
     init {
-        chainApi = chainApiProvider?.provide()
-                ?: io.golos.commun4j.GolosEosConfiguratedApi(config, moshi).provide()
-    }
-
-
-    private fun isStaleError(callResult: Either<out Any?, GolosEosError>): Boolean {
-        return callResult is Either.Failure
-                && (callResult.value.error?.code == staleTransactionErrorCode
-                || callResult.value.error?.code == resourceExceedErrorCode)
+        chainApi = chainApiProvider?.provide() ?: GolosEosConfiguratedApi(config, moshi).provide()
     }
 
     private fun formatPostPermlink(permlinkToFormat: String): String {
@@ -78,19 +73,6 @@ open class Commun4j @JvmOverloads constructor(
         return unicodePermlink
     }
 
-    // sometimes blockain refuses to transact proper transaction due to some inner problems.
-    //if it returns TimeoutException - then i try to push transaction again
-    private fun <T> callTilTimeoutExceptionVanishes(
-            callable: Callable<Either<TransactionCommitted<T>,
-                    GolosEosError>>
-    ): Either<TransactionCommitted<T>, GolosEosError> {
-        var result: Either<TransactionCommitted<T>, GolosEosError>
-        do {
-            result = callable.call()
-        } while (isStaleError(result))
-
-        return result
-    }
 
     /**function tries to resolve canonical name from domain (..@golos for example) or username
      * @param name userName to resolve to
@@ -99,57 +81,45 @@ open class Commun4j @JvmOverloads constructor(
     fun resolveCanonicalCyberName(name: String) = apiService.resolveProfile(name)
 
 
-    private inline fun <reified T : Any> pushTransaction(
-            actions: List<ActionAbi>,
-            actorKey: String,
-            bandWidthRequest: BandWidthRequest?,
-            clientAuthRequest: ClientAuthRequest?): Either<TransactionCommitted<T>, GolosEosError> {
-        return if (bandWidthRequest?.source == BandWidthSource.COMN_SERVICES) {
-
-            val signedTrx =
-                    TransactionPusher.createSignedTransaction(actions + createProvideBw(actions.first().authorization.first().actor.toCyberName(), bandWidthRequest.actor),
-                            listOf(EosPrivateKey(actorKey)), config.blockChainHttpApiUrl,
-                            config.logLevel, config.httpLogger)
-
-            if (signedTrx is Either.Failure) return Either.Failure(signedTrx.value)
-
-            signedTrx as Either.Success
-            return pushTransactionWithProvidedBandwidth(signedTrx.value.usedChainInfo.chain_id,
-                    signedTrx.value.transaction,
-                    signedTrx.value.signedTransactionSignatures.first(),
-                    T::class.java)
-
-        } else transactionPusher.pushTransaction(actions.let {
-            if (bandWidthRequest != null) it + createProvideBw(actions.first().authorization.first().actor.toCyberName(), bandWidthRequest.actor)
-            else it
-        },
-                EosPrivateKey(actorKey),
-                T::class.java,
-                if (clientAuthRequest != null && bandWidthRequest == null) clientAuthRequest.keys else null,
-                bandWidthRequest)
+    interface TransactionRetryStrategy {
+        fun <T> retryIfNeeded(): Either<TransactionCommitted<T>, GolosEosError>
     }
 
     private inline fun <reified T : Any> pushTransaction(
-            action: ActionAbi,
+            originalAction: IAction,
+            actions: List<ActionAbi>,
+            actorKey: EosPrivateKey,
+            bandWidthRequest: BandWidthRequest?,
+            clientAuthRequest: ClientAuthRequest?): Either<TransactionCommitted<T>, GolosEosError> {
+
+        val keys = actorKey
+                .asList()
+                .plus(clientAuthRequest?.keys.orEmpty())
+
+        val callable = Callable {
+            transactionPusher.pushTransaction(
+                    actionsResolver(actions, bandWidthRequest, clientAuthRequest),
+                    actorKey
+                            .asList()
+                            .plus(clientAuthRequest?.keys.orEmpty()),
+                    T::class.java,
+                    bandWidthRequest
+            )
+        }
+        return callWithRecover(callable, transactionRecovers, originalAction, keys, transactionPusher, bandWidthRequest, clientAuthRequest)
+    }
+
+
+    private inline fun <reified T : Any> pushTransaction(
+            originalAction: IAction,
+            auth: TransactionAuthorizationAbi,
             key: String,
             bandWidthRequest: BandWidthRequest?,
             clientAuthRequest: ClientAuthRequest?): Either<TransactionCommitted<T>, GolosEosError> {
-        return pushTransaction(action.let { action ->
-            var resolvedAction = action
-            if (clientAuthRequest != null) {
-                resolvedAction = resolvedAction.copy(
-                        authorization = resolvedAction.authorization + TransactionAuthorizationAbi(action.account, "clients")
-                )
-            }
-            val actions = arrayListOf(resolvedAction)
-            if (bandWidthRequest != null) {
-                actions += createProvideBw(action.account.toCyberName(), "c".toCyberName(), "c".toCyberName()
-                )
-            }
-            actions
 
-        },
-                key,
+        return pushTransaction(originalAction,
+                listOf(originalAction.asActionAbi(listOf(auth))),
+                EosPrivateKey(key),
                 bandWidthRequest,
                 clientAuthRequest)
     }
@@ -391,14 +361,13 @@ open class Commun4j @JvmOverloads constructor(
                     bandWidthRequest: BandWidthRequest? = null): Either<TransactionCommitted<NewusernameCyberDomainStruct>, GolosEosError> {
 
         if (!newUserName.matches("[0-9a-z.-]{1,32}".toRegex())) throw java.lang.IllegalArgumentException("nick must match [0-9a-z.-]{1,32}")
-        val setUserNameCallable = Callable {
-            pushTransaction<NewusernameCyberDomainStruct>(NewusernameCyberDomainAction(
-                    NewusernameCyberDomainStruct(owner, forUser, newUserName)
-            ).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(owner.name, "active"))
-            ), creatorKey, bandWidthRequest, null)
-        }
-        return callTilTimeoutExceptionVanishes(setUserNameCallable)
+
+        return pushTransaction(NewusernameCyberDomainAction(
+                NewusernameCyberDomainStruct(owner, forUser, newUserName)),
+                TransactionAuthorizationAbi(owner.name, "active"),
+                creatorKey,
+                bandWidthRequest,
+                null)
     }
 
     @JvmOverloads
@@ -414,22 +383,22 @@ open class Commun4j @JvmOverloads constructor(
             author: CyberName = keyStorage.getActiveAccount(),
             authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<CreateCGalleryStruct>, GolosEosError> {
 
-        val newPostCallable = Callable {
-            pushTransaction<CreateCGalleryStruct>(CreateCGalleryAction(
-                    CreateCGalleryStruct(communCode,
-                            MssgidCGalleryStruct(author, formatPostPermlink(header)),
-                            MssgidCGalleryStruct(CyberName(), ""),
-                            header,
-                            body,
-                            tags,
-                            metadata,
-                            weight)
-            ).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(author.name, "active"))
-            ), authorKey, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+
+        return pushTransaction(CreateCGalleryAction(
+                CreateCGalleryStruct(communCode,
+                        MssgidCGalleryStruct(author, formatPostPermlink(header)),
+                        MssgidCGalleryStruct(CyberName(), ""),
+                        header,
+                        body,
+                        tags,
+                        metadata,
+                        weight)),
+                TransactionAuthorizationAbi(author.name, "active"),
+                authorKey,
+                bandWidthRequest,
+                clientAuthRequest)
     }
+
 
     @JvmOverloads
     fun createComment(
@@ -445,22 +414,22 @@ open class Commun4j @JvmOverloads constructor(
             author: CyberName = keyStorage.getActiveAccount(),
             authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<CreateCGalleryStruct>, GolosEosError> {
 
-        val newPostCallable = Callable {
-            pushTransaction<CreateCGalleryStruct>(CreateCGalleryAction(
-                    CreateCGalleryStruct(communCode,
-                            MssgidCGalleryStruct(author, formatPostPermlink(header)),
-                            parentMssgId,
-                            header,
-                            body,
-                            tags,
-                            metadata,
-                            weight)
-            ).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(author.name, "active"))
-            ), authorKey, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+
+        return pushTransaction(CreateCGalleryAction(
+                CreateCGalleryStruct(communCode,
+                        MssgidCGalleryStruct(author, formatPostPermlink(header)),
+                        parentMssgId,
+                        header,
+                        body,
+                        tags,
+                        metadata,
+                        weight)),
+                TransactionAuthorizationAbi(author.name, "active"),
+                authorKey,
+                bandWidthRequest,
+                clientAuthRequest)
     }
+
 
     @JvmOverloads
     fun updatePostOrComment(
@@ -475,20 +444,18 @@ open class Commun4j @JvmOverloads constructor(
             author: CyberName = keyStorage.getActiveAccount(),
             authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<UpdateCGalleryStruct>, GolosEosError> {
 
-        val newPostCallable = Callable {
-            pushTransaction<UpdateCGalleryStruct>(UpdateCGalleryAction(
-                    UpdateCGalleryStruct(communCode,
-                            messageId,
-                            header,
-                            body,
-                            tags,
-                            metadata)
-            ).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(author.name, "active"))
-            ), authorKey, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+
+        return pushTransaction<UpdateCGalleryStruct>(UpdateCGalleryAction(
+                UpdateCGalleryStruct(communCode,
+                        messageId,
+                        header,
+                        body,
+                        tags,
+                        metadata)),
+                TransactionAuthorizationAbi(author.name, "active"), authorKey,
+                bandWidthRequest, clientAuthRequest)
     }
+
 
     @JvmOverloads
     fun deletePostOrComment(
@@ -499,15 +466,11 @@ open class Commun4j @JvmOverloads constructor(
             author: CyberName = keyStorage.getActiveAccount(),
             authorKey: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<RemoveCGalleryStruct>, GolosEosError> {
 
-        val newPostCallable = Callable {
-            pushTransaction<RemoveCGalleryStruct>(RemoveCGalleryAction(
-                    RemoveCGalleryStruct(communCode,
-                            messageId)
-            ).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(author.name, "active"))
-            ), authorKey, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+        return pushTransaction<RemoveCGalleryStruct>(RemoveCGalleryAction(
+                RemoveCGalleryStruct(communCode,
+                        messageId)
+        ), TransactionAuthorizationAbi(author.name, "active"), authorKey, bandWidthRequest, clientAuthRequest)
+
     }
 
 
@@ -521,14 +484,11 @@ open class Commun4j @JvmOverloads constructor(
                key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<VoteCGalleryStruct>, GolosEosError> {
 
-        val newPostCallable = Callable {
-            pushTransaction<VoteCGalleryStruct>(UpvoteCGalleryAction(VoteCGalleryStruct(communCode,
-                    voter, messageId, weight)
-            ).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(voter.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+
+        return pushTransaction<VoteCGalleryStruct>(UpvoteCGalleryAction(VoteCGalleryStruct(communCode,
+                voter, messageId, weight)
+        ), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, clientAuthRequest)
+
     }
 
     @JvmOverloads
@@ -541,14 +501,10 @@ open class Commun4j @JvmOverloads constructor(
                  key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<VoteCGalleryStruct>, GolosEosError> {
 
-        val newPostCallable = Callable {
-            pushTransaction<VoteCGalleryStruct>(DownvoteCGalleryAction(VoteCGalleryStruct(communCode,
-                    voter, messageId, weight)
-            ).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(voter.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+
+        return pushTransaction<VoteCGalleryStruct>(DownvoteCGalleryAction(VoteCGalleryStruct(communCode,
+                voter, messageId, weight)
+        ), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
     @JvmOverloads
@@ -560,14 +516,10 @@ open class Commun4j @JvmOverloads constructor(
                key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<UnvoteCGalleryStruct>, GolosEosError> {
 
-        val newPostCallable = Callable {
-            pushTransaction<UnvoteCGalleryStruct>(UnvoteCGalleryAction(UnvoteCGalleryStruct(
-                    communCode, voter, messageId
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(voter.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+
+        return pushTransaction<UnvoteCGalleryStruct>(UnvoteCGalleryAction(UnvoteCGalleryStruct(
+                communCode, voter, messageId
+        )), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
     @JvmOverloads
@@ -577,15 +529,10 @@ open class Commun4j @JvmOverloads constructor(
                 pinner: CyberName = keyStorage.getActiveAccount(),
                 key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<PinCSocialStruct>, GolosEosError> {
+        return pushTransaction<PinCSocialStruct>(PinCSocialAction(PinCSocialStruct(
+                pinner, pinning
+        )), TransactionAuthorizationAbi(pinner.name, "active"), key, bandWidthRequest, clientAuthRequest)
 
-        val newPostCallable = Callable {
-            pushTransaction<PinCSocialStruct>(PinCSocialAction(PinCSocialStruct(
-                    pinner, pinning
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(pinner.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
     }
 
     @JvmOverloads
@@ -596,14 +543,11 @@ open class Commun4j @JvmOverloads constructor(
                   key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<PinCSocialStruct>, GolosEosError> {
 
-        val newPostCallable = Callable {
-            pushTransaction<PinCSocialStruct>(UnpinCSocialAction(PinCSocialStruct(
-                    pinner, unpinning
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(pinner.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+
+        return pushTransaction<PinCSocialStruct>(UnpinCSocialAction(PinCSocialStruct(
+                pinner, unpinning
+        )), TransactionAuthorizationAbi(pinner.name, "active"), key, bandWidthRequest, clientAuthRequest)
+
     }
 
     @JvmOverloads
@@ -614,14 +558,12 @@ open class Commun4j @JvmOverloads constructor(
                         key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<FollowCListStruct>, GolosEosError> {
 
-        val followCallable = Callable {
-            pushTransaction<FollowCListStruct>(FollowCListAction(FollowCListStruct(
-                    communityCode, follower
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(follower.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(followCallable)
+
+        return pushTransaction<FollowCListStruct>(FollowCListAction(FollowCListStruct(
+                communityCode, follower
+        )), TransactionAuthorizationAbi(follower.name, "active"), key, bandWidthRequest, clientAuthRequest)
+
+
     }
 
     @JvmOverloads
@@ -632,15 +574,11 @@ open class Commun4j @JvmOverloads constructor(
                           key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<FollowCListStruct>, GolosEosError> {
 
-        val followCallable = Callable {
-            pushTransaction<FollowCListStruct>(UnfollowCListAction(FollowCListStruct(
-                    communityCode, follower
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(follower.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(followCallable)
+        return pushTransaction<FollowCListStruct>(UnfollowCListAction(FollowCListStruct(
+                communityCode, follower
+        )), TransactionAuthorizationAbi(follower.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
+
 
     @JvmOverloads
     fun block(blocking: CyberName,
@@ -649,15 +587,9 @@ open class Commun4j @JvmOverloads constructor(
               blocker: CyberName = keyStorage.getActiveAccount(),
               key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<BlockCSocialStruct>, GolosEosError> {
-
-        val newPostCallable = Callable {
-            pushTransaction<BlockCSocialStruct>(BlockCSocialAction(BlockCSocialStruct(
-                    blocker, blocking
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(blocker.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+        return pushTransaction<BlockCSocialStruct>(BlockCSocialAction(BlockCSocialStruct(
+                blocker, blocking
+        )), TransactionAuthorizationAbi(blocker.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
     @JvmOverloads
@@ -667,15 +599,9 @@ open class Commun4j @JvmOverloads constructor(
                 blocker: CyberName = keyStorage.getActiveAccount(),
                 key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<BlockCSocialStruct>, GolosEosError> {
-
-        val newPostCallable = Callable {
-            pushTransaction<BlockCSocialStruct>(UnblockCSocialAction(BlockCSocialStruct(
-                    blocker, blocking
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(blocker.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+        return pushTransaction<BlockCSocialStruct>(UnblockCSocialAction(BlockCSocialStruct(
+                blocker, blocking
+        )), TransactionAuthorizationAbi(blocker.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
     @JvmOverloads
@@ -687,15 +613,9 @@ open class Commun4j @JvmOverloads constructor(
                              clientAuthRequest: ClientAuthRequest? = null,
                              key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<BanCListStruct>, GolosEosError> {
-
-        val newPostCallable = Callable {
-            pushTransaction<BanCListStruct>(BanCListAction(BanCListStruct(
-                    communCode, leader, account, reason
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(leader.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+        return pushTransaction<BanCListStruct>(BanCListAction(BanCListStruct(
+                communCode, leader, account, reason
+        )), TransactionAuthorizationAbi(leader.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
     @JvmOverloads
@@ -707,15 +627,9 @@ open class Commun4j @JvmOverloads constructor(
                                clientAuthRequest: ClientAuthRequest? = null,
                                key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<BanCListStruct>, GolosEosError> {
-
-        val newPostCallable = Callable {
-            pushTransaction<BanCListStruct>(UnbanCListAction(BanCListStruct(
-                    communCode, leader, account, reason
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(account.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+        return pushTransaction<BanCListStruct>(UnbanCListAction(BanCListStruct(
+                communCode, leader, account, reason
+        )), TransactionAuthorizationAbi(account.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
     @JvmOverloads
@@ -726,14 +640,10 @@ open class Commun4j @JvmOverloads constructor(
              key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<FollowCListStruct>, GolosEosError> {
 
-        val newPostCallable = Callable {
-            pushTransaction<FollowCListStruct>(HideCListAction(FollowCListStruct(
-                    communCode, user
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(user.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+
+        return pushTransaction<FollowCListStruct>(HideCListAction(FollowCListStruct(
+                communCode, user
+        )), TransactionAuthorizationAbi(user.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
     @JvmOverloads
@@ -743,15 +653,9 @@ open class Commun4j @JvmOverloads constructor(
                clientAuthRequest: ClientAuthRequest? = null,
                key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<FollowCListStruct>, GolosEosError> {
-
-        val newPostCallable = Callable {
-            pushTransaction<FollowCListStruct>(UnhideCListAction(FollowCListStruct(
-                    communCode, user
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(user.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+        return pushTransaction<FollowCListStruct>(UnhideCListAction(FollowCListStruct(
+                communCode, user
+        )), TransactionAuthorizationAbi(user.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
     @JvmOverloads
@@ -768,18 +672,12 @@ open class Commun4j @JvmOverloads constructor(
             user: CyberName = keyStorage.getActiveAccount(),
             key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<UpdatemetaCSocialStruct>, GolosEosError> {
-
-        val newPostCallable = Callable {
-            pushTransaction<UpdatemetaCSocialStruct>(UpdatemetaCSocialAction(UpdatemetaCSocialStruct(
-                    user,
-                    AccountmetaCSocialStruct(
-                            avatarUrl, coverUrl, biography, facebook, telegram, whatsapp, wechat
-                    )
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(user.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+        return pushTransaction<UpdatemetaCSocialStruct>(UpdatemetaCSocialAction(UpdatemetaCSocialStruct(
+                user,
+                AccountmetaCSocialStruct(
+                        avatarUrl, coverUrl, biography, facebook, telegram, whatsapp, wechat
+                )
+        )), TransactionAuthorizationAbi(user.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
     @JvmOverloads
@@ -789,15 +687,9 @@ open class Commun4j @JvmOverloads constructor(
             user: CyberName = keyStorage.getActiveAccount(),
             key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<DeletemetaCSocialStruct>, GolosEosError> {
-
-        val newPostCallable = Callable {
-            pushTransaction<DeletemetaCSocialStruct>(DeletemetaCSocialAction(DeletemetaCSocialStruct(
-                    user
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(user.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+        return pushTransaction<DeletemetaCSocialStruct>(DeletemetaCSocialAction(DeletemetaCSocialStruct(
+                user
+        )), TransactionAuthorizationAbi(user.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
     @JvmOverloads
@@ -810,22 +702,40 @@ open class Commun4j @JvmOverloads constructor(
             reporter: CyberName = keyStorage.getActiveAccount(),
             key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<ReportCGalleryStruct>, GolosEosError> {
+        return pushTransaction<ReportCGalleryStruct>(ReportCGalleryAction(ReportCGalleryStruct(
+                communityCode, reporter, messageId, reason
+        )), TransactionAuthorizationAbi(reporter.name, "active"), key, bandWidthRequest, clientAuthRequest)
+    }
 
-        val newPostCallable = Callable {
-            pushTransaction<ReportCGalleryStruct>(ReportCGalleryAction(ReportCGalleryStruct(
-                    communityCode, reporter, messageId, reason
-            )).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(reporter.name, "active"))
-            ), key, bandWidthRequest, clientAuthRequest)
-        }
-        return callTilTimeoutExceptionVanishes(newPostCallable)
+    @JvmOverloads
+    fun voteLeader(communCode: CyberSymbolCode,
+                   leader: CyberName,
+                   pct: Short?,
+                   bandWidthRequest: BandWidthRequest? = null,
+                   clientAuthRequest: ClientAuthRequest? = null,
+                   voter: CyberName = keyStorage.getActiveAccount(),
+                   key: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<VoteleaderCCtrlStruct>, GolosEosError> {
+        return pushTransaction<VoteleaderCCtrlStruct>(VoteleaderCCtrlAction(VoteleaderCCtrlStruct(
+                communCode, voter, leader, pct
+        )), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, clientAuthRequest)
+    }
+
+    @JvmOverloads
+    fun unVoteLeader(communCode: CyberSymbolCode,
+                     leader: CyberName,
+                     bandWidthRequest: BandWidthRequest? = null,
+                     clientAuthRequest: ClientAuthRequest? = null,
+                     voter: CyberName = keyStorage.getActiveAccount(),
+                     key: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<VoteleaderCCtrlStruct>, GolosEosError> {
+        return pushTransaction<VoteleaderCCtrlStruct>(UnvoteleadCCtrlAction(UnvoteleadCCtrlStruct(
+                communCode, voter, leader
+        )), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
 
     @JvmOverloads
     fun getCommunitiesList(type: CommunitiesRequestType? = null, userId: CyberName? = null,
-                           search: String? = null, offset: Int? = null, limit: Int? = null)
-            = apiService.getCommunitiesList(type?.toString(), userId?.name, search, offset, limit)
+                           search: String? = null, offset: Int? = null, limit: Int? = null) = apiService.getCommunitiesList(type?.toString(), userId?.name, search, offset, limit)
 
     fun getCommunity(communityId: String) = apiService.getCommunity(communityId)
 
@@ -885,8 +795,8 @@ open class Commun4j @JvmOverloads constructor(
 
     @JvmOverloads
     fun getCommentsRaw(sortBy: CommentsSortBy? = null, offset: Int? = null, limit: Int? = null, type: CommentsSortType? = null,
-                    userId: CyberName? = null, permlink: String? = null, communityId: String? = null,
-                    communityAlias: String? = null, parentComment: ParentComment? = null, resolveNestedComments: Boolean? = null): Either<GetCommentsResponseRaw, ApiResponseError> =
+                       userId: CyberName? = null, permlink: String? = null, communityId: String? = null,
+                       communityAlias: String? = null, parentComment: ParentComment? = null, resolveNestedComments: Boolean? = null): Either<GetCommentsResponseRaw, ApiResponseError> =
             apiService.getCommentsRaw(sortBy?.toString(), offset, limit, type?.toString(), userId?.name, permlink,
                     communityId, communityAlias, parentComment, resolveNestedComments)
 
@@ -1263,17 +1173,13 @@ open class Commun4j @JvmOverloads constructor(
 
         if (!amount.matches("([0-9]+\\.[0-9]{3})".toRegex())) throw IllegalArgumentException("wrong currency format. Must have 3 points precision, like 12.000 or 0.001")
 
-        val callable = Callable {
-            pushTransaction<TransferCyberTokenStruct>(TransferCyberTokenAction(
-                    TransferCyberTokenStruct(
-                            from, to,
-                            CyberAsset("$amount $currency"), memo
-                    )
-            ).toActionAbi(
-                    listOf(TransactionAuthorizationAbi(from.name, "active"))
-            ), key, bandWidthRequest, null)
-        }
-        return callTilTimeoutExceptionVanishes(callable)
+        return pushTransaction<TransferCyberTokenStruct>(TransferCyberTokenAction(
+                TransferCyberTokenStruct(
+                        from, to,
+                        CyberAsset("$amount $currency"), memo
+                )
+        ), TransactionAuthorizationAbi(from.name, "active"), key, bandWidthRequest, null)
+
     }
 
     /**method closes all connections, pools, executors etc. After that instance is useless
@@ -1285,15 +1191,3 @@ open class Commun4j @JvmOverloads constructor(
         }
     }
 }
-
-private fun createProvideBw(forUser: CyberName, provider: CyberName, actor: CyberName = provider): ActionAbi = ActionAbi("cyber",
-        "providebw",
-        listOf(TransactionAuthorizationAbi(actor.name, "providebw")),
-        AbiBinaryGenTransactionWriter(CompressionType.NONE)
-                .squishProvideBandwichAbi(
-                        ProvideBandwichAbi(
-                                provider,
-                                forUser).apply {
-                            println("pbw $this")
-                        }
-                        , false).toHex())

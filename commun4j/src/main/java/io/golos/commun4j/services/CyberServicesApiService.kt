@@ -175,10 +175,19 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         val response = apiClient
                 .send(ServicesGateMethods.PROVIDE_BANDWIDTH.toString(), body, Any::class.java)
 
-        if (response is Either.Failure) return Either
-                .Failure(GolosEosError(response.value.error.code.toInt(),
-                        response.value.error.message,
-                        moshi.adapter(GolosEosError.Error::class.java).fromJsonValue(response.value.error.error)))
+        if (response is Either.Failure) {
+            val apiError = response.value
+            var golosEosError = moshi.adapter(GolosEosError::class.java).fromJsonValue(response.value.error.data)
+            if (golosEosError != null) return Either.Failure(golosEosError)
+
+            golosEosError = moshi.adapter(GolosEosError::class.java).fromJsonValue(response.value.error.error)
+            if (golosEosError != null) return Either.Failure(golosEosError)
+
+            return Either
+                    .Failure(GolosEosError(response.value.error.code.toInt(),
+                            response.value.error.message,
+                            null))
+        }
 
         val successResult = (response as Either.Success).value
 
