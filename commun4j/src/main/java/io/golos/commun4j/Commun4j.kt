@@ -81,10 +81,6 @@ open class Commun4j @JvmOverloads constructor(
     fun resolveCanonicalCyberName(name: String) = apiService.resolveProfile(name)
 
 
-    interface TransactionRetryStrategy {
-        fun <T> retryIfNeeded(): Either<TransactionCommitted<T>, GolosEosError>
-    }
-
     private inline fun <reified T : Any> pushTransaction(
             originalAction: IAction,
             actions: List<ActionAbi>,
@@ -712,24 +708,22 @@ open class Commun4j @JvmOverloads constructor(
                    leader: CyberName,
                    pct: Short?,
                    bandWidthRequest: BandWidthRequest? = null,
-                   clientAuthRequest: ClientAuthRequest? = null,
                    voter: CyberName = keyStorage.getActiveAccount(),
                    key: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<VoteleaderCCtrlStruct>, GolosEosError> {
         return pushTransaction<VoteleaderCCtrlStruct>(VoteleaderCCtrlAction(VoteleaderCCtrlStruct(
                 communCode, voter, leader, pct
-        )), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, clientAuthRequest)
+        )), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, null)
     }
 
     @JvmOverloads
     fun unVoteLeader(communCode: CyberSymbolCode,
                      leader: CyberName,
                      bandWidthRequest: BandWidthRequest? = null,
-                     clientAuthRequest: ClientAuthRequest? = null,
                      voter: CyberName = keyStorage.getActiveAccount(),
                      key: String = keyStorage.getActiveKeyOfActiveAccount()): Either<TransactionCommitted<VoteleaderCCtrlStruct>, GolosEosError> {
         return pushTransaction<VoteleaderCCtrlStruct>(UnvoteleadCCtrlAction(UnvoteleadCCtrlStruct(
                 communCode, voter, leader
-        )), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, clientAuthRequest)
+        )), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, null)
     }
 
 

@@ -1,3 +1,2 @@
-Commun4j now can try to recover from `balance does not exist` error, 
-fixed reconnection of socket
-vote and unvote leader methods
+changed signature of methods Commun4j::voteLeader and Commun4j unVoteLeader, removing unneeded `clientAuthRequest`
+param
