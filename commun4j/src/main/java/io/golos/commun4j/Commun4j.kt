@@ -30,7 +30,6 @@ import io.golos.commun4j.services.CyberServicesApiService
 import io.golos.commun4j.services.model.*
 import io.golos.commun4j.sharedmodel.*
 import io.golos.commun4j.utils.StringSigner
-import net.gcardone.junidecode.Junidecode
 import java.io.File
 import java.net.SocketTimeoutException
 import java.util.*
@@ -64,13 +63,14 @@ open class Commun4j @JvmOverloads constructor(
         chainApi = chainApiProvider?.provide() ?: GolosEosConfiguratedApi(config, moshi).provide()
     }
 
-    private fun formatPostPermlink(permlinkToFormat: String): String {
-        val workingCopy =
-                if (permlinkToFormat.length < 12) permlinkToFormat + UUID.randomUUID().toString() else permlinkToFormat
-        var unicodePermlink = Junidecode.unidecode(workingCopy).toLowerCase().replace(Regex("((?![a-z0-9-]).)"), "")
-        if (unicodePermlink.length < 12) unicodePermlink += (UUID.randomUUID().toString().toLowerCase())
-        if (unicodePermlink.length > 256) unicodePermlink.substring(0, 257)
-        return unicodePermlink
+    internal fun createPermlink(parentPermlink: String?): String {
+        val timeStamp = (Date().time / 1000).toString()
+        return when {
+            parentPermlink == null -> timeStamp.toString() //permlink of post
+            parentPermlink.trim().startsWith("re-re") -> parentPermlink.trim().replace(Regex("-[0-9]+\$"), "-$timeStamp")//permlink to comment to coment
+            parentPermlink.trim().startsWith("re-") -> "re-${parentPermlink.trim().replace(Regex("-[0-9]+\$"), "-$timeStamp")}"  //permlink to a coment
+            else -> "re-${parentPermlink.trim()}-$timeStamp"
+        }
     }
 
 
@@ -382,7 +382,7 @@ open class Commun4j @JvmOverloads constructor(
 
         return pushTransaction(CreateCGalleryAction(
                 CreateCGalleryStruct(communCode,
-                        MssgidCGalleryStruct(author, formatPostPermlink(header)),
+                        MssgidCGalleryStruct(author, createPermlink(null)),
                         MssgidCGalleryStruct(CyberName(), ""),
                         header,
                         body,
@@ -413,7 +413,7 @@ open class Commun4j @JvmOverloads constructor(
 
         return pushTransaction(CreateCGalleryAction(
                 CreateCGalleryStruct(communCode,
-                        MssgidCGalleryStruct(author, formatPostPermlink(header)),
+                        MssgidCGalleryStruct(author, createPermlink(parentMssgId.permlink)),
                         parentMssgId,
                         header,
                         body,

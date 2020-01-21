@@ -9,6 +9,7 @@ import io.golos.commun4j.sharedmodel.CheckSum256
 import io.golos.commun4j.sharedmodel.GolosEosError
 import org.junit.Assert
 import org.junit.Test
+import java.util.*
 
 class UtilsTest {
     @Test
@@ -51,6 +52,30 @@ class UtilsTest {
         Assert.assertTrue(error.hasBalanceDoesNotExistError())
     }
 
+    @Test
+    fun permlinkCreationTest(){
+        val client = getClient(setActiveUser = false, authInServices = false)
+        var postPermlink = client.createPermlink(null)
 
+        postPermlink.toLong()
+        postPermlink = "0000000000"
+
+        val commentPermlink = client.createPermlink(postPermlink)
+
+        Assert.assertTrue(commentPermlink.matches(Regex("re-$postPermlink-[0-9]+")))
+        Assert.assertTrue(commentPermlink.contains(postPermlink))
+
+        val comentToAComentPermlink =
+                client.createPermlink(commentPermlink)
+
+
+        Assert.assertTrue(comentToAComentPermlink.matches(Regex("re-re-$postPermlink-[0-9]+")))
+        Assert.assertTrue(commentPermlink.contains(postPermlink))
+
+        val thirdLevelComent = client.createPermlink(comentToAComentPermlink)
+
+        Assert.assertTrue(thirdLevelComent.matches(Regex("re-re-$postPermlink-[0-9]+")))
+        Assert.assertTrue(commentPermlink.contains(postPermlink))
+    }
 }
 

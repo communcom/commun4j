@@ -9,7 +9,7 @@ import org.junit.Test
 import kotlin.random.Random
 
 class ServicesFetchTest {
-    private val client = getClient(CONFIG_TYPE.DEV, false, false)
+    private val client = getClient(CONFIG_TYPE.DEV, true, false)
 
     @Test
     fun testAuth() {
@@ -121,6 +121,8 @@ class ServicesFetchTest {
         client.getPosts(type = FeedType.TOP_COMMENTS, limit = 1).getOrThrow()
         client.getPosts(type = FeedType.VOTED, limit = 1).getOrThrow()
         client.getPosts(communityId = communityId, type = FeedType.COMMUNITY, limit = 1).getOrThrow()
+        client.getPosts(userId = client.keyStorage.getActiveAccount(), type = FeedType.SUBSCRIPTION_HOT, limit = 1).getOrThrow()
+        client.getPosts(userId = client.keyStorage.getActiveAccount(), type = FeedType.SUBSCRIPTION_POPULAR, limit = 1).getOrThrow()
     }
 
     @Test

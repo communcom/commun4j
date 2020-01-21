@@ -75,7 +75,6 @@ dependencies {
 
     api "com.squareup.okhttp3:logging-interceptor:$loggingIntrceptorVersion"
     implementation "com.squareup.okhttp3:okhttp:$okttpVersion"
-    implementation 'net.gcardone.junidecode:junidecode:0.4.1'
     implementation "com.squareup.moshi:moshi-adapters:$moshiAdapterVersion"
     implementation "com.squareup.retrofit2:retrofit:$retrofitVersion"
     implementation "com.squareup.retrofit2:converter-moshi:$retrofitVersion"

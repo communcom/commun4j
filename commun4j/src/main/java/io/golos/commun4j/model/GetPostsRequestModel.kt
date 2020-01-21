@@ -69,7 +69,8 @@ enum class FeedSortByType {
 }
 
 enum class FeedType {
-    NEW, COMMUNITY, SUBSCRIPTION, BY_USER, TOP_LIKES, TOP_COMMENTS, TOP_REWARDS, HOT, VOTED;
+    NEW, COMMUNITY, SUBSCRIPTION, BY_USER, TOP_LIKES, TOP_COMMENTS, TOP_REWARDS, HOT, VOTED,SUBSCRIPTION_HOT,
+    SUBSCRIPTION_POPULAR;
 
     override fun toString(): String {
         return when (this) {
@@ -82,6 +83,8 @@ enum class FeedType {
             TOP_REWARDS -> "topRewards"
             HOT -> "hot"
             VOTED -> "voted"
+            SUBSCRIPTION_HOT -> "subscriptionsHot"
+            SUBSCRIPTION_POPULAR -> "subscriptionsPopular"
         }
     }
 }
