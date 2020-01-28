@@ -1,1 +1,1 @@
-new rules of permlink creation for posts and comments in `Commun4j`
+methods `Commun4j::getNotifications`, `Commun4j::getNotificationsStatus`.`Commun4j::markAllNotificationAsViewed`

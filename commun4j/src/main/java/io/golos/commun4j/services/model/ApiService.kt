@@ -61,7 +61,6 @@ interface ApiService : ServicesTransactionPushService {
 
     fun markEventsAsRead(ids: List<String>, appName: String): Either<ResultOk, ApiResponseError>
 
-    fun markAllEventsAsRead(appName: String): Either<ResultOk, ApiResponseError>
 
     fun getUnreadCount(profileId: String, appName: String): Either<FreshResult, ApiResponseError>
 
@@ -163,5 +162,11 @@ interface ApiService : ServicesTransactionPushService {
     fun getComments(sortBy: String?, offset: Int?, limit: Int?, type: String?, userId: String?, permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponse, ApiResponseError>
 
     fun getCommentsRaw(sortBy: String?, offset: Int?, limit: Int?, type: String?, userId: String?, permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponseRaw, ApiResponseError>
+
+    fun getNotifications(limit: Int?, beforeThan: String?, filter: List<GetNotificationsFilter>?): Either<GetNotificationsResponse, ApiResponseError>
+
+    fun getNotificationsStatus(): Either<GetNotificationStatusResponse, ApiResponseError>
+
+    fun markAllNotificationAsViewed(until: String): Either<ResultOk, ApiResponseError>
 }
 

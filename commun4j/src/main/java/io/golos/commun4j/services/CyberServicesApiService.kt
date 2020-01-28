@@ -20,17 +20,17 @@ import java.math.BigInteger
 import java.util.*
 
 private enum class ServicesGateMethods {
-    GET_FEED, GET_POST, GET_COMMENT, GET_COMMENTS, GET_USER_METADATA, GET_SECRET, AUTH, GET_EMBED,
+    GET_POST, GET_COMMENT, GET_COMMENTS, GET_USER_METADATA, GET_SECRET, AUTH, GET_EMBED,
     GET_REGISTRATION_STATE, REG_FIRST_STEP, REG_VERIFY_PHONE, REG_SET_USER_NAME, REG_WRITE_TO_BLOCKCHAIN,
     REG_RESEND_SMS, WAIT_BLOCK, WAIT_FOR_TRANSACTION, PUSH_SUBSCRIBE, PUSH_UNSUBSCRIBE, GET_NOTIFS_HISTORY, MARK_VIEWED,
     GET_UNREAD_COUNT, MARK_VIEWED_ALL, SET_SETTINGS, GET_SETTINGS, GET_SUBSCRIPTIONS, GET_SUBSCRIBERS,
     RESOLVE_USERNAME, PROVIDE_BANDWIDTH, GET_COMMUNITIES, GET_COMMUNITIY, GET_POSTS, GET_BALANCE, GET_TRANSFER_HISTORY, GET_TOKENS_INFO,
     GET_LEADERS, GET_COMMUNITY_BLACKLIST, GET_BLACKLIST, GET_COMMENT_VOTES, GET_POST_VOTES, GET_NOTIFY_META,
-    GET_ENTITY_REPORTS, GET_REPORTS, SUGGEST_NAMES, ONBOARDING_COMMUNITY_SUBSCRIPTION;
+    GET_ENTITY_REPORTS, GET_REPORTS, SUGGEST_NAMES, ONBOARDING_COMMUNITY_SUBSCRIPTION, GET_NOTIFICATIONS,
+    GET_NOTIFICATIONS_STATUS;
 
     override fun toString(): String {
         return when (this) {
-            GET_FEED -> "content.getFeed"
             GET_POST -> "content.getPost"
             GET_POSTS -> "content.getPosts"
             GET_COMMENT -> "content.getComment"
@@ -53,7 +53,7 @@ private enum class ServicesGateMethods {
             GET_NOTIFS_HISTORY -> "push.history"
             MARK_VIEWED -> "notify.markAsViewed"
             GET_UNREAD_COUNT -> "push.historyFresh"
-            MARK_VIEWED_ALL -> "notify.markAllAsViewed"
+            MARK_VIEWED_ALL -> "notifications.markAllAsViewed"
             SET_SETTINGS -> "options.set"
             GET_SETTINGS -> "options.get"
             GET_SUBSCRIPTIONS -> "content.getSubscriptions"
@@ -74,6 +74,8 @@ private enum class ServicesGateMethods {
             GET_ENTITY_REPORTS -> "content.getEntityReports"
             GET_REPORTS -> "content.getReportsList"
             SUGGEST_NAMES -> "content.suggestNames"
+            GET_NOTIFICATIONS -> "notifications.getNotifications"
+            GET_NOTIFICATIONS_STATUS -> "notifications.getStatus"
         }
     }
 }
@@ -95,6 +97,13 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                                 .withSubtype(VideoContent::class.java, "video")
                                 .withSubtype(EmbedContent::class.java, "embed")
                                 .withSubtype(Website::class.java, "website")
+                )
+                .add(
+                        PolymorphicJsonAdapterFactory.of(Notification::class.java, "eventType")
+                                .withSubtype(SubscribeNotification::class.java, "subscribe")
+                                .withSubtype(UpvoteNotification::class.java, "upvote")
+                                .withSubtype(MentionNotification::class.java, "mention")
+                                .withSubtype(ReplyNotification::class.java, "reply")
                 )
                 .add(EventType::class.java, EventTypeAdapter())
                 .add(CyberAsset::class.java, CyberAssetAdapter())
@@ -586,19 +595,37 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         return apiClient.send(ServicesGateMethods.MARK_VIEWED.toString(), request, ResultOk::class.java)
     }
 
-    override fun markAllEventsAsRead(appName: String): Either<ResultOk, ApiResponseError> {
-
-        return apiClient.send(ServicesGateMethods.MARK_VIEWED_ALL.toString(),
-                MarkAllReadRequest(appName),
-                ResultOk::class.java)
-    }
-
     override fun getUnreadCount(profileId: String, appName: String): Either<FreshResult, ApiResponseError> {
 
         val request = GetUnreadCountRequest(profileId, appName)
 
         return apiClient.send(ServicesGateMethods.GET_UNREAD_COUNT.toString(), request, FreshResult::class.java)
     }
+
+    override fun getNotifications(limit: Int?, beforeThan: String?, filter: List<GetNotificationsFilter>?): Either<GetNotificationsResponse, ApiResponseError> {
+
+        val request = GetNotificationsRequest(limit, beforeThan, filter?.map { it.toString() })
+
+        return apiClient.send(ServicesGateMethods.GET_NOTIFICATIONS.toString(), request, GetNotificationsResponse::class.java)
+
+    }
+
+    override fun getNotificationsStatus(): Either<GetNotificationStatusResponse, ApiResponseError> {
+
+        val request = GetNotificationsStatusRequest()
+
+        return apiClient.send(ServicesGateMethods.GET_NOTIFICATIONS_STATUS.toString(), request, GetNotificationStatusResponse::class.java)
+
+    }
+
+    override fun markAllNotificationAsViewed(until: String): Either<ResultOk, ApiResponseError> {
+
+        val request = MarkAllNotificationsAsViewedRequest(until)
+
+        return apiClient.send(ServicesGateMethods.MARK_VIEWED_ALL.toString(), request, ResultOk::class.java)
+
+    }
+
 
     override fun shutDown() {
         apiClient.dropConnection()
