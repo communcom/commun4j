@@ -21,6 +21,8 @@ import io.golos.commun4j.chain.actions.transaction.abi.ActionAbi
 import io.golos.commun4j.chain.actions.transaction.abi.TransactionAbi
 import io.golos.commun4j.chain.actions.transaction.abi.TransactionAuthorizationAbi
 import io.golos.commun4j.core.crypto.EosPrivateKey
+import io.golos.commun4j.http.rpc.RpcServerMessage
+import io.golos.commun4j.http.rpc.RpcServerMessageCallback
 import io.golos.commun4j.http.rpc.model.ApiResponseError
 import io.golos.commun4j.http.rpc.model.account.request.AccountName
 import io.golos.commun4j.http.rpc.model.transaction.response.TransactionCommitted
@@ -37,9 +39,15 @@ import java.util.concurrent.Callable
 
 open class Commun4j @JvmOverloads constructor(
         val config: Commun4jConfig,
+
         chainApiProvider: ChainApiProvider? = null,
         val keyStorage: KeyStorage = KeyStorage(),
-        private val apiService: ApiService = CyberServicesApiService(config)) {
+        private val serverMessageCallback: RpcServerMessageCallback = object : RpcServerMessageCallback {
+            override fun onMessage(message: RpcServerMessage) {
+
+            }
+        },
+        private val apiService: ApiService = CyberServicesApiService(config, serverMessageCallback = serverMessageCallback)) {
 
     private val transactionPusher: ITransactionPusherBridge = TransactionPusherBridge(config, TransactionPusher, ServicesTransactionPusher(config, apiService, TransactionPusher))
     private val chainApi: CyberWayChainApi
@@ -66,7 +74,7 @@ open class Commun4j @JvmOverloads constructor(
     internal fun createPermlink(parentPermlink: String?): String {
         val timeStamp = (Date().time / 1000).toString()
         return when {
-            parentPermlink == null -> timeStamp.toString() //permlink of post
+            parentPermlink == null -> timeStamp //permlink of post
             parentPermlink.trim().startsWith("re-re") -> parentPermlink.trim().replace(Regex("-[0-9]+\$"), "-$timeStamp")//permlink to comment to coment
             parentPermlink.trim().startsWith("re-") -> "re-${parentPermlink.trim().replace(Regex("-[0-9]+\$"), "-$timeStamp")}"  //permlink to a coment
             else -> "re-${parentPermlink.trim()}-$timeStamp"
@@ -469,6 +477,8 @@ open class Commun4j @JvmOverloads constructor(
 
     }
 
+    
+
 
     @JvmOverloads
     fun upVote(communCode: CyberSymbolCode,
@@ -853,7 +863,11 @@ open class Commun4j @JvmOverloads constructor(
 
     fun markAllNotificationAsViewed(until: String): Either<ResultOk, ApiResponseError> = apiService.markAllNotificationAsViewed(until)
 
+    fun subscribeOnNotifications(): Either<ResultOk, ApiResponseError> = apiService.subscribeOnNotifications()
 
+    fun unSubscribeFromNotifications(): Either<ResultOk, ApiResponseError> = apiService.unSubscribeFromNotifications()
+
+    fun getStateBulk(posts: List<UserAndPermlinkPair>): Either<GetStateBulkResponse, ApiResponseError> = apiService.getStateBulk(posts)
     /** method will block thread until [blockNum] would consumed by prism services
      * @param blockNum num of block to wait
      * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds

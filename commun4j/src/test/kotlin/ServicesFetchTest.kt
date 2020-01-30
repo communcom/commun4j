@@ -39,7 +39,7 @@ class ServicesFetchTest {
 
         val user = client.getPosts(type = FeedType.TOP_COMMENTS, limit = 1)
                 .getOrThrow().items.first().author.userId
-        client.getCommunitiesList(type = CommunitiesRequestType.USER, userId =user ).getOrThrow()
+        client.getCommunitiesList(type = CommunitiesRequestType.USER, userId = user).getOrThrow()
 
         val community = (getCommunitiesResult as Either.Success).value.items[0]
 
@@ -204,7 +204,18 @@ class ServicesFetchTest {
         }
     }
 
+    @Test
+    fun stateBulkTest() {
+        val postsData = client.getPosts(type = FeedType.TOP_LIKES).getOrThrow().map { UserAndPermlinkPair(it.author.userId, it.contentId.permlink) }
+        val result = client.getStateBulk(
+                postsData
+        )
+        result.getOrThrow().forEach { it.toPair().second.forEach { it.collectionEnd } }
+    }
+
     private fun getRandomNullableInt() = if (Random.nextDouble() > 0.5) (100 * Random.nextDouble()).toInt().let {
         if (it == 0) 1 else it
     } else null
+
+
 }

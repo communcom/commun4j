@@ -1,5 +1,7 @@
 import io.golos.commun4j.BuildConfig
 import io.golos.commun4j.Commun4j
+import io.golos.commun4j.http.rpc.RpcServerMessage
+import io.golos.commun4j.http.rpc.RpcServerMessageCallback
 import io.golos.commun4j.model.AuthType
 import io.golos.commun4j.sharedmodel.Commun4jConfig
 import io.golos.commun4j.sharedmodel.CyberName
@@ -74,8 +76,13 @@ fun account(forConfig: CONFIG_TYPE,
 @Synchronized
 fun getClient(ofType: CONFIG_TYPE = CONFIG_TYPE.DEV,
               setActiveUser: Boolean = true,
-              authInServices: Boolean = false): Commun4j {
-    return Commun4j(config = ofType.toConfig())
+              authInServices: Boolean = false,
+              serverMessageCallback: RpcServerMessageCallback = object : RpcServerMessageCallback{
+                  override fun onMessage(message: RpcServerMessage) {
+                      println(message)
+                  }
+              }): Commun4j {
+    return Commun4j(config = ofType.toConfig(), serverMessageCallback = serverMessageCallback)
             .apply {
                 if (setActiveUser) {
                     val account = firstAccount(ofType)

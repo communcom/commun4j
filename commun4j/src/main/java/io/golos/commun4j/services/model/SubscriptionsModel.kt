@@ -2,6 +2,7 @@ package io.golos.commun4j.services.model
 
 import com.squareup.moshi.JsonClass
 import io.golos.commun4j.sharedmodel.CyberName
+import io.golos.commun4j.sharedmodel.CyberSymbolCode
 
 internal enum class SubscriptionType {
     USER, COMMUNITY;
@@ -36,5 +37,7 @@ data class UserSubscriptionItem(
 data class CommunitySubscriptionsResponse(val items: List<CommunitySubscriptionItem>): List<CommunitySubscriptionItem> by items
 
 @JsonClass(generateAdapter = true)
-data class CommunitySubscriptionItem(val communityId: String, val alias: String?, val name: String?,
+data class CommunitySubscriptionItem(val communityId: CyberSymbolCode, val alias: String?,
+                                     val name: String?, val avatarUrl: String?,
+                                     val coverUrl: String?, val postsCount:Int?, val subscribersCount: Int?,
                                      val isSubscribed: Boolean?, val code: String?)

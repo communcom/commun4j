@@ -1,1 +1,3 @@
-methods `Commun4j::getNotifications`, `Commun4j::getNotificationsStatus`.`Commun4j::markAllNotificationAsViewed`
+update of `LeaderItem` model
+new requests in `Commun4j` - `subscribeOnNotifications` && `unSubscribeFromNotifications`
+callback for server prc requests in `Commmun4j`

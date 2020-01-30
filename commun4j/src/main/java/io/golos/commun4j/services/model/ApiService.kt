@@ -168,5 +168,11 @@ interface ApiService : ServicesTransactionPushService {
     fun getNotificationsStatus(): Either<GetNotificationStatusResponse, ApiResponseError>
 
     fun markAllNotificationAsViewed(until: String): Either<ResultOk, ApiResponseError>
+
+    fun getStateBulk(posts: List<UserAndPermlinkPair>): Either<GetStateBulkResponse, ApiResponseError>
+
+    fun subscribeOnNotifications(): Either<ResultOk, ApiResponseError>
+
+    fun unSubscribeFromNotifications(): Either<ResultOk, ApiResponseError>
 }
 

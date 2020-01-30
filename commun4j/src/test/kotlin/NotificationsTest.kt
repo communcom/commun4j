@@ -6,7 +6,7 @@ class NotificationsTest {
     fun testNotifications() {
         val client = getClient(authInServices = true)
 
-        client.getNotifications(10).getOrThrow()
+        val ntfs = client.getNotifications(100).getOrThrow()
         client.getNotifications(filter = GetNotificationsFilter.values().toList()).getOrThrow()
         client.getNotifications(filter = listOf(GetNotificationsFilter.MENTION)).getOrThrow()
 

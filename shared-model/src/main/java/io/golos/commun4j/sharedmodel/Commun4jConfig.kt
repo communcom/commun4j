@@ -2,11 +2,30 @@ package io.golos.commun4j.sharedmodel
 
 import okhttp3.logging.HttpLoggingInterceptor
 
-data class Commun4jConfig @JvmOverloads constructor(val blockChainHttpApiUrl: String,// url of cyber chain rest api
-                                                    val servicesUrl: String, //url of microservices gateway
-                                                    val connectionTimeOutInSeconds: Int = 30,// time to wait unused socket or unresponsive http request to wait before drop
-                                                    val readTimeoutInSeconds: Int = 30,// time to wait read from socket or  http request to wait before drop
-                                                    val writeTimeoutInSeconds: Int = 30,// time to wait write from socket or  http request to wait before drop
-                                                    val logLevel: LogLevel = LogLevel.BODY,// amount of logs. set LogLevel.NONE to disable
+/** configuration object of [Commun4j]
+ * @property blockChainHttpApiUrl url of cyber chain rest api
+ * @property servicesUrl url of microservices socket gateway
+ * @property connectionTimeOutInSeconds time for connection of  http request
+ * @property readTimeoutInSeconds time to wait for socket or http response
+ * @property writeTimeoutInSeconds time to wait for  http request
+ * @property logLevel amount of logs. set LogLevel.NONE to disable
+ * @property httpLogger callback for http logs
+ * @property socketLogger callback for http socket
+ * @property socketOpenQueryParams query params for socket. Each field of [SocketOpenQueryParams]
+ * corresponds to query param name
+ * **/
+
+
+data class Commun4jConfig @JvmOverloads constructor(val blockChainHttpApiUrl: String,
+                                                    val servicesUrl: String,
+                                                    val connectionTimeOutInSeconds: Int = 30,
+                                                    val readTimeoutInSeconds: Int = 30,
+                                                    val writeTimeoutInSeconds: Int = 30,
+                                                    val logLevel: LogLevel = LogLevel.BODY,
                                                     val httpLogger: HttpLoggingInterceptor.Logger? = HttpLoggingInterceptor.Logger.DEFAULT,
-                                                    val socketLogger: HttpLoggingInterceptor.Logger? = null)
+                                                    val socketLogger: HttpLoggingInterceptor.Logger? = null,
+                                                    val socketOpenQueryParams: SocketOpenQueryParams = SocketOpenQueryParams())
+
+data class SocketOpenQueryParams(val deviceType: String = "phone",
+                                 val platform: String = "android",
+                                 val clientType: String = "app")

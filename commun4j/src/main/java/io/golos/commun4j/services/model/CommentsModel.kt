@@ -52,7 +52,7 @@ internal data class GetCommentsRequest(val sortBy: String?, val offset: Int?, va
                               val communityAlias: String?, val parentComment: ParentComment?, val resolveNestedComments: Boolean?)
 
 @JsonClass(generateAdapter = true)
-data class GetCommentsResponse(val items: List<CyberComment>)
+data class GetCommentsResponse(val items: List<CyberComment>): List<CyberComment> by items
 
 @JsonClass(generateAdapter = true)
 data class GetCommentsResponseRaw(val items: List<CyberCommentRaw>)

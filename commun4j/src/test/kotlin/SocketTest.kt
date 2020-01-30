@@ -1,5 +1,7 @@
 import com.squareup.moshi.Moshi
 import io.golos.commun4j.BuildConfig
+import io.golos.commun4j.http.rpc.RpcServerMessage
+import io.golos.commun4j.http.rpc.RpcServerMessageCallback
 import io.golos.commun4j.http.rpc.SocketClientImpl
 import org.junit.Assert
 import org.junit.Test
@@ -10,7 +12,11 @@ class SocketTest {
 
     @Test
     fun reconnectTest() {
-        val impl = SocketClientImpl(BuildConfig.SERVICES_DEV, Moshi.Builder().build())
+        val impl = SocketClientImpl(BuildConfig.SERVICES_DEV, Moshi.Builder().build(), object : RpcServerMessageCallback {
+            override fun onMessage(message: RpcServerMessage) {
+
+            }
+        })
         val latch = CountDownLatch(1)
 
         var answerReceived = false

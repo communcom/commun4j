@@ -9,6 +9,9 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.golos.commun4j.abi.writer.compression.CompressionType
 import io.golos.commun4j.chain.actions.transaction.AbiBinaryGenTransactionWriter
 import io.golos.commun4j.chain.actions.transaction.abi.TransactionAbi
+import io.golos.commun4j.http.rpc.RpcServerMessage
+import io.golos.commun4j.http.rpc.RpcServerMessageCallback
+import io.golos.commun4j.http.rpc.SocketClient
 import io.golos.commun4j.http.rpc.SocketClientImpl
 import io.golos.commun4j.http.rpc.model.ApiResponseError
 import io.golos.commun4j.http.rpc.model.transaction.response.TransactionCommitted
@@ -27,7 +30,7 @@ private enum class ServicesGateMethods {
     RESOLVE_USERNAME, PROVIDE_BANDWIDTH, GET_COMMUNITIES, GET_COMMUNITIY, GET_POSTS, GET_BALANCE, GET_TRANSFER_HISTORY, GET_TOKENS_INFO,
     GET_LEADERS, GET_COMMUNITY_BLACKLIST, GET_BLACKLIST, GET_COMMENT_VOTES, GET_POST_VOTES, GET_NOTIFY_META,
     GET_ENTITY_REPORTS, GET_REPORTS, SUGGEST_NAMES, ONBOARDING_COMMUNITY_SUBSCRIPTION, GET_NOTIFICATIONS,
-    GET_NOTIFICATIONS_STATUS;
+    GET_NOTIFICATIONS_STATUS, GET_BULK, SUBSCRIBE_NOTIFICATIONS, UN_SUBSCRIBE_NOTIFICATIONS;
 
     override fun toString(): String {
         return when (this) {
@@ -76,6 +79,9 @@ private enum class ServicesGateMethods {
             SUGGEST_NAMES -> "content.suggestNames"
             GET_NOTIFICATIONS -> "notifications.getNotifications"
             GET_NOTIFICATIONS_STATUS -> "notifications.getStatus"
+            GET_BULK -> "rewards.getStateBulk"
+            SUBSCRIBE_NOTIFICATIONS -> "notifications.subscribe"
+            UN_SUBSCRIBE_NOTIFICATIONS -> "notifications.unsubscribe"
         }
     }
 }
@@ -114,9 +120,16 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                 .add(ToStringAdapter())
                 .add(KotlinJsonAdapterFactory())
                 .build(),
-        private val apiClient: io.golos.commun4j.http.rpc.SocketClient = SocketClientImpl(
-                config.servicesUrl,
+        serverMessageCallback: RpcServerMessageCallback = object : RpcServerMessageCallback {
+            override fun onMessage(message: RpcServerMessage) {
+
+            }
+        },
+        private val apiClient: SocketClient = SocketClientImpl(
+                "${config.servicesUrl}?platform=${config.socketOpenQueryParams.platform}&" +
+                        "deviceType=${config.socketOpenQueryParams.deviceType}&clientType=${config.socketOpenQueryParams.clientType}",
                 moshi,
+                serverMessageCallback,
                 config.readTimeoutInSeconds,
                 config.logLevel,
                 config.socketLogger)
@@ -185,7 +198,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                 .send(ServicesGateMethods.PROVIDE_BANDWIDTH.toString(), body, Any::class.java)
 
         if (response is Either.Failure) {
-            val apiError = response.value
+
             var golosEosError = moshi.adapter(GolosEosError::class.java).fromJsonValue(response.value.error.data)
             if (golosEosError != null) return Either.Failure(golosEosError)
 
@@ -626,16 +639,40 @@ internal class CyberServicesApiService @JvmOverloads constructor(
 
     }
 
+    override fun getStateBulk(posts: List<UserAndPermlinkPair>): Either<GetStateBulkResponse, ApiResponseError> {
+
+        val request = GetStateBulkRequest(posts)
+
+        val resp = apiClient.send(ServicesGateMethods.GET_BULK.toString(), request, Map::class.java)
+        @Suppress("UNCHECKED_CAST")
+        if (resp is Either.Failure) return resp as Either<GetStateBulkResponse, ApiResponseError>
+
+        val type = Types.newParameterizedType(Map::class.java, String::class.java, List::class.java, Map::class.java)
+
+        val value = (resp as Either.Success).value
+
+        val itemAdapter = moshi.adapter<GetStateBulkResponseItem>(GetStateBulkResponseItem::class.java)
+
+        val result = moshi
+                .adapter<Map<String, List<Map<*, *>>>>(type)
+                .fromJsonValue(value)!!
+                .mapValues { mapEntry ->
+                    mapEntry.value.map { itemAdapter.fromJsonValue(it)!! }
+                }
+
+        return Either.Success(result)
+    }
+
+    override fun subscribeOnNotifications(): Either<ResultOk, ApiResponseError> {
+        return apiClient.send(ServicesGateMethods.SUBSCRIBE_NOTIFICATIONS.toString(), SubscribeOnNotifications(), ResultOk::class.java)
+    }
+
+    override fun unSubscribeFromNotifications(): Either<ResultOk, ApiResponseError> {
+        return apiClient.send(ServicesGateMethods.UN_SUBSCRIBE_NOTIFICATIONS.toString(), UnSubscribeFromNotifications(), ResultOk::class.java)
+    }
+
 
     override fun shutDown() {
         apiClient.dropConnection()
-    }
-
-    private fun ContentParsingType.asContentType(): String {
-        return when (this) {
-            ContentParsingType.WEB -> "web"
-            ContentParsingType.MOBILE -> "mobile"
-            ContentParsingType.RAW -> "raw"
-        }
     }
 }

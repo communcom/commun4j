@@ -63,7 +63,11 @@ data class NotificationContentId(val communityId: CyberSymbolCode?,
 @JsonClass(generateAdapter = true)
 data class NotificationEntityContent(val shortText: String?,
                                      val imageUrl: String?,
-                                     val contentId: NotificationContentId)
+                                     val contentId: NotificationContentId,
+                                     val parents: NotificationEntityContentParents?)
+
+@JsonClass(generateAdapter = true)
+data class NotificationEntityContentParents(val post: NotificationContentId?, val comment: NotificationContentId?)
 
 
 @JsonClass(generateAdapter = true)

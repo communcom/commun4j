@@ -12,30 +12,39 @@ import okhttp3.logging.HttpLoggingInterceptor
 import java.net.SocketTimeoutException
 import java.util.*
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
+interface RpcServerMessageCallback {
+    fun onMessage(message: RpcServerMessage)
+}
+
 class SocketClientImpl(
-        val socketUrl: String,
+        private val socketUrl: String,
         private val moshi: Moshi,
+        private val rpcServerCallback: RpcServerMessageCallback,
         private val readTimeoutInSeconds: Int = 30,
-        var logLevel: LogLevel? = null,
-        var logger: HttpLoggingInterceptor.Logger? = null
-) : WebSocketListener(), io.golos.commun4j.http.rpc.SocketClient {
+        private val logLevel: LogLevel? = null,
+        private val logger: HttpLoggingInterceptor.Logger? = null
+) : WebSocketListener(), SocketClient {
     private lateinit var webSocket: WebSocket
     private val latches = Collections.synchronizedMap<Long, CountDownLatch>(hashMapOf())
     private val responseMap = Collections.synchronizedMap<Long, String?>(hashMapOf())
     private val isSocketConnected = AtomicBoolean(false)
+    private var callbackExecutor: ExecutorService? = null
 
     private fun connect() {
         synchronized(this) {
             if (isSocketConnected.get()) return
+            if (callbackExecutor?.isShutdown != false) callbackExecutor = Executors.newSingleThreadExecutor()
 
             webSocket = OkHttpClient
                     .Builder()
-                    .addInterceptor(HttpLoggingInterceptor().also { logLevel = LogLevel.BODY })
-                    .connectionPool(io.golos.commun4j.http.rpc.SharedConnectionPool.pool)
+                    .addInterceptor(HttpLoggingInterceptor().also { it.level = HttpLoggingInterceptor.Level.BODY })
+                    .connectionPool(SharedConnectionPool.pool)
                     .build()
                     .newWebSocket(Request.Builder()
                             .url(socketUrl)
@@ -114,13 +123,20 @@ class SocketClientImpl(
         super.onMessage(webSocket, text)
         log("onMessage $text")
         try {
-            val id = moshi.adapter(Identifieble::class.java).nullSafe().fromJson(text)?.id
+            val id = moshi.adapter(Identifiable::class.java).nullSafe().fromJson(text)?.id
             if (id != null) {
                 responseMap[id] = text
                 latches[id]?.countDown()
             }
         } catch (e: Exception) {//incoming message
-
+            callbackExecutor?.execute {
+                try {
+                    val message = moshi.adapter<RpcServerMessage>(RpcServerMessage::class.java).nonNull().fromJson(text)!!
+                    rpcServerCallback.onMessage(message)
+                } catch (e: java.lang.Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
@@ -128,6 +144,8 @@ class SocketClientImpl(
     override fun dropConnection() {
         synchronized(this) {
             if (::webSocket.isInitialized) webSocket.close(1000, "connection drop by user request")
+            callbackExecutor?.shutdown()
+            callbackExecutor = null
         }
     }
 
@@ -143,7 +161,11 @@ class SocketClientImpl(
 internal class RpcResponseWrapper<T>(val id: Long, val result: T)
 
 @JsonClass(generateAdapter = true)
-internal class Identifieble(val id: Long)
+internal class Identifiable(val id: Long)
+
+@JsonClass(generateAdapter = true)
+data class RpcServerMessage(val method: String, val params: Any)
+
 
 @JsonClass(generateAdapter = true)
 class RpcMessageWrapper(val method: String,

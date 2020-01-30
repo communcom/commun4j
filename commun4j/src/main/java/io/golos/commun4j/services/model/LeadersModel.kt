@@ -31,4 +31,5 @@ data class LeaderItem(val url: String,
                       val isSubscribed: Boolean?,
                       val userName: String?,
                       val votesCount: Int?,
-                      val avatarUrl: String?)
+                      val avatarUrl: String?,
+                      val inTop:Boolean)
