@@ -1,8 +1,10 @@
 package io.golos.commun4j.services.model
 
 import com.squareup.moshi.JsonClass
+import io.golos.commun4j.sharedmodel.CyberAsset
 import io.golos.commun4j.sharedmodel.CyberName
 import io.golos.commun4j.sharedmodel.CyberSymbolCode
+import java.math.BigInteger
 import java.util.*
 
 enum class GetNotificationsFilter {
@@ -32,6 +34,9 @@ data class GetNotificationStatusResponse(val unseenCount: Int)
 
 @JsonClass(generateAdapter = true)
 data class GetNotificationsResponse(val items: List<Notification>, val lastNotificationTimestamp: String?) : List<Notification> by items
+
+@JsonClass(generateAdapter = true)
+internal data class GetNotificationsRaw(val items: List<Any>, val lastNotificationTimestamp: String?) : List<Any> by items
 
 sealed class Notification(eventType: String, id: String)
 
@@ -106,4 +111,24 @@ data class ReplyNotification(val eventType: String,
                              val post: NotificationEntityContent?,
                              val comment: NotificationEntityContent?,
                              val isNew: Boolean) : Notification(eventType, id)
+
+@JsonClass(generateAdapter = true)
+data class TransferNotification(val eventType: String,
+                                val id: String,
+                                val timestamp: Date,
+                                val from: NotificationUserDescription?,
+                                val userId: CyberName,
+                                val amount: Double?,
+                                val pointType: String?,
+                                val isNew: Boolean) : Notification(eventType, id)
+
+@JsonClass(generateAdapter = true)
+data class RewardNotification(val eventType: String,
+                              val id: String,
+                              val timestamp: Date,
+                              val community: NotificationCommunityDescription?,
+                              val userId: CyberName,
+                              val amount: Double,
+                              val tracery: BigInteger?,
+                              val isNew: Boolean) : Notification(eventType, id)
 

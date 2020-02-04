@@ -1,3 +1,2 @@
-update of `LeaderItem` model
-new requests in `Commun4j` - `subscribeOnNotifications` && `unSubscribeFromNotifications`
-callback for server prc requests in `Commmun4j`
+method `Commun4j::getNotificationsSkipUnrecognized` that will
+skip all unparsed notifications 

@@ -110,6 +110,8 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                                 .withSubtype(UpvoteNotification::class.java, "upvote")
                                 .withSubtype(MentionNotification::class.java, "mention")
                                 .withSubtype(ReplyNotification::class.java, "reply")
+                                .withSubtype(TransferNotification::class.java, "transfer")
+                                .withSubtype(RewardNotification::class.java, "reward")
                 )
                 .add(EventType::class.java, EventTypeAdapter())
                 .add(CyberAsset::class.java, CyberAssetAdapter())
@@ -621,6 +623,30 @@ internal class CyberServicesApiService @JvmOverloads constructor(
 
         return apiClient.send(ServicesGateMethods.GET_NOTIFICATIONS.toString(), request, GetNotificationsResponse::class.java)
 
+    }
+
+    override fun getNotificationsSafe(limit: Int?, beforeThan: String?, filter: List<GetNotificationsFilter>?): Either<GetNotificationsResponse, ApiResponseError> {
+
+        val request = GetNotificationsRequest(limit, beforeThan, filter?.map { it.toString() })
+
+        val resp = apiClient.send(ServicesGateMethods.GET_NOTIFICATIONS.toString(), request, GetNotificationsRaw::class.java)
+        val notificationsAdapter = moshi.adapter<Notification>(Notification::class.java)
+
+        @Suppress("UNCHECKED_CAST")
+        return if (resp is Either.Failure) resp as Either.Failure<GetNotificationsResponse, ApiResponseError>
+        else (resp as Either.Success)
+                .value
+                .mapNotNull { rawNotification ->
+                    try {
+                        notificationsAdapter.fromJsonValue(rawNotification)
+                    } catch (e: java.lang.Exception) {
+                        e.printStackTrace()
+                        null
+                    }
+                }
+                .run {
+                    Either.Success<GetNotificationsResponse, ApiResponseError>(GetNotificationsResponse(this, resp.value.lastNotificationTimestamp))
+                }
     }
 
     override fun getNotificationsStatus(): Either<GetNotificationStatusResponse, ApiResponseError> {

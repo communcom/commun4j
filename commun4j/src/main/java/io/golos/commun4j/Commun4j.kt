@@ -859,6 +859,9 @@ open class Commun4j @JvmOverloads constructor(
     @JvmOverloads
     fun getNotifications(limit: Int? = 20, beforeThan: String? = null, filter: List<GetNotificationsFilter>? = null): Either<GetNotificationsResponse, ApiResponseError> = apiService.getNotifications(limit, beforeThan, filter)
 
+    @JvmOverloads
+    fun getNotificationsSkipUnrecognized(limit: Int? = 20, beforeThan: String? = null, filter: List<GetNotificationsFilter>? = null): Either<GetNotificationsResponse, ApiResponseError> = apiService.getNotificationsSafe(limit, beforeThan, filter)
+
     fun getNotificationsStatus(): Either<GetNotificationStatusResponse, ApiResponseError> = apiService.getNotificationsStatus()
 
     fun markAllNotificationAsViewed(until: String): Either<ResultOk, ApiResponseError> = apiService.markAllNotificationAsViewed(until)

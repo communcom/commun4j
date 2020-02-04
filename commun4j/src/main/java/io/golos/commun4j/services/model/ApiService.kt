@@ -165,6 +165,8 @@ interface ApiService : ServicesTransactionPushService {
 
     fun getNotifications(limit: Int?, beforeThan: String?, filter: List<GetNotificationsFilter>?): Either<GetNotificationsResponse, ApiResponseError>
 
+    fun getNotificationsSafe(limit: Int?, beforeThan: String?, filter: List<GetNotificationsFilter>?): Either<GetNotificationsResponse, ApiResponseError>
+
     fun getNotificationsStatus(): Either<GetNotificationStatusResponse, ApiResponseError>
 
     fun markAllNotificationAsViewed(until: String): Either<ResultOk, ApiResponseError>
