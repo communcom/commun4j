@@ -30,7 +30,7 @@ private enum class ServicesGateMethods {
     RESOLVE_USERNAME, PROVIDE_BANDWIDTH, GET_COMMUNITIES, GET_COMMUNITIY, GET_POSTS, GET_BALANCE, GET_TRANSFER_HISTORY, GET_TOKENS_INFO,
     GET_LEADERS, GET_COMMUNITY_BLACKLIST, GET_BLACKLIST, GET_COMMENT_VOTES, GET_POST_VOTES, GET_NOTIFY_META,
     GET_ENTITY_REPORTS, GET_REPORTS, SUGGEST_NAMES, ONBOARDING_COMMUNITY_SUBSCRIPTION, GET_NOTIFICATIONS,
-    GET_NOTIFICATIONS_STATUS, GET_BULK, SUBSCRIBE_NOTIFICATIONS, UN_SUBSCRIBE_NOTIFICATIONS;
+    GET_NOTIFICATIONS_STATUS, GET_BULK, SUBSCRIBE_NOTIFICATIONS, UN_SUBSCRIBE_NOTIFICATIONS, GET_COIN_BUY_PRICE, GET_COIN_SELL_PRICE;
 
     override fun toString(): String {
         return when (this) {
@@ -82,6 +82,8 @@ private enum class ServicesGateMethods {
             GET_BULK -> "rewards.getStateBulk"
             SUBSCRIBE_NOTIFICATIONS -> "notifications.subscribe"
             UN_SUBSCRIBE_NOTIFICATIONS -> "notifications.unsubscribe"
+            GET_COIN_BUY_PRICE -> "wallet.getBuyPrice"
+            GET_COIN_SELL_PRICE -> "wallet.getSellPrice"
         }
     }
 }
@@ -116,6 +118,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                 .add(EventType::class.java, EventTypeAdapter())
                 .add(CyberAsset::class.java, CyberAssetAdapter())
                 .add(CyberSymbolCode::class.java, CyberSymbolCodeAdapter())
+                .add(WalletQuantity::class.java, WalletQuantityAdapter())
                 .add(CyberName::class.java, CyberNameAdapter())
                 .add(ServiceSettingsLanguage::class.java, ServiceSettingsLanguageAdapter())
                 .add(EventsAdapter())
@@ -303,20 +306,6 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                         allowNsfw, type, sortBy, timeframe, limit, offset),
                 GetDiscussionsResultRaw::class.java
         )
-    }
-
-    override fun getBalance(name: String): Either<UserBalance, ApiResponseError> {
-        return apiClient.send(
-                ServicesGateMethods.GET_BALANCE.toString(),
-                mapOf<String, Any>("userId" to name),
-                UserBalance::class.java
-        )
-    }
-
-    override fun getTransferHistory(userId: String, direction: String?, sequenceKey: String?, limit: Int?): Either<GetTransferHistoryResponse, ApiResponseError> {
-        return apiClient.send(ServicesGateMethods.GET_TRANSFER_HISTORY.toString(),
-                GetTransferHistoryRequest(userId, direction, sequenceKey, limit),
-                GetTransferHistoryResponse::class.java)
     }
 
     override fun getTokensInfo(list: List<String>): Either<GetTokensInfoResponse, ApiResponseError> {
@@ -697,6 +686,26 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         return apiClient.send(ServicesGateMethods.UN_SUBSCRIBE_NOTIFICATIONS.toString(), UnSubscribeFromNotifications(), ResultOk::class.java)
     }
 
+    override fun getWalletBalance(userId: CyberName): Either<GetUserBalanceResponse, ApiResponseError> {
+        val request = GetUserBalanceRequest(userId.name)
+        return apiClient.send(ServicesGateMethods.GET_BALANCE.toString(), request, GetUserBalanceResponse::class.java)
+    }
+
+    override fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection?, transferType: TransferHistoryTransferType?,
+                                    symbol: CyberSymbolCode?, rewards: String?, limit: Int?, offset: Int?): Either<GetTransferHistoryResponse, ApiResponseError> {
+        val request = GetTransferHistoryRequest(userId, direction, transferType, symbol, rewards, limit, offset)
+        return apiClient.send(ServicesGateMethods.GET_TRANSFER_HISTORY.toString(), request, GetTransferHistoryResponse::class.java)
+    }
+
+    override fun getBuyPrice(pointSymbol: CyberSymbolCode, quantity: WalletQuantity): Either<GetWalletBuyPriceResponse, ApiResponseError> {
+        val request = GetWalletBuyPriceRequest(pointSymbol, quantity)
+        return apiClient.send(ServicesGateMethods.GET_COIN_BUY_PRICE.toString(), request, GetWalletBuyPriceResponse::class.java)
+    }
+
+    override fun getSellPrice(quantity: WalletQuantity): Either<GetWalletSellPriceResponse, ApiResponseError> {
+        val request = GetWalletSellPriceRequest(quantity)
+        return apiClient.send(ServicesGateMethods.GET_COIN_SELL_PRICE.toString(), request, GetWalletSellPriceResponse::class.java)
+    }
 
     override fun shutDown() {
         apiClient.dropConnection()

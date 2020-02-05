@@ -11,9 +11,13 @@ import io.golos.commun4j.abi.implementation.c.ctrl.VoteleaderCCtrlAction
 import io.golos.commun4j.abi.implementation.c.ctrl.VoteleaderCCtrlStruct
 import io.golos.commun4j.abi.implementation.c.gallery.*
 import io.golos.commun4j.abi.implementation.c.list.*
+import io.golos.commun4j.abi.implementation.c.point.TransferArgsCPointStruct
+import io.golos.commun4j.abi.implementation.c.point.TransferCPointAction
 import io.golos.commun4j.abi.implementation.c.social.*
 import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainAction
 import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainStruct
+import io.golos.commun4j.abi.implementation.cyber.token.OpenCyberTokenAction
+import io.golos.commun4j.abi.implementation.cyber.token.OpenCyberTokenStruct
 import io.golos.commun4j.abi.implementation.cyber.token.TransferCyberTokenAction
 import io.golos.commun4j.abi.implementation.cyber.token.TransferCyberTokenStruct
 import io.golos.commun4j.chain.actions.transaction.TransactionPusher
@@ -127,228 +131,6 @@ open class Commun4j @JvmOverloads constructor(
                 bandWidthRequest,
                 clientAuthRequest)
     }
-
-
-//    /** method for account creation.
-//     * currently consists of 5 steps:
-//     * 1. create eos account
-//     * 2. open vesting balance [openVestingBalance]
-//     * 3. open token balance [openTokenBalance]
-//     * 4. issuing vesting to new user [issueTokens]
-//     * if one of this steps fails - you need do it manually, to fully init new user.
-//     * @param newAccountName account name of new account. must be [CyberName] compatible. Format - "[a-z0-5.]{0,12}"
-//     * @param newAccountMasterPassword master password for generating keys for newly created account.
-//     * method uses [AuthUtils.generatePrivateWiFs] for generating private key - so can you. Also
-//     * [AuthUtils.generatePublicWiFs] for acquiring public keys
-//     *  @param actor account name of creator
-//     * @param cyberCreatePermissionKey key of "gls" for "newaccount" action with "active" permission
-//     * @throws IllegalStateException if method failed to open vesting or token balance, issue tokens or transfer it to "gls.vesting
-//     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-
-//    @JvmOverloads
-//    fun createAccount(
-//            newAccountName: String,
-//            newAccountMasterPassword: String,
-//            actor: CyberName,
-//            cyberCreatePermissionKey: String,
-//            bandWidthRequest: BandWidthRequest? = null
-//    ): Either<TransactionCommitted<NewaccountCyberStruct>, GolosEosError> {
-//        CyberName(newAccountName)
-//
-//        val keys = AuthUtils.generatePublicWiFs(newAccountName, newAccountMasterPassword, AuthType.values())
-//
-//        val callable = Callable {
-//            pushTransaction<NewaccountCyberStruct>(NewaccountCyberAction(NewaccountCyberStruct(
-//                    actor,
-//                    CyberName(newAccountName),
-//                    AuthorityCyberStruct(
-//                            1,
-//                            listOf(KeyWeightCyberStruct(EosPublicKey(keys[AuthType.OWNER]!!), 1)),
-//                            emptyList(), emptyList()
-//                    ),
-//                    AuthorityCyberStruct(
-//                            1,
-//                            listOf(KeyWeightCyberStruct(EosPublicKey(keys[AuthType.ACTIVE]!!), 1)),
-//                            emptyList(),
-//                            emptyList()
-//                    )
-//            ))
-//                    .toActionAbi(listOf(TransactionAuthorizationAbi(actor.name,
-//                            "active"))),
-//
-//                    cyberCreatePermissionKey,
-//                    bandWidthRequest)
-//        }
-//        return callTilTimeoutExceptionVanishes(callable)
-
-
-//        if (createAnswer is Either.Failure) return createAnswer
-//
-//        val openTokenResult = openTokenBalance(newAccountName.toCyberName(), cyberCreatePermissionKey, actor)
-//
-//        if (openTokenResult is Either.Failure) throw IllegalStateException(
-//                "error initializing of account $newAccountName" +
-//                        "during openTokenBalance()"
-//        )
-//        val issueVestingResult =
-//                issueVesting(newAccountName.toCyberName(), cyberCreatePermissionKey, "3.000 GOLOS")
-//
-//        if (issueVestingResult is Either.Failure) throw IllegalStateException(
-//                "error initializing of account $newAccountName\n" +
-//                        "during issueVesting()"
-//        )
-//
-//        return createAnswer
-//}
-
-//    /** method for opening vesting balance of account. used in [createAccount] as one of the steps of
-//     * new account creation
-//     * @param forUser account name
-//     * @param cyberKey key of "cyber" with "createuser" permission
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//
-//    fun openVestingBalance(
-//            forUser: CyberName,
-//            cyberKey: String,
-//            actor: CyberName,
-//            bandWidthRequest: BandWidthRequest? = null
-//    ) = openBalance(forUser, UserBalance.VESTING, actor, cyberKey, bandWidthRequest)
-
-//    /** method for opening token balance of account. used in [createAccount] as one of the steps of
-//     * new account creation
-//     * @param forUser account name
-//     * @param cyberCreatePermissionKey key of "cyber" with "createuser" permission
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//
-//    fun openTokenBalance(
-//            forUser: CyberName,
-//            actor: CyberName,
-//            cyberCreatePermissionKey: String,
-//            symbol: CyberSymbol,
-//            bandWidthRequest: BandWidthRequest? = null
-//    ): Either<TransactionCommitted<OpenCyberTokenStruct>, GolosEosError> {
-//
-//        val setUserNameCallable = Callable {
-//            pushTransaction<OpenCyberTokenStruct>(OpenCyberTokenAction(
-//                    OpenCyberTokenStruct(forUser, symbol, actor)
-//            ).toActionAbi(
-//                    listOf(TransactionAuthorizationAbi(actor.name, "active"))
-//            ), cyberCreatePermissionKey, bandWidthRequest)
-//        }
-//        return callTilTimeoutExceptionVanishes(setUserNameCallable)
-//    }
-
-//    /** method for issuing vesting for [forUser] recipient. Also, used as part of new account creation in [createAccount]
-//     * @param forUser account name
-//     * @param issuerKey key of "gls" with "issue" permission
-//     * @param amount amount of tokens to issue.  Must have 3 points precision, like 12.000 or 0.001
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//    fun issueVesting(
-//            forUser: CyberName,
-//            issuerKey: String,
-//            amount: String,
-//            memo: String = "",
-//            bandWidthRequest: BandWidthRequest? = null
-//    ): Either<TransactionCommitted<Any>, GolosEosError> {
-//
-//        val issuerTokenCallable = Callable {
-//
-//            val actionAbis = ArrayList<ActionAbi>()
-//
-//            val writer = createBinaryConverter()
-//            val issueRequest = IssueRequestAbi(CyberContracts.GLS.toString().toCyberName(), amount, memo)
-//            val result = writer.squishIssueRequestAbi(issueRequest)
-//
-//            if (config.logLevel == LogLevel.BODY) config.httpLogger
-//                    ?.log("issue request  = ${moshi.adapter(IssueRequestAbi::class.java).toJson(issueRequest)}")
-//
-//            var hex = result.toHex()
-//            val issueAbi = ActionAbi(
-//                    CyberContracts.CYBER_TOKEN.toString(), CyberActions.ISSUE.toString(),
-//                    listOf(TransactionAuthorizationAbi(CyberContracts.GLS.toString(), "issue")), hex
-//            )
-//            if (config.logLevel == LogLevel.BODY) config.httpLogger
-//                    ?.log("issue transaction = ${moshi.adapter(ActionAbi::class.java).toJson(issueAbi)}")
-//
-//            actionAbis.add(issueAbi)
-//
-//            hex = createBinaryConverter().squishMyTransferArgsAbi(
-//                    MyTransferArgsAbi(CyberContracts.GLS.toString(),
-//                            CyberContracts.VESTING.toString(),
-//                            amount,
-//                            "send to: ${forUser.name};")
-//            ).toHex()
-//
-//            actionAbis.add(
-//                    ActionAbi(
-//                            CyberContracts.CYBER_TOKEN.toString(), CyberActions.TRANSFER.toString(),
-//                            listOf(TransactionAuthorizationAbi(CyberContracts.GLS.toString(), "issue")), hex
-//                    )
-//            )
-//            transactionPusher.pushTransaction(actionAbis, EosPrivateKey(issuerKey),
-//                    Any::class.java, bandWidthRequest)
-//        }
-//
-//        return callTilTimeoutExceptionVanishes(issuerTokenCallable)
-//    }
-
-
-//    /** method for issuing tokens for [forUser] recipient. Also, used as part of new account creation in [createAccount]
-//     * @param forUser account name
-//     * @param issuerKey key of "gls" with "issue" permission
-//     * @param amount amount of tokens to issue.  Must have 3 points precision, like 12.000 or 0.001
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//    fun issueTokens(
-//            forUser: CyberName,
-//            issuerKey: String,
-//            amount: String,
-//            memo: String = "",
-//            bandWidthRequest: BandWidthRequest? = null
-//    ): Either<TransactionCommitted<Any>, GolosEosError> {
-//
-//        val issuerTokenCallable = Callable {
-//
-//            val actionAbis = ArrayList<ActionAbi>()
-//
-//            val writer = createBinaryConverter()
-//            val issueRequest = IssueRequestAbi(CyberContracts.GLS.toString().toCyberName(), amount, memo)
-//            val result = writer.squishIssueRequestAbi(issueRequest)
-//
-//            if (config.logLevel == LogLevel.BODY) config.httpLogger
-//                    ?.log("issue request  = ${moshi.adapter(IssueRequestAbi::class.java).toJson(issueRequest)}")
-//
-//            var hex = result.toHex()
-//            val issueAbi = ActionAbi(
-//                    CyberContracts.CYBER_TOKEN.toString(), CyberActions.ISSUE.toString(),
-//                    listOf(TransactionAuthorizationAbi(CyberContracts.GLS.toString(), "issue")), hex
-//            )
-//            if (config.logLevel == LogLevel.BODY) config.httpLogger
-//                    ?.log("issue transaction = ${moshi.adapter(ActionAbi::class.java).toJson(issueAbi)}")
-//
-//            actionAbis.add(issueAbi)
-//
-//            hex = createBinaryConverter().squishMyTransferArgsAbi(
-//                    MyTransferArgsAbi(CyberContracts.GLS.toString(), forUser.name, amount, memo)
-//            ).toHex()
-//
-//            actionAbis.add(
-//                    ActionAbi(
-//                            CyberContracts.CYBER_TOKEN.toString(), CyberActions.TRANSFER.toString(),
-//                            listOf(TransactionAuthorizationAbi(CyberContracts.GLS.toString(), "issue")), hex
-//                    )
-//            )
-//            transactionPusher.pushTransaction(actionAbis,
-//                    EosPrivateKey(issuerKey), Any::class.java, bandWidthRequest)
-//
-//        }
-//
-//        return callTilTimeoutExceptionVanishes(issuerTokenCallable)
-//    }
 
     /**method sets  nickname for active user. Method assumes, that there is some active user in [keyStorage]
      * Nick must match [0-9a-z.-]{1,32}
@@ -476,8 +258,6 @@ open class Commun4j @JvmOverloads constructor(
         ), TransactionAuthorizationAbi(author.name, "active"), authorKey, bandWidthRequest, clientAuthRequest)
 
     }
-
-    
 
 
     @JvmOverloads
@@ -808,23 +588,11 @@ open class Commun4j @JvmOverloads constructor(
             apiService.getProfile(user?.name, userName)
 
     fun getBalance(userId: CyberName) =
-            apiService.getBalance(userId.name)
-
-    @JvmOverloads
-    fun getTransferHistory(userId: CyberName,
-                           direction: TransactionDirection? = null,
-                           sequenceKey: String? = null,
-                           limit: Int? = null) = apiService.getTransferHistory(userId.name,
-            direction?.toString(),
-            sequenceKey,
-            limit)
+            apiService.getWalletBalance(userId)
 
     fun getTokensInfo(codes: List<CyberSymbolCode>) = apiService.getTokensInfo(codes.map { it.value })
 
     fun getLeaders(communityId: String, limit: Int? = null, offset: Int? = null): Either<LeadersResponse, ApiResponseError> = apiService.getLeaders(communityId, limit, offset, null)
-
-//    fun getCommunityBlacklist(communityId: String?, communityAlias: String? = null, offset: Int? = null, limit: Int? = null) =
-//            apiService.getCommunityBlacklist(communityId, communityAlias, offset, limit)
 
     fun getBlacklistedUsers(userId: CyberName): Either<BlacklistedUsersResponse, ApiResponseError> =
             apiService.getBlacklistedUsers(userId)
@@ -871,6 +639,15 @@ open class Commun4j @JvmOverloads constructor(
     fun unSubscribeFromNotifications(): Either<ResultOk, ApiResponseError> = apiService.unSubscribeFromNotifications()
 
     fun getStateBulk(posts: List<UserAndPermlinkPair>): Either<GetStateBulkResponse, ApiResponseError> = apiService.getStateBulk(posts)
+
+    @JvmOverloads
+    fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection? = null, transferType: TransferHistoryTransferType? = null,
+                           symbol: CyberSymbolCode? = null, rewards: String? = null, limit: Int? = null, offset: Int? = null): Either<GetTransferHistoryResponse, ApiResponseError> = apiService.getTransferHistory(userId, direction, transferType, symbol, rewards, limit, offset)
+
+    fun getBuyPrice(pointSymbol: CyberSymbolCode, quantity: WalletQuantity): Either<GetWalletBuyPriceResponse, ApiResponseError> = apiService.getBuyPrice(pointSymbol, quantity)
+
+    fun getSellPrice(quantity: WalletQuantity): Either<GetWalletSellPriceResponse, ApiResponseError> = apiService.getSellPrice(quantity)
+
     /** method will block thread until [blockNum] would consumed by prism services
      * @param blockNum num of block to wait
      * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
@@ -885,118 +662,6 @@ open class Commun4j @JvmOverloads constructor(
      */
     fun waitForTransaction(transactionId: String): Either<ResultOk, ApiResponseError> = apiService.waitForTransaction(transactionId)
 
-
-//    /**get processed embed link for some raw "https://site.com/content" using iframely service
-//     * @param forLink raw link of site content
-//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//    fun getEmbedIframely(forLink: String): Either<IFramelyEmbedResult, ApiResponseError> =
-//            apiService.getIframelyEmbed(forLink)
-//
-//    /**get processed embed link for some raw "https://site.com/content" using oembed service
-//     * @param forLink raw link of site content
-//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//    fun getEmbedOembed(forLink: String): Either<OEmbedResult, ApiResponseError> = apiService.getOEmdedEmbed(forLink)
-//
-//
-//    /** method subscribes mobile device for push notifications in FCM.
-//     * method requires authorization
-//     * @param deviceId userId of device or installation.
-//     * @param fcmToken token of app installation in FCM.
-//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//    fun subscribeOnMobilePushNotifications(deviceId: String,
-//                                           fcmToken: String,
-//                                           appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.subscribeOnMobilePushNotifications(deviceId, appName, fcmToken)
-//
-//    /** method unSubscribes mobile device from push notifications in FCM.
-//     *  method requires authorization
-//     * @param deviceId userId of device or installation.
-//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//    fun unSubscribeOnNotifications(userId: CyberName,
-//                                   deviceId: String,
-//                                   appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.unSubscribeOnNotifications(userId.name, deviceId, appName)
-//
-//    /**method for setting various settings for user. If any of setting param is null, this settings will not change.
-//     * All setting are individual for every [deviceId]
-//     * method requires authorization
-//     * @param deviceId userId of device or installation.
-//     * @param newBasicSettings schema-free settings, used for saving app personalization.
-//     * @param newWebNotifySettings settings of online web notifications.
-//     * @param newMobilePushSettings settings of mobile push notifications. Uses FCM.
-//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//    fun setUserSettings(deviceId: String,
-//                        newBasicSettings: Any?,
-//                        newWebNotifySettings: WebShowSettings?,
-//                        newMobilePushSettings: MobileShowSettings?,
-//                        appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.setNotificationSettings(deviceId, appName, newBasicSettings, newWebNotifySettings, newMobilePushSettings)
-//
-//    /**method for retreiving user setting. Personal for evert [deviceId]
-//     * method requires authorization
-//     * @param deviceId userId of device or installation.
-//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//    fun getUserSettings(deviceId: String, appName: String = "gls"): Either<UserSettings, ApiResponseError> = apiService.getNotificationSettings(deviceId, appName)
-//
-//    /**method for retreiving history of notifications.
-//     * method requires authorization
-//     * @param userProfile name of user which notifications to retreive.
-//     * @param afterId userId of next page of events. Set null if you want first page.
-//     * @param limit number of event to retreive
-//     * @param markAsViewed set true, if you want to set all retreived notifications as viewed
-//     * @param freshOnly set true, if you want get only fresh notifcaitons
-//     * @param types list of types of notifcaitons you want to get
-//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//    fun getEvents(userProfile: String,
-//                  afterId: String?,
-//                  limit: Int?,
-//                  markAsViewed: Boolean?,
-//                  freshOnly: Boolean?,
-//                  types: List<EventType>,
-//                  appName: String = "gls"): Either<EventsData, ApiResponseError> =
-//            apiService.getEvents(userProfile, appName, afterId, limit, markAsViewed, freshOnly, types)
-//
-//    /**mark certain events as unfresh, eg returning 'fresh' property as false
-//     * method requires authorization
-//     * @param ids list of userId's to set as read
-//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//    fun markEventsAsNotFresh(ids: List<String>, appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.markEventsAsRead(ids, appName)
-//
-//    /**mark certain all events history of authorized user as not fresh
-//     * method requires authorization
-//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//    fun markAllEventsAsNotFresh(appName: String = "gls"): Either<ResultOk, ApiResponseError> = apiService.markAllEventsAsRead(appName)
-//
-//    /**method for retreving count of fresh events of authorized user.
-//     * method requires authorization
-//     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-//     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
-//
-//    fun getFreshNotificationCount(profileId: String, appName: String = "gls"): Either<FreshResult, ApiResponseError> = apiService.getUnreadCount(profileId, appName)
-//
-//    /**method returns current state of user registration process, user gets identified by [user] or
-//     * by [phone]
-//     *  @param user name of user, which registration state get fetched.
-//     *  @param phone  of user, which registration state get fetched.
-//     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-//     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-//     * */
 
     fun <T : Any> pushTransactionWithProvidedBandwidth(chainId: String,
                                                        transactionAbi: TransactionAbi,
@@ -1169,17 +834,8 @@ open class Commun4j @JvmOverloads constructor(
 
     }
 
-    /** transfer [amount] of [currency] [from] user [to] user
-     * @param key active key [from] user
-     * @param from user from wallet you want to transfer
-     * @param to recipient of money
-     * @param amount amount of [currency] to transfer. Must have 3 points precision, like 12.000 or 0.001
-     * @param currency currency to transfer. GLS, for example
-     * @param memo some additional info, that added to transfer
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     */
     @JvmOverloads
-    fun transfer(
+    fun exchange(
             to: CyberName,
             amount: String,
             currency: String,
@@ -1189,7 +845,7 @@ open class Commun4j @JvmOverloads constructor(
             from: CyberName = keyStorage.getActiveAccount()
     ): Either<TransactionCommitted<TransferCyberTokenStruct>, GolosEosError> {
 
-        if (!amount.matches("([0-9]+\\.[0-9]{3})".toRegex())) throw IllegalArgumentException("wrong currency format. Must have 3 points precision, like 12.000 or 0.001")
+        // if (!amount.matches("([0-9]+\\.[0-9]{3})".toRegex())) throw IllegalArgumentException("wrong currency format. Must have 3 points precision, like 12.000 or 0.001")
 
         return pushTransaction<TransferCyberTokenStruct>(TransferCyberTokenAction(
                 TransferCyberTokenStruct(
@@ -1198,6 +854,40 @@ open class Commun4j @JvmOverloads constructor(
                 )
         ), TransactionAuthorizationAbi(from.name, "active"), key, bandWidthRequest, null)
 
+    }
+
+    @JvmOverloads
+    fun transfer(
+            to: CyberName,
+            amount: String,
+            currency: String,
+            memo: String = "",
+            bandWidthRequest: BandWidthRequest? = null,
+            key: String = keyStorage.getActiveAccountKeys().find { it.first == AuthType.ACTIVE }!!.second,
+            from: CyberName = keyStorage.getActiveAccount()
+    ): Either<TransactionCommitted<TransferArgsCPointStruct>, GolosEosError> {
+
+        //  if (!amount.matches("([0-9]+\\.[0-9]{3})".toRegex())) throw IllegalArgumentException("wrong currency format. Must have 3 points precision, like 12.000 or 0.001")
+
+        return pushTransaction<TransferArgsCPointStruct>(TransferCPointAction(
+                TransferArgsCPointStruct(
+                        from, to,
+                        CyberAsset("$amount $currency"), memo
+                )
+        ), TransactionAuthorizationAbi(from.name, "active"), key, bandWidthRequest, null)
+    }
+
+    fun openBalance(symbol: CyberSymbol,
+                    ramPayer: CyberName,
+                    owner: CyberName = keyStorage.getActiveAccount(),
+                    bandWidthRequest: BandWidthRequest? = null,
+                    key: String = keyStorage.getActiveAccountKeys().find { it.first == AuthType.ACTIVE }!!.second): Either<TransactionCommitted<OpenCyberTokenStruct>, GolosEosError> {
+
+        return pushTransaction<OpenCyberTokenStruct>(OpenCyberTokenAction(
+                OpenCyberTokenStruct(
+                        owner, symbol, ramPayer
+                )
+        ), TransactionAuthorizationAbi(owner.name, "active"), key, bandWidthRequest, null)
     }
 
     /**method closes all connections, pools, executors etc. After that instance is useless

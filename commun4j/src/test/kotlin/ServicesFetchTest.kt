@@ -126,22 +126,6 @@ class ServicesFetchTest {
     }
 
     @Test
-    fun walletTest() {
-        val getWalletResult = client.getBalance(CyberName("tst5vmhjuxie"))
-        assertTrue(getWalletResult is Either.Success)
-        println(getWalletResult)
-
-        val tranferHistoryResponse = client.getTransferHistory(CyberName("tst5vmhjuxie"),
-                TransactionDirection.ALL)
-        assertTrue(tranferHistoryResponse is Either.Success)
-        println(tranferHistoryResponse)
-
-        val getTokens = client.getTokensInfo(getWalletResult.getOrThrow().balances.map { it.symbol })
-        assertTrue(getTokens is Either.Success)
-        println(getTokens)
-    }
-
-    @Test
     fun leadersTest() {
         val getCommunitiesResult = client.getCommunitiesList(limit = 20).getOrThrow()
         getCommunitiesResult.items.forEach {

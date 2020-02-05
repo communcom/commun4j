@@ -8,10 +8,7 @@ import io.golos.commun4j.model.CyberDiscussion
 import io.golos.commun4j.model.CyberDiscussionRaw
 import io.golos.commun4j.model.GetDiscussionsResult
 import io.golos.commun4j.model.GetDiscussionsResultRaw
-import io.golos.commun4j.sharedmodel.AuthSecret
-import io.golos.commun4j.sharedmodel.CyberName
-import io.golos.commun4j.sharedmodel.Either
-import io.golos.commun4j.sharedmodel.GolosEosError
+import io.golos.commun4j.sharedmodel.*
 
 /**
  *
@@ -112,10 +109,6 @@ interface ApiService : ServicesTransactionPushService {
                     limit: Int?,
                     offset: Int?): Either<GetDiscussionsResultRaw, ApiResponseError>
 
-    fun getBalance(name: String): Either<UserBalance, ApiResponseError>
-
-    fun getTransferHistory(userId: String, direction: String?, sequenceKey: String?, limit: Int?): Either<GetTransferHistoryResponse, ApiResponseError>
-
     fun getTokensInfo(list: List<String>): Either<GetTokensInfoResponse, ApiResponseError>
 
     fun getLeaders(communityId: String, limit: Int?, skip: Int?, query: String?): Either<LeadersResponse, ApiResponseError>
@@ -176,5 +169,14 @@ interface ApiService : ServicesTransactionPushService {
     fun subscribeOnNotifications(): Either<ResultOk, ApiResponseError>
 
     fun unSubscribeFromNotifications(): Either<ResultOk, ApiResponseError>
+
+    fun getWalletBalance(userId: CyberName): Either<GetUserBalanceResponse, ApiResponseError>
+
+    fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection?, transferType: TransferHistoryTransferType?,
+                           symbol: CyberSymbolCode?, rewards: String?, limit: Int?, offset: Int?): Either<GetTransferHistoryResponse, ApiResponseError>
+
+    fun getBuyPrice(pointSymbol: CyberSymbolCode, quantity: WalletQuantity): Either<GetWalletBuyPriceResponse, ApiResponseError>
+
+    fun getSellPrice(quantity: WalletQuantity): Either<GetWalletSellPriceResponse, ApiResponseError>
 }
 
