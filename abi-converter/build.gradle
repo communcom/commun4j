@@ -25,6 +25,7 @@ application {
 run {
     args = ["${project.sourceSets.main.kotlin.srcDirs.first()}".replace("abi-converter", "abi-implementation"),
             buildDir,
+            "http://88.198.201.238:8888",
             "cyber",
             "cyber.token",
             "cyber.domain",

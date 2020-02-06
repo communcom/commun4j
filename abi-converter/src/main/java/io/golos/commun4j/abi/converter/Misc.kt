@@ -30,11 +30,13 @@ class Main {
 
             val buildDir = File(args[1])
 
-            val contracts = args.toList().subList(2, args.size)
+            val url = args[2]
+
+            val contracts = args.toList().subList(3, args.size)
 
             println("src dir = $srcDir, buildDir = $buildDir, contracts = $contracts")
 
-            val abis = contracts.map { getAbi(CyberName(it), buildDir) }
+            val abis = contracts.map { getAbi(CyberName(it), buildDir, url) }
 
             val destPackage = "io.golos.commun4j.abi.implementation"
 
@@ -60,7 +62,7 @@ class Main {
 
 private val moshi = Moshi.Builder().add(CyberName::class.java, CyberNameAdapter()).build()!!
 
-fun getAbi(contractName: CyberName, buildDir: File): EosAbi {
+fun getAbi(contractName: CyberName, buildDir: File, blockChainUrl: String): EosAbi {
     val cashedFile = File(buildDir, "${contractName.name}.json")
 
     if (cashedFile.exists()) {
@@ -76,7 +78,7 @@ fun getAbi(contractName: CyberName, buildDir: File): EosAbi {
     val resp = okHttpClient.newCall(Request.Builder()
             .post(RequestBody.create(MediaType.get("application/json"),
                     moshi.toJson(mapOf("account_name" to contractName.name))))
-            .url("http://116.202.4.46:8888/v1/chain/get_abi")
+            .url("${blockChainUrl.removeSuffix("/")}/v1/chain/get_abi")
             .build())
             .execute()
 

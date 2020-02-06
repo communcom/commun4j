@@ -394,28 +394,28 @@ open class Commun4j @JvmOverloads constructor(
     fun banUserFromCommunity(communCode: CyberSymbolCode,
                              reason: String,
                              account: CyberName,
-                             leader: CyberName = keyStorage.getActiveAccount(),
+                             actor: CyberName  = keyStorage.getActiveAccount(),
                              bandWidthRequest: BandWidthRequest? = null,
                              clientAuthRequest: ClientAuthRequest? = null,
                              key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<BanCListStruct>, GolosEosError> {
         return pushTransaction<BanCListStruct>(BanCListAction(BanCListStruct(
-                communCode, leader, account, reason
-        )), TransactionAuthorizationAbi(leader.name, "active"), key, bandWidthRequest, clientAuthRequest)
+                communCode, account, reason
+        )), TransactionAuthorizationAbi(actor.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
     @JvmOverloads
     fun unBanUserFromCommunity(communCode: CyberSymbolCode,
                                reason: String,
                                account: CyberName,
-                               leader: CyberName = keyStorage.getActiveAccount(),
+                               actor: CyberName  = keyStorage.getActiveAccount(),
                                bandWidthRequest: BandWidthRequest? = null,
                                clientAuthRequest: ClientAuthRequest? = null,
                                key: String = keyStorage.getActiveKeyOfActiveAccount()
     ): Either<TransactionCommitted<BanCListStruct>, GolosEosError> {
         return pushTransaction<BanCListStruct>(UnbanCListAction(BanCListStruct(
-                communCode, leader, account, reason
-        )), TransactionAuthorizationAbi(account.name, "active"), key, bandWidthRequest, clientAuthRequest)
+                communCode, account, reason
+        )), TransactionAuthorizationAbi(actor.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
     @JvmOverloads
@@ -453,6 +453,16 @@ open class Commun4j @JvmOverloads constructor(
             telegram: String?,
             whatsapp: String?,
             wechat: String?,
+            firstName: String?,
+            lastName: String?,
+            country: String?,
+            city: String?,
+            birth_date: CyberTimeStampSeconds?,
+            instagram: String?,
+            linkedin: String?,
+            twitter: String?,
+            github: String?,
+            websiteUrl: String?,
             bandWidthRequest: BandWidthRequest? = null,
             clientAuthRequest: ClientAuthRequest? = null,
             user: CyberName = keyStorage.getActiveAccount(),
@@ -461,7 +471,8 @@ open class Commun4j @JvmOverloads constructor(
         return pushTransaction<UpdatemetaCSocialStruct>(UpdatemetaCSocialAction(UpdatemetaCSocialStruct(
                 user,
                 AccountmetaCSocialStruct(
-                        avatarUrl, coverUrl, biography, facebook, telegram, whatsapp, wechat
+                        avatarUrl, coverUrl, biography, facebook, telegram, whatsapp, wechat, firstName,
+                        lastName, country, city, birth_date, instagram, linkedin, twitter, github, websiteUrl
                 )
         )), TransactionAuthorizationAbi(user.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
