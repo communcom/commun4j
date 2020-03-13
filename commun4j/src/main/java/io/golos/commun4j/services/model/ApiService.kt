@@ -178,5 +178,14 @@ interface ApiService : ServicesTransactionPushService {
     fun getBuyPrice(pointSymbol: CyberSymbolCode, quantity: WalletQuantity): Either<GetWalletBuyPriceResponse, ApiResponseError>
 
     fun getSellPrice(quantity: WalletQuantity): Either<GetWalletSellPriceResponse, ApiResponseError>
+
+    fun getConfig(): Either<GetConfigResponse, ApiResponseError>
+
+    fun quickSearch(queryString: String, limit: Int?, entities: List<SearchableEntities>?): Either<QuickSearchResponse, ApiResponseError>
+
+    fun extendedSearch(queryString: String,
+                       profilesSearchRequest: ExtendedRequestSearchItem?,
+                       communitiesSearchRequest: ExtendedRequestSearchItem?,
+                       postsSearchRequest: ExtendedRequestSearchItem?): Either<ExtendedSearchResponse, ApiResponseError>
 }
 

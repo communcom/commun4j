@@ -1,7 +1,6 @@
 import io.golos.commun4j.model.FeedTimeFrame
 import io.golos.commun4j.model.FeedType
 import io.golos.commun4j.services.model.*
-import io.golos.commun4j.sharedmodel.CyberName
 import io.golos.commun4j.sharedmodel.Either
 import io.golos.commun4j.utils.StringSigner
 import org.junit.Assert.assertTrue
@@ -200,6 +199,17 @@ class ServicesFetchTest {
     private fun getRandomNullableInt() = if (Random.nextDouble() > 0.5) (100 * Random.nextDouble()).toInt().let {
         if (it == 0) 1 else it
     } else null
+
+    @Test
+    fun searchTest() {
+        val quickSearch = client.quickSearch("s", 500, listOf(SearchableEntities.POSTS, SearchableEntities.PROFILES, SearchableEntities.COMMUNITIES)).getOrThrow()
+
+        val extendedSearchRequestSearch = client.extendedSearch("s",
+                ExtendedRequestSearchItem(100, 0),
+                ExtendedRequestSearchItem(100, 0),
+                ExtendedRequestSearchItem(100, 0)).getOrThrow()
+        print(quickSearch)
+    }
 
 
 }

@@ -26,7 +26,11 @@ enum class TransferHistoryTransferType {
     TRANSFER,
     @Json(name = "convert")
     CONVERT,
+    @Json(name = "token")
+    TOKEN,
     @Json(name = "none")
+    POINT,
+    @Json(name = "point")
     NONE;
 }
 
@@ -35,17 +39,17 @@ data class GetTransferHistoryResponse(val items: List<GetTransferHistoryResponse
 
 @JsonClass(generateAdapter = true)
 data class GetTransferHistoryResponseItem(val id: String, val sender: TransferHistorySender, val receiver: TransferHistoryReceiver,
-                                          val quantity: Double, val symbol: CyberSymbolCode, val point: TransferHistoryPoint,
+                                          val quantity: Double, val symbol: CyberSymbolCode, val point: TransferHistoryPoint?,
                                           val trxId: String, val memo: String?, val timestamp: Date, val meta: TransferHistoryMeta)
 
 @JsonClass(generateAdapter = true)
 data class TransferHistorySender(val userId: CyberName, val username: String?, val avatarUrl: String?)
 
 @JsonClass(generateAdapter = true)
-data class TransferHistoryReceiver(val userId: CyberName)
+data class TransferHistoryReceiver(val userId: CyberName, val avatarUrl: String?, val username: String?)
 
 @JsonClass(generateAdapter = true)
-data class TransferHistoryPoint(val name: String, val logo: String?, val symbol: CyberSymbolCode)
+data class TransferHistoryPoint(val name: String?, val logo: String?, val symbol: CyberSymbolCode?)
 
 @JsonClass(generateAdapter = true)
-data class TransferHistoryMeta(val actionType: String, val transferType: TransferHistoryTransferType?, val exchangeAmount: Double?, val direction: TransferHistoryDirection)
+data class TransferHistoryMeta(val actionType: String, val transferType: TransferHistoryTransferType?, val exchangeAmount: Double?, val holdType: String?, val direction: TransferHistoryDirection)

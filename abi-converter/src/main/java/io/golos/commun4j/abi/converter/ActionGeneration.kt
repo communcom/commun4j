@@ -10,7 +10,6 @@ import io.golos.commun4j.chain.actions.transaction.abi.TransactionAuthorizationA
 import io.golos.commun4j.core.crypto.EosPrivateKey
 import io.golos.commun4j.sharedmodel.Commun4jConfig
 import io.golos.commun4j.sharedmodel.EosAbi
-import jdk.nashorn.internal.codegen.types.Type
 
 const val contractNameProperty = "contractName"
 

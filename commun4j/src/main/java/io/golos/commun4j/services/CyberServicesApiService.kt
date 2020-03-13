@@ -30,7 +30,8 @@ private enum class ServicesGateMethods {
     RESOLVE_USERNAME, PROVIDE_BANDWIDTH, GET_COMMUNITIES, GET_COMMUNITIY, GET_POSTS, GET_BALANCE, GET_TRANSFER_HISTORY, GET_TOKENS_INFO,
     GET_LEADERS, GET_COMMUNITY_BLACKLIST, GET_BLACKLIST, GET_COMMENT_VOTES, GET_POST_VOTES, GET_NOTIFY_META,
     GET_ENTITY_REPORTS, GET_REPORTS, SUGGEST_NAMES, ONBOARDING_COMMUNITY_SUBSCRIPTION, GET_NOTIFICATIONS,
-    GET_NOTIFICATIONS_STATUS, GET_BULK, SUBSCRIBE_NOTIFICATIONS, UN_SUBSCRIBE_NOTIFICATIONS, GET_COIN_BUY_PRICE, GET_COIN_SELL_PRICE;
+    GET_NOTIFICATIONS_STATUS, GET_BULK, SUBSCRIBE_NOTIFICATIONS, UN_SUBSCRIBE_NOTIFICATIONS, GET_COIN_BUY_PRICE, GET_COIN_SELL_PRICE,
+    GET_CONFIG, SEARCH_QUICK, SEARCH_EXTENDED;
 
     override fun toString(): String {
         return when (this) {
@@ -84,6 +85,9 @@ private enum class ServicesGateMethods {
             UN_SUBSCRIBE_NOTIFICATIONS -> "notifications.unsubscribe"
             GET_COIN_BUY_PRICE -> "wallet.getBuyPrice"
             GET_COIN_SELL_PRICE -> "wallet.getSellPrice"
+            GET_CONFIG -> "config.getConfig"
+            SEARCH_QUICK -> "content.quickSearch"
+            SEARCH_EXTENDED -> "content.extendedSearch"
         }
     }
 }
@@ -115,6 +119,13 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                                 .withSubtype(TransferNotification::class.java, "transfer")
                                 .withSubtype(RewardNotification::class.java, "reward")
                 )
+                .add(
+                        PolymorphicJsonAdapterFactory.of(QuickSearchResponseItem::class.java, "type")
+                                .withSubtype(QuickSearchCommunityItem::class.java, "community")
+                                .withSubtype(QuickSearchProfileItem::class.java, "profile")
+                                .withSubtype(QuickSearchCommentItem::class.java, "comment")
+                                .withSubtype(QuickSearchPostItem::class.java, "post")
+                )
                 .add(EventType::class.java, EventTypeAdapter())
                 .add(CyberAsset::class.java, CyberAssetAdapter())
                 .add(CyberSymbolCode::class.java, CyberSymbolCodeAdapter())
@@ -132,7 +143,8 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         },
         private val apiClient: SocketClient = SocketClientImpl(
                 "${config.servicesUrl}?platform=${config.socketOpenQueryParams.platform}&" +
-                        "deviceType=${config.socketOpenQueryParams.deviceType}&clientType=${config.socketOpenQueryParams.clientType}",
+                        "deviceType=${config.socketOpenQueryParams.deviceType}" +
+                        "&clientType=${config.socketOpenQueryParams.clientType}&version=${config.socketOpenQueryParams.version}",
                 moshi,
                 serverMessageCallback,
                 config.readTimeoutInSeconds,
@@ -705,6 +717,24 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     override fun getSellPrice(quantity: WalletQuantity): Either<GetWalletSellPriceResponse, ApiResponseError> {
         val request = GetWalletSellPriceRequest(quantity)
         return apiClient.send(ServicesGateMethods.GET_COIN_SELL_PRICE.toString(), request, GetWalletSellPriceResponse::class.java)
+    }
+
+    override fun getConfig(): Either<GetConfigResponse, ApiResponseError> {
+        val request = GetConfigRequest()
+        return apiClient.send(ServicesGateMethods.GET_CONFIG.toString(), request, GetConfigResponse::class.java)
+    }
+
+    override fun quickSearch(queryString: String, limit: Int?, entities: List<SearchableEntities>?): Either<QuickSearchResponse, ApiResponseError> {
+        val request = QuickSearchRequest(queryString, limit, entities?.map { it.toString() })
+        return apiClient.send(ServicesGateMethods.SEARCH_QUICK.toString(), request, QuickSearchResponse::class.java)
+    }
+
+    override fun extendedSearch(queryString: String,
+                                profilesSearchRequest: ExtendedRequestSearchItem?,
+                                communitiesSearchRequest: ExtendedRequestSearchItem?,
+                                postsSearchRequest: ExtendedRequestSearchItem?): Either<ExtendedSearchResponse, ApiResponseError> {
+        val request = ExtendedSearchRequest(queryString, ExtendedSearchRequestEntities(profilesSearchRequest, communitiesSearchRequest, postsSearchRequest))
+        return apiClient.send(ServicesGateMethods.SEARCH_EXTENDED.toString(), request, ExtendedSearchResponse::class.java)
     }
 
     override fun shutDown() {

@@ -37,7 +37,8 @@ run {
             "c.emit",
             "c.list",
             "c.gallery", 
-            "c.social"]
+            "c.social",
+            "c.recover"]
 }
 
 assemble.dependsOn run

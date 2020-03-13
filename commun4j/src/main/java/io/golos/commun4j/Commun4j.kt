@@ -133,6 +133,7 @@ open class Commun4j @JvmOverloads constructor(
     }
 
     /**method sets  nickname for active user. Method assumes, that there is some active user in [keyStorage]
+     * cyber.domain@newusername action
      * Nick must match [0-9a-z.-]{1,32}
      * @param owner owner of domain
      * @param newUserName new nickName for user
@@ -156,6 +157,8 @@ open class Commun4j @JvmOverloads constructor(
                 null)
     }
 
+    /** c.gallery@create action
+     * */
     @JvmOverloads
     fun createPost(
             communCode: CyberSymbolCode,
@@ -185,7 +188,8 @@ open class Commun4j @JvmOverloads constructor(
                 clientAuthRequest)
     }
 
-
+    /** c.gallery@create action
+     * */
     @JvmOverloads
     fun createComment(
             parentMssgId: MssgidCGalleryStruct,
@@ -216,7 +220,8 @@ open class Commun4j @JvmOverloads constructor(
                 clientAuthRequest)
     }
 
-
+    /** c.gallery@update action
+     * */
     @JvmOverloads
     fun updatePostOrComment(
             messageId: MssgidCGalleryStruct,
@@ -242,7 +247,8 @@ open class Commun4j @JvmOverloads constructor(
                 bandWidthRequest, clientAuthRequest)
     }
 
-
+    /** c.gallery@remove action
+     * */
     @JvmOverloads
     fun deletePostOrComment(
             messageId: MssgidCGalleryStruct,
@@ -259,7 +265,8 @@ open class Commun4j @JvmOverloads constructor(
 
     }
 
-
+    /** c.gallery@upvote action
+     * */
     @JvmOverloads
     fun upVote(communCode: CyberSymbolCode,
                messageId: MssgidCGalleryStruct,
@@ -277,6 +284,8 @@ open class Commun4j @JvmOverloads constructor(
 
     }
 
+    /** c.gallery@downvote action
+     * */
     @JvmOverloads
     fun downVote(communCode: CyberSymbolCode,
                  messageId: MssgidCGalleryStruct,
@@ -293,6 +302,8 @@ open class Commun4j @JvmOverloads constructor(
         ), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
+    /** c.gallery@unvote action
+     * */
     @JvmOverloads
     fun unVote(communCode: CyberSymbolCode,
                messageId: MssgidCGalleryStruct,
@@ -308,6 +319,8 @@ open class Commun4j @JvmOverloads constructor(
         )), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
+    /** c.social@pin action
+     * */
     @JvmOverloads
     fun pinUser(pinning: CyberName,
                 bandWidthRequest: BandWidthRequest? = null,
@@ -321,6 +334,8 @@ open class Commun4j @JvmOverloads constructor(
 
     }
 
+    /** c.social@unpin action
+     * */
     @JvmOverloads
     fun unpinUser(unpinning: CyberName,
                   bandWidthRequest: BandWidthRequest? = null,
@@ -336,6 +351,8 @@ open class Commun4j @JvmOverloads constructor(
 
     }
 
+    /** c.listl@follow action
+     * */
     @JvmOverloads
     fun followCommunity(communityCode: CyberSymbolCode,
                         bandWidthRequest: BandWidthRequest? = null,
@@ -352,6 +369,8 @@ open class Commun4j @JvmOverloads constructor(
 
     }
 
+    /** c.listl@unfollow action
+     * */
     @JvmOverloads
     fun unFollowCommunity(communityCode: CyberSymbolCode,
                           bandWidthRequest: BandWidthRequest? = null,
@@ -365,7 +384,8 @@ open class Commun4j @JvmOverloads constructor(
         )), TransactionAuthorizationAbi(follower.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
-
+    /** c.sociall@block action
+     * */
     @JvmOverloads
     fun block(blocking: CyberName,
               bandWidthRequest: BandWidthRequest? = null,
@@ -378,6 +398,8 @@ open class Commun4j @JvmOverloads constructor(
         )), TransactionAuthorizationAbi(blocker.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
+    /** c.sociall@unblock action
+     * */
     @JvmOverloads
     fun unBlock(blocking: CyberName,
                 bandWidthRequest: BandWidthRequest? = null,
@@ -390,11 +412,13 @@ open class Commun4j @JvmOverloads constructor(
         )), TransactionAuthorizationAbi(blocker.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
+    /** c.list@ban action
+     * */
     @JvmOverloads
     fun banUserFromCommunity(communCode: CyberSymbolCode,
                              reason: String,
                              account: CyberName,
-                             actor: CyberName  = keyStorage.getActiveAccount(),
+                             actor: CyberName = keyStorage.getActiveAccount(),
                              bandWidthRequest: BandWidthRequest? = null,
                              clientAuthRequest: ClientAuthRequest? = null,
                              key: String = keyStorage.getActiveKeyOfActiveAccount()
@@ -404,11 +428,13 @@ open class Commun4j @JvmOverloads constructor(
         )), TransactionAuthorizationAbi(actor.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
+    /** c.list@unban action
+     * */
     @JvmOverloads
     fun unBanUserFromCommunity(communCode: CyberSymbolCode,
                                reason: String,
                                account: CyberName,
-                               actor: CyberName  = keyStorage.getActiveAccount(),
+                               actor: CyberName = keyStorage.getActiveAccount(),
                                bandWidthRequest: BandWidthRequest? = null,
                                clientAuthRequest: ClientAuthRequest? = null,
                                key: String = keyStorage.getActiveKeyOfActiveAccount()
@@ -418,6 +444,8 @@ open class Commun4j @JvmOverloads constructor(
         )), TransactionAuthorizationAbi(actor.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
+    /** c.list@hide action
+     * */
     @JvmOverloads
     fun hide(communCode: CyberSymbolCode,
              user: CyberName = keyStorage.getActiveAccount(),
@@ -432,6 +460,8 @@ open class Commun4j @JvmOverloads constructor(
         )), TransactionAuthorizationAbi(user.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
+    /** c.list@unhide action
+     * */
     @JvmOverloads
     fun unHide(communCode: CyberSymbolCode,
                user: CyberName = keyStorage.getActiveAccount(),
@@ -444,6 +474,8 @@ open class Commun4j @JvmOverloads constructor(
         )), TransactionAuthorizationAbi(user.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
+    /** c.social@updatemeta action
+     * */
     @JvmOverloads
     fun updateUserMetadata(
             avatarUrl: String?,
@@ -477,6 +509,8 @@ open class Commun4j @JvmOverloads constructor(
         )), TransactionAuthorizationAbi(user.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
+    /** c.social@deletemeta action
+     * */
     @JvmOverloads
     fun deleteUserMetadata(
             bandWidthRequest: BandWidthRequest? = null,
@@ -489,6 +523,8 @@ open class Commun4j @JvmOverloads constructor(
         )), TransactionAuthorizationAbi(user.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
+    /** c.gallery@report action
+     * */
     @JvmOverloads
     fun reportContent(
             communityCode: CyberSymbolCode,
@@ -504,6 +540,8 @@ open class Commun4j @JvmOverloads constructor(
         )), TransactionAuthorizationAbi(reporter.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
 
+    /** c.ctrl@voteleader action
+     * */
     @JvmOverloads
     fun voteLeader(communCode: CyberSymbolCode,
                    leader: CyberName,
@@ -516,6 +554,8 @@ open class Commun4j @JvmOverloads constructor(
         )), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, null)
     }
 
+    /** c.ctrl@unvotelead action
+     * */
     @JvmOverloads
     fun unVoteLeader(communCode: CyberSymbolCode,
                      leader: CyberName,
@@ -574,6 +614,10 @@ open class Commun4j @JvmOverloads constructor(
             allowNsfw, type?.toString(),
             sortBy?.toString(),
             timeframe?.toString(), limit, offset)
+
+    fun getIframelyEmbed(forLink: String): Either<IFramelyEmbedResult, ApiResponseError> = apiService.getIframelyEmbed(forLink)
+
+    fun getOEmdedEmbed(forLink: String): Either<OEmbedResult, ApiResponseError> = apiService.getOEmdedEmbed(forLink)
 
     fun getComment(userId: CyberName, communityId: String, permlink: String): Either<CyberComment, ApiResponseError> =
             apiService.getComment(userId.name, communityId, permlink)
@@ -634,6 +678,8 @@ open class Commun4j @JvmOverloads constructor(
                       offset: Int? = null): Either<GetReportsResponseRaw, ApiResponseError> = apiService.getReportsRaw(communityIds, status, contentType, sortBy, limit, offset)
 
     fun suggestNames(text: String): Either<SuggestNameResponse, ApiResponseError> = apiService.suggestNames(text)
+
+    fun getConfig() = apiService.getConfig()
 
     @JvmOverloads
     fun getNotifications(limit: Int? = 20, beforeThan: String? = null, filter: List<GetNotificationsFilter>? = null): Either<GetNotificationsResponse, ApiResponseError> = apiService.getNotifications(limit, beforeThan, filter)
@@ -773,6 +819,13 @@ open class Commun4j @JvmOverloads constructor(
      * */
     fun unAuth() = apiService.unAuth()
 
+    fun quickSearch(queryString: String, limit: Int?, entities: List<SearchableEntities>?): Either<QuickSearchResponse, ApiResponseError> = apiService.quickSearch(queryString, limit, entities)
+
+    fun extendedSearch(queryString: String,
+                       profilesSearchRequest: ExtendedRequestSearchItem?,
+                       communitiesSearchRequest: ExtendedRequestSearchItem?,
+                       postsSearchRequest: ExtendedRequestSearchItem?): Either<ExtendedSearchResponse, ApiResponseError> = apiService.extendedSearch(queryString, profilesSearchRequest, communitiesSearchRequest, postsSearchRequest)
+
 
     /** method for fetching  account of some user
      * @param user name of user, which account is  fetched
@@ -845,6 +898,8 @@ open class Commun4j @JvmOverloads constructor(
 
     }
 
+    /** cyber.token@transfer action
+     * */
     @JvmOverloads
     fun exchange(
             to: CyberName,
@@ -867,6 +922,8 @@ open class Commun4j @JvmOverloads constructor(
 
     }
 
+    /** c.point@transfer action
+     * */
     @JvmOverloads
     fun transfer(
             to: CyberName,
@@ -888,6 +945,8 @@ open class Commun4j @JvmOverloads constructor(
         ), TransactionAuthorizationAbi(from.name, "active"), key, bandWidthRequest, null)
     }
 
+    /** cyber.token@open action
+     * */
     fun openBalance(symbol: CyberSymbol,
                     ramPayer: CyberName,
                     owner: CyberName = keyStorage.getActiveAccount(),

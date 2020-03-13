@@ -24,8 +24,9 @@ data class Commun4jConfig @JvmOverloads constructor(val blockChainHttpApiUrl: St
                                                     val logLevel: LogLevel = LogLevel.BODY,
                                                     val httpLogger: HttpLoggingInterceptor.Logger? = HttpLoggingInterceptor.Logger.DEFAULT,
                                                     val socketLogger: HttpLoggingInterceptor.Logger? = null,
-                                                    val socketOpenQueryParams: SocketOpenQueryParams = SocketOpenQueryParams())
+                                                    val socketOpenQueryParams: SocketOpenQueryParams)
 
-data class SocketOpenQueryParams(val deviceType: String = "phone",
-                                 val platform: String = "android",
-                                 val clientType: String = "app")
+data class SocketOpenQueryParams @JvmOverloads constructor(val version: String,
+                                                           val deviceType: String = "phone",
+                                                           val platform: String = "android",
+                                                           val clientType: String = "app")
