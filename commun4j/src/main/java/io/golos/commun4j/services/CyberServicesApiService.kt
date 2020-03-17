@@ -188,10 +188,9 @@ internal class CyberServicesApiService @JvmOverloads constructor(
             GetCommunitiesRequest(type, userId, search, offset, limit),
             GetCommunitiesResponse::class.java)
 
-    override fun getCommunity(communityId: String) = apiClient.send(
+    override fun getCommunity(communityId: String?, communityAlias: String?) = apiClient.send(
             ServicesGateMethods.GET_COMMUNITIY.toString(),
-            hashMapOf(
-                    "communityId" to communityId),
+            GetCommunityRequest(communityId, communityAlias),
             GetCommunitiesItem::class.java)
 
 

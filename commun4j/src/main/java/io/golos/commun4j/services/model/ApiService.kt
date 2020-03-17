@@ -79,7 +79,7 @@ interface ApiService : ServicesTransactionPushService {
 
     fun getCommunitiesList(type: String?, userId: String?, search: String?, offset: Int?, limit: Int?): Either<GetCommunitiesResponse, ApiResponseError>
 
-    fun getCommunity(communityId: String): Either<GetCommunitiesItem, ApiResponseError>
+    fun getCommunity(communityId: String?, communityAlias: String?): Either<GetCommunitiesItem, ApiResponseError>
 
     fun shutDown()
 

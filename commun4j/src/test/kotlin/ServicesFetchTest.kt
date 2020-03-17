@@ -42,9 +42,13 @@ class ServicesFetchTest {
 
         val community = (getCommunitiesResult as Either.Success).value.items[0]
 
-        val getComnityResult = client.getCommunity(community.communityId)
+        val getComnityResult = client.getCommunity(community.communityId, null)
 
         assertTrue(getComnityResult is Either.Success)
+
+        val getComnityByAliasResult = client.getCommunity(null, community.alias)
+
+        assertTrue(getComnityByAliasResult is Either.Success)
     }
 
     @Test
