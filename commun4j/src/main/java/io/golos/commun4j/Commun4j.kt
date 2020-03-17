@@ -13,6 +13,7 @@ import io.golos.commun4j.abi.implementation.c.gallery.*
 import io.golos.commun4j.abi.implementation.c.list.*
 import io.golos.commun4j.abi.implementation.c.point.TransferArgsCPointStruct
 import io.golos.commun4j.abi.implementation.c.point.TransferCPointAction
+import io.golos.commun4j.abi.implementation.c.point.TransferCPointStruct
 import io.golos.commun4j.abi.implementation.c.social.*
 import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainAction
 import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainStruct
@@ -275,10 +276,10 @@ open class Commun4j @JvmOverloads constructor(
                clientAuthRequest: ClientAuthRequest? = null,
                voter: CyberName = keyStorage.getActiveAccount(),
                key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<VoteCGalleryStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<UpvoteCGalleryStruct>, GolosEosError> {
 
 
-        return pushTransaction<VoteCGalleryStruct>(UpvoteCGalleryAction(VoteCGalleryStruct(communCode,
+        return pushTransaction(UpvoteCGalleryAction(UpvoteCGalleryStruct(communCode,
                 voter, messageId, weight)
         ), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, clientAuthRequest)
 
@@ -294,10 +295,10 @@ open class Commun4j @JvmOverloads constructor(
                  clientAuthRequest: ClientAuthRequest? = null,
                  voter: CyberName = keyStorage.getActiveAccount(),
                  key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<VoteCGalleryStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<DownvoteCGalleryStruct>, GolosEosError> {
 
 
-        return pushTransaction<VoteCGalleryStruct>(DownvoteCGalleryAction(VoteCGalleryStruct(communCode,
+        return pushTransaction(DownvoteCGalleryAction(DownvoteCGalleryStruct(communCode,
                 voter, messageId, weight)
         ), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
@@ -342,10 +343,10 @@ open class Commun4j @JvmOverloads constructor(
                   clientAuthRequest: ClientAuthRequest? = null,
                   pinner: CyberName = keyStorage.getActiveAccount(),
                   key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<PinCSocialStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<UnpinCSocialStruct>, GolosEosError> {
 
 
-        return pushTransaction<PinCSocialStruct>(UnpinCSocialAction(PinCSocialStruct(
+        return pushTransaction(UnpinCSocialAction(UnpinCSocialStruct(
                 pinner, unpinning
         )), TransactionAuthorizationAbi(pinner.name, "active"), key, bandWidthRequest, clientAuthRequest)
 
@@ -377,9 +378,9 @@ open class Commun4j @JvmOverloads constructor(
                           clientAuthRequest: ClientAuthRequest? = null,
                           follower: CyberName = keyStorage.getActiveAccount(),
                           key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<FollowCListStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<UnfollowCListStruct>, GolosEosError> {
 
-        return pushTransaction<FollowCListStruct>(UnfollowCListAction(FollowCListStruct(
+        return pushTransaction(UnfollowCListAction(UnfollowCListStruct(
                 communityCode, follower
         )), TransactionAuthorizationAbi(follower.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
@@ -406,8 +407,8 @@ open class Commun4j @JvmOverloads constructor(
                 clientAuthRequest: ClientAuthRequest? = null,
                 blocker: CyberName = keyStorage.getActiveAccount(),
                 key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<BlockCSocialStruct>, GolosEosError> {
-        return pushTransaction<BlockCSocialStruct>(UnblockCSocialAction(BlockCSocialStruct(
+    ): Either<TransactionCommitted<UnblockCSocialStruct>, GolosEosError> {
+        return pushTransaction(UnblockCSocialAction(UnblockCSocialStruct(
                 blocker, blocking
         )), TransactionAuthorizationAbi(blocker.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
@@ -438,8 +439,8 @@ open class Commun4j @JvmOverloads constructor(
                                bandWidthRequest: BandWidthRequest? = null,
                                clientAuthRequest: ClientAuthRequest? = null,
                                key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<BanCListStruct>, GolosEosError> {
-        return pushTransaction<BanCListStruct>(UnbanCListAction(BanCListStruct(
+    ): Either<TransactionCommitted<UnbanCListStruct>, GolosEosError> {
+        return pushTransaction(UnbanCListAction(UnbanCListStruct(
                 communCode, account, reason
         )), TransactionAuthorizationAbi(actor.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
@@ -452,10 +453,10 @@ open class Commun4j @JvmOverloads constructor(
              bandWidthRequest: BandWidthRequest? = null,
              clientAuthRequest: ClientAuthRequest? = null,
              key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<FollowCListStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<HideCListStruct>, GolosEosError> {
 
 
-        return pushTransaction<FollowCListStruct>(HideCListAction(FollowCListStruct(
+        return pushTransaction(HideCListAction(HideCListStruct(
                 communCode, user
         )), TransactionAuthorizationAbi(user.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
@@ -468,8 +469,8 @@ open class Commun4j @JvmOverloads constructor(
                bandWidthRequest: BandWidthRequest? = null,
                clientAuthRequest: ClientAuthRequest? = null,
                key: String = keyStorage.getActiveKeyOfActiveAccount()
-    ): Either<TransactionCommitted<FollowCListStruct>, GolosEosError> {
-        return pushTransaction<FollowCListStruct>(UnhideCListAction(FollowCListStruct(
+    ): Either<TransactionCommitted<UnhideCListStruct>, GolosEosError> {
+        return pushTransaction(UnhideCListAction(UnhideCListStruct(
                 communCode, user
         )), TransactionAuthorizationAbi(user.name, "active"), key, bandWidthRequest, clientAuthRequest)
     }
@@ -489,7 +490,7 @@ open class Commun4j @JvmOverloads constructor(
             lastName: String?,
             country: String?,
             city: String?,
-            birth_date: CyberTimeStampSeconds?,
+            birth_date: String?,
             instagram: String?,
             linkedin: String?,
             twitter: String?,
@@ -933,12 +934,12 @@ open class Commun4j @JvmOverloads constructor(
             bandWidthRequest: BandWidthRequest? = null,
             key: String = keyStorage.getActiveAccountKeys().find { it.first == AuthType.ACTIVE }!!.second,
             from: CyberName = keyStorage.getActiveAccount()
-    ): Either<TransactionCommitted<TransferArgsCPointStruct>, GolosEosError> {
+    ): Either<TransactionCommitted<TransferCPointStruct>, GolosEosError> {
 
         //  if (!amount.matches("([0-9]+\\.[0-9]{3})".toRegex())) throw IllegalArgumentException("wrong currency format. Must have 3 points precision, like 12.000 or 0.001")
 
-        return pushTransaction<TransferArgsCPointStruct>(TransferCPointAction(
-                TransferArgsCPointStruct(
+        return pushTransaction(TransferCPointAction(
+                TransferCPointStruct(
                         from, to,
                         CyberAsset("$amount $currency"), memo
                 )

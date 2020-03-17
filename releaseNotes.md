@@ -1,1 +1,1 @@
-added `c.recover` contracts
+updated contracts naming
