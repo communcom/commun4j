@@ -11,7 +11,6 @@ import io.golos.commun4j.abi.implementation.c.ctrl.VoteleaderCCtrlAction
 import io.golos.commun4j.abi.implementation.c.ctrl.VoteleaderCCtrlStruct
 import io.golos.commun4j.abi.implementation.c.gallery.*
 import io.golos.commun4j.abi.implementation.c.list.*
-import io.golos.commun4j.abi.implementation.c.point.TransferArgsCPointStruct
 import io.golos.commun4j.abi.implementation.c.point.TransferCPointAction
 import io.golos.commun4j.abi.implementation.c.point.TransferCPointStruct
 import io.golos.commun4j.abi.implementation.c.social.*

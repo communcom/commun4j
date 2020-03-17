@@ -2,7 +2,6 @@ package io.golos.commun4j.model
 
 import io.golos.commun4j.abi.implementation.IAction
 import io.golos.commun4j.abi.implementation.c.gallery.*
-import io.golos.commun4j.abi.implementation.c.point.OpenArgsCPointStruct
 import io.golos.commun4j.abi.implementation.c.point.OpenCPointStruct
 import io.golos.commun4j.utils.toCyberName
 
