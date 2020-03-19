@@ -27,7 +27,7 @@ compileTestKotlin {
 dependencies {
     compileOnly project(":abi-converter")
 
-    kapt project(path:":eos-abi-writer-preprocessor", configuration: 'default')
+    kapt project(path: ":eos-abi-writer-preprocessor", configuration: 'default')
     implementation project(":shared-model")
     implementation project(":eos-abi-writer")
     implementation project(":eos-chain-actions")
@@ -41,5 +41,24 @@ dependencies {
 }
 
 apply from: '../publish.gradle'
+
+task cleanGeneratedAbi {
+    doLast {
+        def kotlinDir = project.sourceSets.main.kotlin.srcDirs.iterator().next()
+        kotlinDir.listFiles().each { deleteDirectory(it) }
+    }
+}
+
+clean.dependsOn cleanGeneratedAbi
+
+boolean deleteDirectory(File directoryToBeDeleted) {
+    File[] allContents = directoryToBeDeleted.listFiles();
+    if (allContents != null) {
+        for (File file : allContents) {
+            deleteDirectory(file);
+        }
+    }
+    return directoryToBeDeleted.delete();
+}
 
 
