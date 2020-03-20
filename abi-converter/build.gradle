@@ -25,7 +25,7 @@ application {
 run {
     args = ["${project.sourceSets.main.kotlin.srcDirs.first()}".replace("abi-converter", "abi-implementation"),
             buildDir,
-            "http://88.198.201.238:8888",
+            "http://116.202.4.46:8888/",
             "cyber",
             "cyber.token",
             "cyber.domain",
@@ -37,8 +37,7 @@ run {
             "c.emit",
             "c.list",
             "c.gallery", 
-            "c.social",
-            "c.recover"]
+            "c.social"]
 }
 
 assemble.dependsOn run

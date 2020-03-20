@@ -1,1 +1,1 @@
-updated contracts naming
+added `UserRegistrationState.CREATE_IDENTITY` in `UserRegistrationState` enum

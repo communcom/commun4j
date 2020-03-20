@@ -29,15 +29,15 @@ interface ApiService : ServicesTransactionPushService {
 
     fun getOEmdedEmbed(forLink: String): Either<OEmbedResult, ApiResponseError>
 
-    fun getRegistrationStateOf(userId: String?, phone: String?): Either<UserRegistrationStateResult, ApiResponseError>
+    fun getRegistrationStateOf(userId: String?, phone: String?, identity: String?): Either<UserRegistrationStateResult, ApiResponseError>
 
     fun firstUserRegistrationStep(captcha: String?, phone: String, testingPass: String?): Either<FirstRegistrationStepResult, ApiResponseError>
 
     fun verifyPhoneForUserRegistration(phone: String, code: Int): Either<VerifyStepResult, ApiResponseError>
 
-    fun setVerifiedUserName(user: String, phone: String): Either<SetUserNameStepResult, ApiResponseError>
+    fun setVerifiedUserName(user: String, phone: String?, identity: String?): Either<SetUserNameStepResult, ApiResponseError>
 
-    fun writeUserToBlockchain(phone: String, userId: String, userName: String, owner: String, active: String): Either<WriteToBlockChainStepResult, ApiResponseError>
+    fun writeUserToBlockchain(phone: String?, identity: String?, userId: String, userName: String, owner: String, active: String): Either<WriteToBlockChainStepResult, ApiResponseError>
 
     fun resendSmsCode(name: String?, phone: String?): Either<ResultOk, ApiResponseError>
 

@@ -471,11 +471,12 @@ internal class CyberServicesApiService @JvmOverloads constructor(
 
     override fun getRegistrationStateOf(
             userId: String?,
-            phone: String?
+            phone: String?,
+            identity: String?
     ): Either<UserRegistrationStateResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_REGISTRATION_STATE.toString(),
-                RegistrationStateRequest(userId, phone), UserRegistrationStateResult::class.java
+                RegistrationStateRequest(userId, phone, identity), UserRegistrationStateResult::class.java
         )
     }
 
@@ -497,15 +498,16 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun setVerifiedUserName(user: String, phone: String): Either<SetUserNameStepResult, ApiResponseError> {
+    override fun setVerifiedUserName(user: String, phone: String?, identity: String?): Either<SetUserNameStepResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_SET_USER_NAME.toString(),
-                RegistrationStateRequest(user, phone), SetUserNameStepResult::class.java
+                SetVerifiedUserNameRequest(user, phone, identity), SetUserNameStepResult::class.java
         )
     }
 
     override fun writeUserToBlockchain(
-            phone: String,
+            phone: String?,
+            identity: String?,
             userId: String,
             userName: String,
             owner: String,
@@ -513,7 +515,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     ): Either<WriteToBlockChainStepResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_WRITE_TO_BLOCKCHAIN.toString(),
-                WriteUserToBlockchainRequest(phone, userName, userId, owner, active),
+                WriteUserToBlockchainRequest(phone, identity, userName, userId, owner, active),
                 WriteToBlockChainStepResult::class.java
         )
     }
