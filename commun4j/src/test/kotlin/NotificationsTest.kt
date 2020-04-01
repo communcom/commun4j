@@ -1,4 +1,5 @@
 import io.golos.commun4j.services.model.GetNotificationsFilter
+import io.golos.commun4j.services.model.UnsupportedNotification
 import org.junit.Test
 
 class NotificationsTest {
@@ -7,12 +8,9 @@ class NotificationsTest {
 
         val client = getClient(authInServices = true)
 
-        val ntfs = client.getNotifications(100).getOrThrow()
 
-        client.getNotificationsSkipUnrecognized(filter = GetNotificationsFilter.values().toList()).getOrThrow()
-        client.getNotificationsSkipUnrecognized(filter = listOf(GetNotificationsFilter.MENTION)).getOrThrow()
-
-        client.getNotificationsStatus().getOrThrow()
-        client.markAllNotificationAsViewed(client.getNotificationsSkipUnrecognized().getOrThrow().lastNotificationTimestamp!!).getOrThrow()
+        val ntfs = client.getNotificationsSkipUnrecognized(limit = 170).getOrThrow()
+        println(ntfs.size)
+        println(ntfs.filterIsInstance<UnsupportedNotification>())
     }
 }

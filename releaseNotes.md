@@ -1,1 +1,1 @@
-added `ReferralRegistrationBonusNotification` and `ReferralPurchaseBonusNotification`
+`UnsupportedNotification` for `Commun4j::getNotificationsSkipUnrecognized` 

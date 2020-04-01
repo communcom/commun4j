@@ -1,14 +1,13 @@
 package io.golos.commun4j.services.model
 
 import com.squareup.moshi.JsonClass
-import io.golos.commun4j.sharedmodel.CyberAsset
 import io.golos.commun4j.sharedmodel.CyberName
 import io.golos.commun4j.sharedmodel.CyberSymbolCode
 import java.math.BigInteger
 import java.util.*
 
 enum class GetNotificationsFilter {
-    SUBSCRIBE, UPVOTE, REPLY, MENTION;
+    SUBSCRIBE, UPVOTE, REPLY, MENTION, TRANSFER, REWARD, REFERRAL_REG_BONUS, REFERRAL_PURCH_BONUS;
 
     override fun toString(): String {
         return when (this) {
@@ -16,6 +15,10 @@ enum class GetNotificationsFilter {
             UPVOTE -> "upvote"
             REPLY -> "reply"
             MENTION -> "mention"
+            TRANSFER -> "transfer"
+            REWARD -> "reward"
+            REFERRAL_REG_BONUS->"referralRegistrationBonus"
+            REFERRAL_PURCH_BONUS -> "referralPurchaseBonus"
         }
     }
 }
@@ -135,21 +138,24 @@ data class RewardNotification(val eventType: String,
 
 @JsonClass(generateAdapter = true)
 data class ReferralRegistrationBonusNotification(val eventType: String,
-                                     val id: String,
-                                     val timestamp: Date,
-                                     val userId: CyberName,
-                                     val from: NotificationUserDescription,
-                                     val amount: Double,
-                                     val pointType: String,
-                                     val isNew: Boolean): Notification(eventType, id)
-
-@JsonClass(generateAdapter = true)
-data class ReferralPurchaseBonusNotification(val eventType: String,
                                                  val id: String,
                                                  val timestamp: Date,
                                                  val userId: CyberName,
                                                  val from: NotificationUserDescription,
                                                  val amount: Double,
                                                  val pointType: String,
-                                                 val percent: Int,
-                                                 val isNew: Boolean): Notification(eventType, id)
+                                                 val isNew: Boolean) : Notification(eventType, id)
+
+@JsonClass(generateAdapter = true)
+data class ReferralPurchaseBonusNotification(val eventType: String,
+                                             val id: String,
+                                             val timestamp: Date,
+                                             val userId: CyberName,
+                                             val from: NotificationUserDescription,
+                                             val amount: Double,
+                                             val pointType: String,
+                                             val percent: Int,
+                                             val isNew: Boolean) : Notification(eventType, id)
+
+@JsonClass(generateAdapter = true)
+class UnsupportedNotification(eventType: String, id: String) : Notification(eventType, id)

@@ -20,7 +20,7 @@ class RegistrationTest {
 
     @Test
     fun testGetState() {
-        val state = client.getRegistrationState("+773217337584")
+        val state = client.getRegistrationState("+773217337584", null)
 
         assertTrue(state is Either.Success)
     }
@@ -35,26 +35,27 @@ class RegistrationTest {
 
         println(firstStepSuccess)
 
-        assertTrue(client.getRegistrationState(unExistingPhone) is Either.Success)
+        assertTrue(client.getRegistrationState(unExistingPhone, null) is Either.Success)
         val secondStep = client.verifyPhoneForUserRegistration(unExistingPhone, 1234)
 
         assertTrue(secondStep is Either.Success)
 
-        println(client.getRegistrationState(unExistingPhone).getOrThrow())
+        println(client.getRegistrationState(unExistingPhone, null).getOrThrow())
 
         println(secondStep)
 
-        val thirdStep = client.setVerifiedUserName(accName, unExistingPhone)
+        val thirdStep = client.setVerifiedUserName(accName, unExistingPhone, null)
 
         assertTrue(thirdStep is Either.Success)
 
-        println(client.getRegistrationState(unExistingPhone).getOrThrow())
+        println(client.getRegistrationState(unExistingPhone, null).getOrThrow())
 
         println(thirdStep)
 
         val keys = AuthUtils.generatePublicWiFs(accName, generatePass(), AuthType.values())
 
         val lastStep = client.writeUserToBlockChain(unExistingPhone,
+                null,
                 thirdStep.getOrThrow().userId.name,
                 accName,
                 keys[AuthType.OWNER]!!,
@@ -62,7 +63,7 @@ class RegistrationTest {
 
         assertTrue(lastStep is Either.Success)
 
-        assertTrue(client.getRegistrationState(unExistingPhone) is Either.Success)
+        assertTrue(client.getRegistrationState(unExistingPhone, null) is Either.Success)
 
         assertNotNull(lastStep.getOrThrow().userId)
         assertNotNull(lastStep.getOrThrow().username)

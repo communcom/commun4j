@@ -118,6 +118,8 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                                 .withSubtype(ReplyNotification::class.java, "reply")
                                 .withSubtype(TransferNotification::class.java, "transfer")
                                 .withSubtype(RewardNotification::class.java, "reward")
+                                .withSubtype(ReferralRegistrationBonusNotification::class.java, "referralRegistrationBonus")
+                                .withSubtype(ReferralPurchaseBonusNotification::class.java, "referralPurchaseBonus")
                 )
                 .add(
                         PolymorphicJsonAdapterFactory.of(QuickSearchResponseItem::class.java, "type")
@@ -638,12 +640,13 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         return if (resp is Either.Failure) resp as Either.Failure<GetNotificationsResponse, ApiResponseError>
         else (resp as Either.Success)
                 .value
-                .mapNotNull { rawNotification ->
+                .map { rawNotification ->
                     try {
-                        notificationsAdapter.fromJsonValue(rawNotification)
+                        notificationsAdapter.fromJsonValue(rawNotification)!!
                     } catch (e: java.lang.Exception) {
-                        e.printStackTrace()
-                        null
+                        val map = rawNotification as Map<*, *>
+                        UnsupportedNotification(map["eventType"] as? String ?: "unknown",
+                                map["id"] as? String ?: "unknown")
                     }
                 }
                 .run {
