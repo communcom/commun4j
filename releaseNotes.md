@@ -1,1 +1,1 @@
-added `UserRegistrationState.CREATE_IDENTITY` in `UserRegistrationState` enum
+added `ReferralRegistrationBonusNotification` and `ReferralPurchaseBonusNotification`

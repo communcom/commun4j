@@ -93,7 +93,7 @@ class SocketClientImpl(
 
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
         super.onFailure(webSocket, t, response)
-        System.err.println("socket failure $response")
+        logger?.log("socket failure $response")
         isSocketConnected.set(false)
         t.printStackTrace()
         latches.forEach(action = {
@@ -102,7 +102,7 @@ class SocketClientImpl(
     }
 
     override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-        System.err.println("socket is closing by $reason with code $code")
+        logger?.log("socket is closing by $reason with code $code")
         super.onClosing(webSocket, code, reason)
         latches.forEach(action = {
             it.value?.countDown()

@@ -120,6 +120,7 @@ data class TransferNotification(val eventType: String,
                                 val userId: CyberName,
                                 val amount: Double?,
                                 val pointType: String?,
+                                val community: NotificationCommunityDescription?,
                                 val isNew: Boolean) : Notification(eventType, id)
 
 @JsonClass(generateAdapter = true)
@@ -132,3 +133,23 @@ data class RewardNotification(val eventType: String,
                               val tracery: BigInteger?,
                               val isNew: Boolean) : Notification(eventType, id)
 
+@JsonClass(generateAdapter = true)
+data class ReferralRegistrationBonusNotification(val eventType: String,
+                                     val id: String,
+                                     val timestamp: Date,
+                                     val userId: CyberName,
+                                     val from: NotificationUserDescription,
+                                     val amount: Double,
+                                     val pointType: String,
+                                     val isNew: Boolean): Notification(eventType, id)
+
+@JsonClass(generateAdapter = true)
+data class ReferralPurchaseBonusNotification(val eventType: String,
+                                                 val id: String,
+                                                 val timestamp: Date,
+                                                 val userId: CyberName,
+                                                 val from: NotificationUserDescription,
+                                                 val amount: Double,
+                                                 val pointType: String,
+                                                 val percent: Int,
+                                                 val isNew: Boolean): Notification(eventType, id)
