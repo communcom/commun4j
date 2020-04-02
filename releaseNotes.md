@@ -1,1 +1,1 @@
-`UnsupportedNotification` for `Commun4j::getNotificationsSkipUnrecognized` 
+timeStamp field for `Notification`

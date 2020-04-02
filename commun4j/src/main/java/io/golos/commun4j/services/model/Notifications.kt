@@ -17,7 +17,7 @@ enum class GetNotificationsFilter {
             MENTION -> "mention"
             TRANSFER -> "transfer"
             REWARD -> "reward"
-            REFERRAL_REG_BONUS->"referralRegistrationBonus"
+            REFERRAL_REG_BONUS -> "referralRegistrationBonus"
             REFERRAL_PURCH_BONUS -> "referralPurchaseBonus"
         }
     }
@@ -41,7 +41,7 @@ data class GetNotificationsResponse(val items: List<Notification>, val lastNotif
 @JsonClass(generateAdapter = true)
 internal data class GetNotificationsRaw(val items: List<Any>, val lastNotificationTimestamp: String?) : List<Any> by items
 
-sealed class Notification(eventType: String, id: String)
+sealed class Notification(open val eventType: String, open val id: String, open val timestamp: Date)
 
 @JsonClass(generateAdapter = true)
 data class NotificationUserDescription(val userId: CyberName,
@@ -55,12 +55,12 @@ data class NotificationCommunityDescription(val communityId: CyberSymbolCode,
                                             val avatarUrl: String?)
 
 @JsonClass(generateAdapter = true)
-data class SubscribeNotification(val eventType: String,
-                                 val id: String,
-                                 val timestamp: Date,
+data class SubscribeNotification(override val eventType: String,
+                                 override val id: String,
+                                 override val timestamp: Date,
                                  val userId: CyberName,
                                  val user: NotificationUserDescription,
-                                 val isNew: Boolean) : Notification(eventType, id)
+                                 val isNew: Boolean) : Notification(eventType, id, timestamp)
 
 @JsonClass(generateAdapter = true)
 data class NotificationContentId(val communityId: CyberSymbolCode?,
@@ -80,82 +80,81 @@ data class NotificationEntityContentParents(val post: NotificationContentId?, va
 
 @JsonClass(generateAdapter = true)
 data class UpvoteNotification(
-        val eventType: String,
-        val id: String,
-        val timestamp: Date,
+        override val eventType: String,
+        override val id: String,
+        override val timestamp: Date,
         val community: NotificationCommunityDescription?,
         val userId: CyberName,
         val voter: NotificationUserDescription?,
         val entityType: String,
         val post: NotificationEntityContent?,
         val comment: NotificationEntityContent?,
-        val isNew: Boolean) : Notification(eventType, id)
+        val isNew: Boolean) : Notification(eventType, id, timestamp)
 
 @JsonClass(generateAdapter = true)
-data class MentionNotification(val eventType: String,
-                               val id: String,
-                               val timestamp: Date,
+data class MentionNotification(override val eventType: String,
+                               override val id: String,
+                               override val timestamp: Date,
                                val community: NotificationCommunityDescription?,
                                val userId: CyberName,
                                val author: NotificationUserDescription,
                                val entityType: String,
                                val post: NotificationEntityContent?,
                                val comment: NotificationEntityContent?,
-                               val isNew: Boolean) : Notification(eventType, id)
+                               val isNew: Boolean) : Notification(eventType, id, timestamp)
 
 @JsonClass(generateAdapter = true)
-data class ReplyNotification(val eventType: String,
-                             val id: String,
-                             val timestamp: Date,
+data class ReplyNotification(override val eventType: String,
+                             override val id: String,
+                             override val timestamp: Date,
                              val community: NotificationCommunityDescription?,
                              val userId: CyberName,
                              val author: NotificationUserDescription,
                              val entityType: String,
                              val post: NotificationEntityContent?,
                              val comment: NotificationEntityContent?,
-                             val isNew: Boolean) : Notification(eventType, id)
+                             val isNew: Boolean) : Notification(eventType, id, timestamp)
 
 @JsonClass(generateAdapter = true)
-data class TransferNotification(val eventType: String,
-                                val id: String,
-                                val timestamp: Date,
+data class TransferNotification(override val eventType: String,
+                                override val id: String,
+                                override val timestamp: Date,
                                 val from: NotificationUserDescription?,
                                 val userId: CyberName,
                                 val amount: Double?,
                                 val pointType: String?,
                                 val community: NotificationCommunityDescription?,
-                                val isNew: Boolean) : Notification(eventType, id)
+                                val isNew: Boolean) : Notification(eventType, id, timestamp)
 
 @JsonClass(generateAdapter = true)
-data class RewardNotification(val eventType: String,
-                              val id: String,
-                              val timestamp: Date,
+data class RewardNotification(override val eventType: String,
+                              override val id: String,
+                              override val timestamp: Date,
                               val community: NotificationCommunityDescription?,
                               val userId: CyberName,
                               val amount: Double,
                               val tracery: BigInteger?,
-                              val isNew: Boolean) : Notification(eventType, id)
+                              val isNew: Boolean) : Notification(eventType, id, timestamp)
 
 @JsonClass(generateAdapter = true)
-data class ReferralRegistrationBonusNotification(val eventType: String,
-                                                 val id: String,
-                                                 val timestamp: Date,
+data class ReferralRegistrationBonusNotification(override val eventType: String,
+                                                 override val id: String,
+                                                 override val timestamp: Date,
                                                  val userId: CyberName,
                                                  val from: NotificationUserDescription,
                                                  val amount: Double,
                                                  val pointType: String,
-                                                 val isNew: Boolean) : Notification(eventType, id)
+                                                 val isNew: Boolean) : Notification(eventType, id, timestamp)
 
 @JsonClass(generateAdapter = true)
-data class ReferralPurchaseBonusNotification(val eventType: String,
-                                             val id: String,
-                                             val timestamp: Date,
+data class ReferralPurchaseBonusNotification(override val eventType: String,
+                                             override val id: String,
+                                             override val timestamp: Date,
                                              val userId: CyberName,
                                              val from: NotificationUserDescription,
                                              val amount: Double,
                                              val pointType: String,
                                              val percent: Int,
-                                             val isNew: Boolean) : Notification(eventType, id)
+                                             val isNew: Boolean) : Notification(eventType, id, timestamp)
 
-@JsonClass(generateAdapter = true)
-class UnsupportedNotification(eventType: String, id: String) : Notification(eventType, id)
+class UnsupportedNotification(eventType: String, id: String, timestamp: Date, val rawData: Map<*, *>) : Notification(eventType, id, timestamp)

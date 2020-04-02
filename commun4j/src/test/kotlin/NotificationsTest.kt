@@ -10,7 +10,6 @@ class NotificationsTest {
 
 
         val ntfs = client.getNotificationsSkipUnrecognized(limit = 170).getOrThrow()
-        println(ntfs.size)
-        println(ntfs.filterIsInstance<UnsupportedNotification>())
+        ntfs.forEach { println(it.timestamp) }
     }
 }

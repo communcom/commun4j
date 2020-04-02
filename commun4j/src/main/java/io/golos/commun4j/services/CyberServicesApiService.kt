@@ -646,7 +646,9 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                     } catch (e: java.lang.Exception) {
                         val map = rawNotification as Map<*, *>
                         UnsupportedNotification(map["eventType"] as? String ?: "unknown",
-                                map["id"] as? String ?: "unknown")
+                                map["id"] as? String ?: "unknown",
+                                Date((map["timestamp"] as? Long) ?: 0L),
+                                rawNotification)
                     }
                 }
                 .run {
