@@ -9,6 +9,7 @@ import io.golos.commun4j.sharedmodel.Either
 import io.golos.commun4j.sharedmodel.SocketOpenQueryParams
 import io.golos.commun4j.utils.StringSigner
 import java.io.File
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 
@@ -17,7 +18,7 @@ enum class CONFIG_TYPE {
 }
 
 private val devConfig = Commun4jConfig(blockChainHttpApiUrl = BuildConfig.BLOCKCHAIN_DEV,
-        servicesUrl = BuildConfig.SERVICES_DEV, socketOpenQueryParams = SocketOpenQueryParams("1.0.0"))
+        servicesUrl = BuildConfig.SERVICES_DEV, socketOpenQueryParams = SocketOpenQueryParams("1.0.0", deviceId = UUID.randomUUID().toString()))
 
 
 fun CONFIG_TYPE.toConfig() = when (this) {

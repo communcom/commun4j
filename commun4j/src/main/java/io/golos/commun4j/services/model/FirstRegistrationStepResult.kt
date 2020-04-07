@@ -7,3 +7,9 @@ import java.util.Date
 data class FirstRegistrationStepResult(val code: Int?,
                                        val currentState: UserRegistrationState,
                                        val nextSmsRetry: Date)
+
+
+@JsonClass(generateAdapter = true)
+data class FirstRegistrationStepEmailResult(val code: String?,
+                                       val currentState: UserRegistrationState,
+                                       val nextEmailRetry: Date)

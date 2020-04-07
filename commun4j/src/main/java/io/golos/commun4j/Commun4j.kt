@@ -11,8 +11,8 @@ import io.golos.commun4j.abi.implementation.c.ctrl.VoteleaderCCtrlAction
 import io.golos.commun4j.abi.implementation.c.ctrl.VoteleaderCCtrlStruct
 import io.golos.commun4j.abi.implementation.c.gallery.*
 import io.golos.commun4j.abi.implementation.c.list.*
-import io.golos.commun4j.abi.implementation.c.point.TransferCPointAction
 import io.golos.commun4j.abi.implementation.c.point.TransferArgsCPointStruct
+import io.golos.commun4j.abi.implementation.c.point.TransferCPointAction
 import io.golos.commun4j.abi.implementation.c.social.*
 import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainAction
 import io.golos.commun4j.abi.implementation.cyber.domain.NewusernameCyberDomainStruct
@@ -22,20 +22,16 @@ import io.golos.commun4j.abi.implementation.cyber.token.TransferCyberTokenAction
 import io.golos.commun4j.abi.implementation.cyber.token.TransferCyberTokenStruct
 import io.golos.commun4j.chain.actions.transaction.TransactionPusher
 import io.golos.commun4j.chain.actions.transaction.abi.ActionAbi
-import io.golos.commun4j.chain.actions.transaction.abi.TransactionAbi
 import io.golos.commun4j.chain.actions.transaction.abi.TransactionAuthorizationAbi
 import io.golos.commun4j.core.crypto.EosPrivateKey
 import io.golos.commun4j.http.rpc.RpcServerMessage
 import io.golos.commun4j.http.rpc.RpcServerMessageCallback
-import io.golos.commun4j.http.rpc.model.ApiResponseError
 import io.golos.commun4j.http.rpc.model.account.request.AccountName
 import io.golos.commun4j.http.rpc.model.transaction.response.TransactionCommitted
 import io.golos.commun4j.model.*
-import io.golos.commun4j.model.FeedTimeFrame
 import io.golos.commun4j.services.CyberServicesApiService
-import io.golos.commun4j.services.model.*
+import io.golos.commun4j.services.model.ApiService
 import io.golos.commun4j.sharedmodel.*
-import io.golos.commun4j.utils.StringSigner
 import java.io.File
 import java.net.SocketTimeoutException
 import java.util.*
@@ -51,7 +47,7 @@ open class Commun4j @JvmOverloads constructor(
 
             }
         },
-        private val apiService: ApiService = CyberServicesApiService(config, serverMessageCallback = serverMessageCallback)) {
+        private val apiService: ApiService = CyberServicesApiService(config, serverMessageCallback = serverMessageCallback)) : ApiService by apiService {
 
     private val transactionPusher: ITransactionPusherBridge = TransactionPusherBridge(config, TransactionPusher, ServicesTransactionPusher(config, apiService, TransactionPusher))
     private val chainApi: CyberWayChainApi
@@ -84,14 +80,6 @@ open class Commun4j @JvmOverloads constructor(
             else -> "re-${parentPermlink.trim()}-$timeStamp"
         }
     }
-
-
-    /**function tries to resolve canonical name from domain (..@golos for example) or username
-     * @param name userName to resolve to
-     * @throws IllegalArgumentException if name doesn't exist
-     * */
-    fun resolveCanonicalCyberName(name: String) = apiService.resolveProfile(name)
-
 
     private inline fun <reified T : Any> pushTransaction(
             originalAction: IAction,
@@ -556,268 +544,6 @@ open class Commun4j @JvmOverloads constructor(
                 communCode, voter, leader
         )), TransactionAuthorizationAbi(voter.name, "active"), key, bandWidthRequest, null)
     }
-
-
-    @JvmOverloads
-    fun getCommunitiesList(type: CommunitiesRequestType? = null, userId: CyberName? = null,
-                           search: String? = null, offset: Int? = null, limit: Int? = null) = apiService.getCommunitiesList(type?.toString(), userId?.name, search, offset, limit)
-
-    fun getCommunity(communityId: String?, communityAlias: String?) = apiService.getCommunity(communityId, communityAlias)
-
-
-    fun getPost(
-            userId: CyberName,
-            communityId: String,
-            permlink: String
-    ) = apiService.getPost(userId, communityId, permlink)
-
-    fun getPostRaw(
-            userId: CyberName,
-            communityId: String,
-            permlink: String
-    ) = apiService.getPostRaw(userId, communityId, permlink)
-
-    fun getPosts(userId: CyberName? = null,
-                 communityId: String? = null,
-                 communityAlias: String? = null,
-                 allowNsfw: Boolean? = null,
-                 type: FeedType? = null,
-                 sortBy: FeedSortByType? = null,
-                 timeframe: FeedTimeFrame? = null,
-                 limit: Int? = null,
-                 offset: Int? = null) = apiService.getPosts(userId?.name,
-            communityId, communityAlias,
-            allowNsfw, type?.toString(),
-            sortBy?.toString(),
-            timeframe?.toString(), limit, offset)
-
-    fun getPostsRaw(userId: CyberName? = null,
-                    communityId: String? = null,
-                    communityAlias: String? = null,
-                    allowNsfw: Boolean? = null,
-                    type: FeedType? = null,
-                    sortBy: FeedSortByType? = null,
-                    timeframe: FeedTimeFrame? = null,
-                    limit: Int? = null,
-                    offset: Int? = null) = apiService.getPostsRaw(userId?.name,
-            communityId, communityAlias,
-            allowNsfw, type?.toString(),
-            sortBy?.toString(),
-            timeframe?.toString(), limit, offset)
-
-    fun getIframelyEmbed(forLink: String): Either<IFramelyEmbedResult, ApiResponseError> = apiService.getIframelyEmbed(forLink)
-
-    fun getOEmdedEmbed(forLink: String): Either<OEmbedResult, ApiResponseError> = apiService.getOEmdedEmbed(forLink)
-
-    fun getComment(userId: CyberName, communityId: String, permlink: String): Either<CyberComment, ApiResponseError> =
-            apiService.getComment(userId.name, communityId, permlink)
-
-    fun getCommentRaw(userId: CyberName, communityId: String, permlink: String): Either<CyberCommentRaw, ApiResponseError> =
-            apiService.getCommentRaw(userId.name, communityId, permlink)
-
-    @JvmOverloads
-    fun getComments(sortBy: CommentsSortBy? = null, offset: Int? = null, limit: Int? = null, type: CommentsSortType? = null,
-                    userId: CyberName? = null, permlink: String? = null, communityId: String? = null,
-                    communityAlias: String? = null, parentComment: ParentComment? = null, resolveNestedComments: Boolean? = null): Either<GetCommentsResponse, ApiResponseError> =
-            apiService.getComments(sortBy?.toString(), offset, limit, type?.toString(), userId?.name, permlink,
-                    communityId, communityAlias, parentComment, resolveNestedComments)
-
-    @JvmOverloads
-    fun getCommentsRaw(sortBy: CommentsSortBy? = null, offset: Int? = null, limit: Int? = null, type: CommentsSortType? = null,
-                       userId: CyberName? = null, permlink: String? = null, communityId: String? = null,
-                       communityAlias: String? = null, parentComment: ParentComment? = null, resolveNestedComments: Boolean? = null): Either<GetCommentsResponseRaw, ApiResponseError> =
-            apiService.getCommentsRaw(sortBy?.toString(), offset, limit, type?.toString(), userId?.name, permlink,
-                    communityId, communityAlias, parentComment, resolveNestedComments)
-
-    fun getUserProfile(user: CyberName?, userName: String?): Either<GetProfileResult, ApiResponseError> =
-            apiService.getProfile(user?.name, userName)
-
-    fun getBalance(userId: CyberName) =
-            apiService.getWalletBalance(userId)
-
-    fun getTokensInfo(codes: List<CyberSymbolCode>) = apiService.getTokensInfo(codes.map { it.value })
-
-    fun getLeaders(communityId: String, limit: Int? = null, offset: Int? = null): Either<LeadersResponse, ApiResponseError> = apiService.getLeaders(communityId, limit, offset, null)
-
-    fun getBlacklistedUsers(userId: CyberName): Either<BlacklistedUsersResponse, ApiResponseError> =
-            apiService.getBlacklistedUsers(userId)
-
-    fun getBlacklistedCommunities(userId: CyberName): Either<BlacklistedCommunitiesResponse, ApiResponseError> = apiService.getBlacklistedCommunities(userId)
-
-    fun getSubscribers(userId: CyberName?,
-                       communityId: String?,
-                       limit: Int? = null,
-                       offset: Int? = null): Either<SubscribedUsersResponse, ApiResponseError> = apiService.getSubscribers(userId, communityId, limit, offset)
-
-    fun getUserSubscriptions(ofUser: CyberName, limit: Int? = null, offset: Int? = null): Either<UserSubscriptionsResponse, ApiResponseError> = apiService.getUserSubscriptions(ofUser, limit, offset)
-
-    fun getCommunitySubscriptions(ofUser: CyberName, limit: Int? = null, offset: Int? = null): Either<CommunitySubscriptionsResponse, ApiResponseError> = apiService.getCommunitySubscriptions(ofUser, limit, offset)
-
-    fun getReports(communityIds: List<String>?,
-                   status: ReportsRequestStatus?,
-                   contentType: ReportRequestContentType?,
-                   sortBy: ReportsRequestTimeSort? = null,
-                   limit: Int? = null,
-                   offset: Int? = null): Either<GetReportsResponse, ApiResponseError> = apiService.getReports(communityIds, status, contentType, sortBy, limit, offset)
-
-    fun getReportsRaw(communityIds: List<String>?,
-                      status: ReportsRequestStatus?,
-                      contentType: ReportRequestContentType?,
-                      sortBy: ReportsRequestTimeSort? = null,
-                      limit: Int? = null,
-                      offset: Int? = null): Either<GetReportsResponseRaw, ApiResponseError> = apiService.getReportsRaw(communityIds, status, contentType, sortBy, limit, offset)
-
-    fun suggestNames(text: String): Either<SuggestNameResponse, ApiResponseError> = apiService.suggestNames(text)
-
-    fun getConfig() = apiService.getConfig()
-
-    @JvmOverloads
-    fun getNotifications(limit: Int? = 20, beforeThan: String? = null, filter: List<GetNotificationsFilter>? = null): Either<GetNotificationsResponse, ApiResponseError> = apiService.getNotifications(limit, beforeThan, filter)
-
-    @JvmOverloads
-    fun getNotificationsSkipUnrecognized(limit: Int? = 20, beforeThan: String? = null, filter: List<GetNotificationsFilter>? = null): Either<GetNotificationsResponse, ApiResponseError> = apiService.getNotificationsSafe(limit, beforeThan, filter)
-
-    fun getNotificationsStatus(): Either<GetNotificationStatusResponse, ApiResponseError> = apiService.getNotificationsStatus()
-
-    fun markAllNotificationAsViewed(until: String): Either<ResultOk, ApiResponseError> = apiService.markAllNotificationAsViewed(until)
-
-    fun subscribeOnNotifications(): Either<ResultOk, ApiResponseError> = apiService.subscribeOnNotifications()
-
-    fun unSubscribeFromNotifications(): Either<ResultOk, ApiResponseError> = apiService.unSubscribeFromNotifications()
-
-    fun getStateBulk(posts: List<UserAndPermlinkPair>): Either<GetStateBulkResponse, ApiResponseError> = apiService.getStateBulk(posts)
-
-    @JvmOverloads
-    fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection? = null, transferType: TransferHistoryTransferType? = null,
-                           symbol: CyberSymbolCode? = null, rewards: String? = null, limit: Int? = null, offset: Int? = null): Either<GetTransferHistoryResponse, ApiResponseError> = apiService.getTransferHistory(userId, direction, transferType, symbol, rewards, limit, offset)
-
-    fun getBuyPrice(pointSymbol: CyberSymbolCode, quantity: WalletQuantity): Either<GetWalletBuyPriceResponse, ApiResponseError> = apiService.getBuyPrice(pointSymbol, quantity)
-
-    fun getSellPrice(quantity: WalletQuantity): Either<GetWalletSellPriceResponse, ApiResponseError> = apiService.getSellPrice(quantity)
-
-    /** method will block thread until [blockNum] would consumed by prism services
-     * @param blockNum num of block to wait
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     */
-    fun waitForABlock(blockNum: Long): Either<ResultOk, ApiResponseError> = apiService.waitBlock(blockNum)
-
-    /** method will block thread until [transactionId] would be consumed by prism services. Old transaction are not stored in services.
-     * @param transactionId userId of transaction to wait
-     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     */
-    fun waitForTransaction(transactionId: String): Either<ResultOk, ApiResponseError> = apiService.waitForTransaction(transactionId)
-
-
-    fun <T : Any> pushTransactionWithProvidedBandwidth(chainId: String,
-                                                       transactionAbi: TransactionAbi,
-                                                       signature: String,
-                                                       traceType: Class<T>): Either<TransactionCommitted<T>, GolosEosError> = apiService.pushTransactionWithProvidedBandwidth(chainId, transactionAbi, signature, traceType)
-
-    fun getRegistrationState(
-            phone: String?,
-            identity: String?
-    ): Either<UserRegistrationStateResult, ApiResponseError> =
-            apiService.getRegistrationStateOf(userId = null, phone = phone, identity = identity)
-
-
-    /** method leads to sending sms code to user's [phone]. proper [testingPass] makes backend to omit this check
-     *  @param captcha capthc string
-     *  @param phone  of user for sending sms verification code
-     *  @param testingPass pass to omit cpatcha and phone checks
-     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-
-    fun firstUserRegistrationStep(captcha: String?, phone: String, testingPass: String?) =
-            apiService.firstUserRegistrationStep(captcha, phone, testingPass)
-
-    /** method used to verify [phone] by sent [code] through sms. Second step of registration
-     *  @param code sms code sent to [phone]
-     *  @param phone  of user
-     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun verifyPhoneForUserRegistration(phone: String, code: Int) =
-            apiService.verifyPhoneForUserRegistration(phone, code)
-
-    /** method used to connect verified [user] name with [phone]. Third step of registration
-     *  @param user name to associate with [phone]
-     *  @param phone verified phone
-     *  @param identity
-     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun setVerifiedUserName(user: String, phone: String?, identity: String?) = apiService.setVerifiedUserName(user, phone,identity)
-
-    /** method used to finalize registration of user in cyberway blockchain. Final step of registration
-     *  @param userName name of user
-     *  @param owner public owner key of user
-     *  @param active public active key of user
-     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun writeUserToBlockChain(
-            phone: String?,
-            identity: String?,
-            userId: String,
-            userName: String,
-            owner: String,
-            active: String
-    ) = apiService.writeUserToBlockchain(phone, identity, userId, userName, owner, active)
-
-
-    /** method used to resend sms code to user during phone verification
-     *  @param forUser name of user
-     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun resendSmsCode(forUser: String, @Suppress("UNUSED_PARAMETER") unused: Int = 0) = apiService.resendSmsCode(forUser, null)
-
-    /** method used to resend sms code to user during phone verification
-     *  @param phone phone of user to verify
-     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
-     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun resendSmsCode(phone: String) = apiService.resendSmsCode(null, phone)
-
-    fun onBoardingCommunitySubscriptions(userId: CyberName, communityIds: List<String>) = apiService.onBoardingCommunitySubscriptions(userId.name, communityIds)
-
-
-    /**part of auth process. It consists of 3 steps:
-     * 1. getting secret string using method [getAuthSecret]
-     * 2. signing it with [StringSigner]
-     * 3. sending result using [authWithSecret] method
-     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-    fun getAuthSecret(): Either<AuthSecret, ApiResponseError> = apiService.getAuthSecret()
-
-    /**part of auth process. It consists of 3 steps:
-     * 1. getting secret string using method [getAuthSecret]
-     * 2. signing it with [StringSigner]
-     * 3. sending result using [authWithSecret] method
-     *  @param userName userid, userName, domain name, or whatever current version of services willing to accept
-     *  @param secret secret string, obtained from [getAuthSecret] method
-     *  @param signedSecret [secret] signed with [StringSigner]
-     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
-     * */
-
-    fun authWithSecret(userName: String,
-                       secret: String,
-                       signedSecret: String): Either<AuthResult, ApiResponseError> = apiService.authWithSecret(userName, secret, signedSecret)
-
-    /**disconnects from microservices, effectively unaithing
-     * Method will result  throwing all pending socket requests.
-     * */
-    fun unAuth() = apiService.unAuth()
-
-    fun quickSearch(queryString: String, limit: Int?, entities: List<SearchableEntities>?): Either<QuickSearchResponse, ApiResponseError> = apiService.quickSearch(queryString, limit, entities)
-
-    fun extendedSearch(queryString: String,
-                       profilesSearchRequest: ExtendedRequestSearchItem?,
-                       communitiesSearchRequest: ExtendedRequestSearchItem?,
-                       postsSearchRequest: ExtendedRequestSearchItem?): Either<ExtendedSearchResponse, ApiResponseError> = apiService.extendedSearch(queryString, profilesSearchRequest, communitiesSearchRequest, postsSearchRequest)
 
 
     /** method for fetching  account of some user

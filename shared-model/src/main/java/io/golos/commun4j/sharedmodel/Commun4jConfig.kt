@@ -29,4 +29,5 @@ data class Commun4jConfig @JvmOverloads constructor(val blockChainHttpApiUrl: St
 data class SocketOpenQueryParams @JvmOverloads constructor(val version: String,
                                                            val deviceType: String = "phone",
                                                            val platform: String = "android",
-                                                           val clientType: String = "app")
+                                                           val clientType: String = "app",
+                                                           val deviceId: String? = null)

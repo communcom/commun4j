@@ -16,6 +16,7 @@ import io.golos.commun4j.http.rpc.SocketClientImpl
 import io.golos.commun4j.http.rpc.model.ApiResponseError
 import io.golos.commun4j.http.rpc.model.transaction.response.TransactionCommitted
 import io.golos.commun4j.model.*
+import io.golos.commun4j.model.FeedTimeFrame
 import io.golos.commun4j.services.model.*
 import io.golos.commun4j.sharedmodel.*
 import io.golos.commun4j.utils.*
@@ -25,13 +26,15 @@ import java.util.*
 private enum class ServicesGateMethods {
     GET_POST, GET_COMMENT, GET_COMMENTS, GET_USER_METADATA, GET_SECRET, AUTH, GET_EMBED,
     GET_REGISTRATION_STATE, REG_FIRST_STEP, REG_VERIFY_PHONE, REG_SET_USER_NAME, REG_WRITE_TO_BLOCKCHAIN,
+    REG_FIRST_STEP_EMAIL, REG_VERIFY_EMAIL, REG_APPEND_REFERRAL_PARENT,
     REG_RESEND_SMS, WAIT_BLOCK, WAIT_FOR_TRANSACTION, PUSH_SUBSCRIBE, PUSH_UNSUBSCRIBE, GET_NOTIFS_HISTORY, MARK_VIEWED,
-    GET_UNREAD_COUNT, MARK_VIEWED_ALL, SET_SETTINGS, GET_SETTINGS, GET_SUBSCRIPTIONS, GET_SUBSCRIBERS,
+    GET_UNREAD_COUNT, MARK_VIEWED_ALL, SET_PISH_SETTINGS, GET_PUSH_SETTINGS, GET_SUBSCRIPTIONS, GET_SUBSCRIBERS,
     RESOLVE_USERNAME, PROVIDE_BANDWIDTH, GET_COMMUNITIES, GET_COMMUNITIY, GET_POSTS, GET_BALANCE, GET_TRANSFER_HISTORY, GET_TOKENS_INFO,
     GET_LEADERS, GET_COMMUNITY_BLACKLIST, GET_BLACKLIST, GET_COMMENT_VOTES, GET_POST_VOTES, GET_NOTIFY_META,
     GET_ENTITY_REPORTS, GET_REPORTS, SUGGEST_NAMES, ONBOARDING_COMMUNITY_SUBSCRIPTION, GET_NOTIFICATIONS,
     GET_NOTIFICATIONS_STATUS, GET_BULK, SUBSCRIBE_NOTIFICATIONS, UN_SUBSCRIBE_NOTIFICATIONS, GET_COIN_BUY_PRICE, GET_COIN_SELL_PRICE,
-    GET_CONFIG, SEARCH_QUICK, SEARCH_EXTENDED;
+    GET_CONFIG, SEARCH_QUICK, SEARCH_EXTENDED, SET_DEVICE_INFO, SET_FCM_TOKEN, RESET_FCM_TOKEN, REG_RESEND_EMAIL,
+    GET_REFERRAL_USERS;
 
     override fun toString(): String {
         return when (this) {
@@ -47,9 +50,12 @@ private enum class ServicesGateMethods {
             AUTH -> "auth.authorize"
             GET_REGISTRATION_STATE -> "registration.getState"
             REG_FIRST_STEP -> "registration.firstStep"
+            REG_FIRST_STEP_EMAIL -> "registration.firstStepEmail"
             REG_VERIFY_PHONE -> "registration.verify"
             REG_SET_USER_NAME -> "registration.setUsername"
             REG_WRITE_TO_BLOCKCHAIN -> "registration.toBlockChain"
+            REG_RESEND_EMAIL -> "registration.resendEmailCode"
+            REG_APPEND_REFERRAL_PARENT -> "registration.appendReferralParent"
             ONBOARDING_COMMUNITY_SUBSCRIPTION -> "registration.onboardingCommunitySubscriptions"
             REG_RESEND_SMS -> "registration.resendSmsCode"
             PUSH_SUBSCRIBE -> "push.notifyOn"
@@ -58,8 +64,8 @@ private enum class ServicesGateMethods {
             MARK_VIEWED -> "notify.markAsViewed"
             GET_UNREAD_COUNT -> "push.historyFresh"
             MARK_VIEWED_ALL -> "notifications.markAllAsViewed"
-            SET_SETTINGS -> "options.set"
-            GET_SETTINGS -> "options.get"
+            SET_PISH_SETTINGS -> "settings.setPushSettings"
+            GET_PUSH_SETTINGS -> "settings.getPushSettings"
             GET_SUBSCRIPTIONS -> "content.getSubscriptions"
             GET_SUBSCRIBERS -> "content.getSubscribers"
             RESOLVE_USERNAME -> "content.resolveProfile"
@@ -88,6 +94,11 @@ private enum class ServicesGateMethods {
             GET_CONFIG -> "config.getConfig"
             SEARCH_QUICK -> "content.quickSearch"
             SEARCH_EXTENDED -> "content.extendedSearch"
+            SET_DEVICE_INFO -> "device.setInfo"
+            SET_FCM_TOKEN -> "device.setFcmToken"
+            RESET_FCM_TOKEN -> "device.resetFcmToken"
+            REG_VERIFY_EMAIL -> "registration.verifyEmail"
+            GET_REFERRAL_USERS -> "content.getReferralUsers"
         }
     }
 }
@@ -134,6 +145,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                 .add(WalletQuantity::class.java, WalletQuantityAdapter())
                 .add(CyberName::class.java, CyberNameAdapter())
                 .add(ServiceSettingsLanguage::class.java, ServiceSettingsLanguageAdapter())
+                .add(NotificationType::class.java, NotificationTypeAdapter())
                 .add(EventsAdapter())
                 .add(ToStringAdapter())
                 .add(KotlinJsonAdapterFactory())
@@ -146,7 +158,11 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         private val apiClient: SocketClient = SocketClientImpl(
                 "${config.servicesUrl}?platform=${config.socketOpenQueryParams.platform}&" +
                         "deviceType=${config.socketOpenQueryParams.deviceType}" +
-                        "&clientType=${config.socketOpenQueryParams.clientType}&version=${config.socketOpenQueryParams.version}",
+                        "&clientType=${config.socketOpenQueryParams.clientType}&version=${config.socketOpenQueryParams.version}".let {
+                            val queryParams = config.socketOpenQueryParams;
+                            if (queryParams.deviceId == null)it
+                            else it + "&deviceId=${queryParams.deviceId}"
+                        },
                 moshi,
                 serverMessageCallback,
                 config.readTimeoutInSeconds,
@@ -177,7 +193,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         apiClient.dropConnection()
     }
 
-    override fun resolveProfile(username: String): Either<ResolvedProfile, ApiResponseError> {
+    override fun resolveCanonicalCyberName(username: String): Either<ResolvedProfile, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.RESOLVE_USERNAME.toString(),
                 ResolveUserNameRequest(
@@ -185,9 +201,9 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                 ), ResolvedProfile::class.java)
     }
 
-    override fun getCommunitiesList(type: String?, userId: String?, search: String?, offset: Int?, limit: Int?) = apiClient.send(
+    override fun getCommunitiesList(type: CommunitiesRequestType?, userId: CyberName?, search: String?, offset: Int?, limit: Int?) = apiClient.send(
             ServicesGateMethods.GET_COMMUNITIES.toString(),
-            GetCommunitiesRequest(type, userId, search, offset, limit),
+            GetCommunitiesRequest(type?.toString(), userId?.name, search, offset, limit),
             GetCommunitiesResponse::class.java)
 
     override fun getCommunity(communityId: String?, communityAlias: String?) = apiClient.send(
@@ -287,39 +303,24 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun getPosts(userId: String?,
-                          communityId: String?,
-                          communityAlias: String?,
-                          allowNsfw: Boolean?,
-                          type: String?,
-                          sortBy: String?,
-                          timeframe: String?,
-                          limit: Int?,
-                          offset: Int?): Either<GetDiscussionsResult, ApiResponseError> {
+    override fun getPosts(userId: CyberName?, communityId: String?, communityAlias: String?, allowNsfw: Boolean?, type: FeedType?, sortBy: FeedSortByType?, timeframe: FeedTimeFrame?, limit: Int?, offset: Int?): Either<GetDiscussionsResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_POSTS.toString(),
-                GetPostsRequest(userId, communityId, communityAlias,
-                        allowNsfw, type, sortBy, timeframe, limit, offset),
+                GetPostsRequest(userId?.name, communityId, communityAlias,
+                        allowNsfw, type?.toString(), sortBy?.toString(), timeframe?.toString(), limit, offset),
                 GetDiscussionsResult::class.java
         )
     }
 
-    override fun getPostsRaw(userId: String?,
-                             communityId: String?,
-                             communityAlias: String?,
-                             allowNsfw: Boolean?,
-                             type: String?,
-                             sortBy: String?,
-                             timeframe: String?,
-                             limit: Int?,
-                             offset: Int?): Either<GetDiscussionsResultRaw, ApiResponseError> {
+    override fun getPostsRaw(userId: CyberName?, communityId: String?, communityAlias: String?, allowNsfw: Boolean?, type: FeedType?, sortBy: FeedSortByType?, timeframe: FeedTimeFrame?, limit: Int?, offset: Int?): Either<GetDiscussionsResultRaw, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_POSTS.toString(),
-                GetPostsRequest(userId, communityId, communityAlias,
-                        allowNsfw, type, sortBy, timeframe, limit, offset),
+                GetPostsRequest(userId?.name, communityId, communityAlias,
+                        allowNsfw, type?.toString(), sortBy?.toString(), timeframe?.toString(), limit, offset),
                 GetDiscussionsResultRaw::class.java
         )
     }
+
 
     override fun getTokensInfo(list: List<String>): Either<GetTokensInfoResponse, ApiResponseError> {
         return apiClient.send(ServicesGateMethods.GET_TOKENS_INFO.toString(),
@@ -327,7 +328,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                 GetTokensInfoResponse::class.java)
     }
 
-    override fun waitBlock(blockNum: Long): Either<ResultOk, ApiResponseError> {
+    override fun waitForABlock(blockNum: Long): Either<ResultOk, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.WAIT_BLOCK.toString(),
                 WaitRequest(blockNum, null),
@@ -375,33 +376,33 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun getComment(name: String, communityId: String, permlink: String): Either<CyberComment, ApiResponseError> {
+    override fun getComment(userId: CyberName, communityId: String, permlink: String): Either<CyberComment, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_COMMENT.toString(),
-                GetCommentRequest(name, communityId, permlink),
+                GetCommentRequest(userId.name, communityId, permlink),
                 CyberComment::class.java)
     }
 
-    override fun getCommentRaw(name: String, communityId: String, permlink: String): Either<CyberCommentRaw, ApiResponseError> {
+    override fun getCommentRaw(userId: CyberName, communityId: String, permlink: String): Either<CyberCommentRaw, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_COMMENT.toString(),
-                GetCommentRequest(name, communityId, permlink),
+                GetCommentRequest(userId.name, communityId, permlink),
                 CyberCommentRaw::class.java)
     }
 
-    override fun getComments(sortBy: String?, offset: Int?, limit: Int?, type: String?, userId: String?,
-                             permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponse, ApiResponseError> {
+    override fun getComments(sortBy: CommentsSortBy?, offset: Int?, limit: Int?, type: CommentsSortType?, userId: CyberName?, permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponse, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_COMMENTS.toString(),
-                GetCommentsRequest(sortBy, offset, limit, type, userId, permlink, communityId, communityAlias,
+                GetCommentsRequest(sortBy?.toString(), offset, limit, type?.toString(), userId?.toString(), permlink, communityId, communityAlias,
                         parentComment, resolveNestedComments),
                 GetCommentsResponse::class.java)
     }
 
-    override fun getCommentsRaw(sortBy: String?, offset: Int?, limit: Int?, type: String?, userId: String?, permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponseRaw, ApiResponseError> {
+
+    override fun getCommentsRaw(sortBy: CommentsSortBy?, offset: Int?, limit: Int?, type: CommentsSortType?, userId: CyberName?, permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponseRaw, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_COMMENTS.toString(),
-                GetCommentsRequest(sortBy, offset, limit, type, userId, permlink, communityId, communityAlias,
+                GetCommentsRequest(sortBy?.toString(), offset, limit, type?.toString(), userId?.toString(), permlink, communityId, communityAlias,
                         parentComment, resolveNestedComments),
                 GetCommentsResponseRaw::class.java)
     }
@@ -464,21 +465,17 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun getProfile(userId: String?, username: String?): Either<GetProfileResult, ApiResponseError> {
+    override fun getUserProfile(userId: CyberName?, userName: String?): Either<GetProfileResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_USER_METADATA.toString(),
-                UserMetaDataRequest(userId, username), GetProfileResult::class.java
+                UserMetaDataRequest(userId?.name, userName), GetProfileResult::class.java
         )
     }
 
-    override fun getRegistrationStateOf(
-            userId: String?,
-            phone: String?,
-            identity: String?
-    ): Either<UserRegistrationStateResult, ApiResponseError> {
+    override fun getRegistrationState(phone: String?, identity: String?, email: String?): Either<UserRegistrationStateResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_REGISTRATION_STATE.toString(),
-                RegistrationStateRequest(userId, phone, identity), UserRegistrationStateResult::class.java
+                RegistrationStateRequest(email, phone, identity), UserRegistrationStateResult::class.java
         )
     }
 
@@ -493,6 +490,13 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
+    override fun firstUserRegistrationStepEmail(captcha: String?, email: String, testingPass: String?): Either<FirstRegistrationStepEmailResult, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.REG_FIRST_STEP_EMAIL.toString(),
+                FirstRegistrationStepEmailRequest(captcha, email, testingPass), FirstRegistrationStepEmailResult::class.java
+        )
+    }
+
     override fun verifyPhoneForUserRegistration(phone: String, code: Int): Either<VerifyStepResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_VERIFY_PHONE.toString(),
@@ -500,16 +504,25 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun setVerifiedUserName(user: String, phone: String?, identity: String?): Either<SetUserNameStepResult, ApiResponseError> {
+    override fun verifyEmailForUserRegistration(email: String, code: Int): Either<VerifyStepResult, ApiResponseError> {
         return apiClient.send(
-                ServicesGateMethods.REG_SET_USER_NAME.toString(),
-                SetVerifiedUserNameRequest(user, phone, identity), SetUserNameStepResult::class.java
+                ServicesGateMethods.REG_VERIFY_EMAIL.toString(),
+                VerifyEmailRequest(email, code), VerifyStepResult::class.java
         )
     }
 
-    override fun writeUserToBlockchain(
+
+    override fun setVerifiedUserName(user: String, phone: String?, identity: String?, email: String?): Either<SetUserNameStepResult, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.REG_SET_USER_NAME.toString(),
+                SetVerifiedUserNameRequest(user, phone, identity, email), SetUserNameStepResult::class.java
+        )
+    }
+
+    override fun writeUserToBlockChain(
             phone: String?,
             identity: String?,
+            email: String?,
             userId: String,
             userName: String,
             owner: String,
@@ -517,15 +530,39 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     ): Either<WriteToBlockChainStepResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_WRITE_TO_BLOCKCHAIN.toString(),
-                WriteUserToBlockchainRequest(phone, identity, userName, userId, owner, active),
+                WriteUserToBlockchainRequest(phone, identity, email, userName, userId, owner, active),
                 WriteToBlockChainStepResult::class.java
         )
     }
 
-    override fun resendSmsCode(name: String?, phone: String?): Either<ResultOk, ApiResponseError> {
+    override fun appendReferralParent(phone: String?, identity: String?, email: String?,
+                                      refferalId: String, userId: CyberName?
+    ): Either<ResultOk, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.REG_APPEND_REFERRAL_PARENT.toString(),
+                AppendReferralParent(phone, identity, email, refferalId, userId?.name),
+                ResultOk::class.java
+        )
+    }
+
+    override fun resendSmsCode(forUser: String?, phone: String?): Either<ResendSmsResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_RESEND_SMS.toString(),
-                ResendUserSmsRequest(name, phone), ResultOk::class.java
+                ResendUserSmsRequest(forUser, phone), ResendSmsResult::class.java
+        )
+    }
+
+    override fun resendEmail(email: String): Either<ResendEmailResult, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.REG_RESEND_EMAIL.toString(), mapOf(
+                "email" to email
+        ), ResendEmailResult::class.java
+        )
+    }
+
+    override fun getReferralUsers(limit: Int?, offset: Int?): Either<GetReferralUsersResponse, ApiResponseError> {
+        return apiClient.send(
+                ServicesGateMethods.GET_REFERRAL_USERS.toString(), GetReferralUsersRequest(limit, offset), GetReferralUsersResponse::class.java
         )
     }
 
@@ -547,11 +584,11 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun onBoardingCommunitySubscriptions(name: String, communityIds: List<String>): Either<ResultOk, ApiResponseError> {
+    override fun onBoardingCommunitySubscriptions(userId: CyberName, communityIds: List<String>): Either<ResultOk, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.ONBOARDING_COMMUNITY_SUBSCRIPTION.toString(),
                 mapOf(
-                        "userId" to name,
+                        "userId" to userId.name,
                         "communityIds" to communityIds
                 ), ResultOk::class.java
         )
@@ -568,27 +605,19 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun setNotificationSettings(deviceId: String,
-                                         app: String,
-                                         newBasicSettings: Any?,
-                                         newWebNotifySettings: WebShowSettings?,
-                                         newMobilePushSettings: MobileShowSettings?): Either<ResultOk, ApiResponseError> {
-
-        val request = UserSettings(deviceId, app, newBasicSettings, newWebNotifySettings, newMobilePushSettings)
-
+    override fun setPushSettings(disable: List<NotificationType>): Either<ResultOk, ApiResponseError> {
         return apiClient.send(
-                ServicesGateMethods.SET_SETTINGS.toString(),
-                request, ResultOk::class.java
+                ServicesGateMethods.SET_PISH_SETTINGS.toString(),
+                mapOf(
+                        "disable" to disable
+                ), ResultOk::class.java
         )
     }
 
-    override fun getNotificationSettings(deviceId: String, app: String): Either<UserSettings, ApiResponseError> {
-
-        val request = ServicesSettingsRequest(deviceId, app)
-
+    override fun getPushSettings(): Either<PushSettingsResponse, ApiResponseError> {
         return apiClient.send(
-                ServicesGateMethods.GET_SETTINGS.toString(),
-                request, UserSettings::class.java
+                ServicesGateMethods.GET_PUSH_SETTINGS.toString(),
+                Any(), PushSettingsResponse::class.java
         )
     }
 
@@ -629,7 +658,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
 
     }
 
-    override fun getNotificationsSafe(limit: Int?, beforeThan: String?, filter: List<GetNotificationsFilter>?): Either<GetNotificationsResponse, ApiResponseError> {
+    override fun getNotificationsSkipUnrecognized(limit: Int?, beforeThan: String?, filter: List<GetNotificationsFilter>?): Either<GetNotificationsResponse, ApiResponseError> {
 
         val request = GetNotificationsRequest(limit, beforeThan, filter?.map { it.toString() })
 
@@ -704,7 +733,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         return apiClient.send(ServicesGateMethods.UN_SUBSCRIBE_NOTIFICATIONS.toString(), UnSubscribeFromNotifications(), ResultOk::class.java)
     }
 
-    override fun getWalletBalance(userId: CyberName): Either<GetUserBalanceResponse, ApiResponseError> {
+    override fun getBalance(userId: CyberName): Either<GetUserBalanceResponse, ApiResponseError> {
         val request = GetUserBalanceRequest(userId.name)
         return apiClient.send(ServicesGateMethods.GET_BALANCE.toString(), request, GetUserBalanceResponse::class.java)
     }
@@ -741,6 +770,23 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                                 postsSearchRequest: ExtendedRequestSearchItem?): Either<ExtendedSearchResponse, ApiResponseError> {
         val request = ExtendedSearchRequest(queryString, ExtendedSearchRequestEntities(profilesSearchRequest, communitiesSearchRequest, postsSearchRequest))
         return apiClient.send(ServicesGateMethods.SEARCH_EXTENDED.toString(), request, ExtendedSearchResponse::class.java)
+    }
+
+
+    override fun setInfo(timezoneOffset: Int): Either<ResultOk, ApiResponseError> {
+        return apiClient.send(ServicesGateMethods.SET_DEVICE_INFO.toString(), mapOf(
+                "timeZoneOffset" to timezoneOffset
+        ), ResultOk::class.java)
+    }
+
+    override fun setFcmToken(token: String): Either<ResultOk, ApiResponseError> {
+        return apiClient.send(ServicesGateMethods.SET_FCM_TOKEN.toString(), mapOf(
+                "fcmToken" to token
+        ), ResultOk::class.java)
+    }
+
+    override fun resetFcmToken(): Either<ResultOk, ApiResponseError> {
+        return apiClient.send(ServicesGateMethods.RESET_FCM_TOKEN.toString(), Any(), ResultOk::class.java)
     }
 
     override fun shutDown() {

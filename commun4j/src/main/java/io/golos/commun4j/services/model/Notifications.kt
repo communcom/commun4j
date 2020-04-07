@@ -1,6 +1,9 @@
 package io.golos.commun4j.services.model
 
+import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonClass
+import com.squareup.moshi.JsonReader
+import com.squareup.moshi.JsonWriter
 import io.golos.commun4j.sharedmodel.CyberName
 import io.golos.commun4j.sharedmodel.CyberSymbolCode
 import java.math.BigInteger
@@ -22,6 +25,45 @@ enum class GetNotificationsFilter {
         }
     }
 }
+
+enum class NotificationType {
+    SUBSCRIBE, UPVOTE, REPLY, MENTION, TRANSFER, REWARD, REFERRAL_REG_BONUS, REFERRAL_PURCH_BONUS;
+}
+
+class NotificationTypeAdapter : JsonAdapter<NotificationType>() {
+    override fun fromJson(reader: JsonReader): NotificationType? {
+        val result: String? = reader.nextString() ?: return null
+        return when (result) {
+            null -> null
+            "subscribe" -> NotificationType.SUBSCRIBE
+            "upvote" -> NotificationType.UPVOTE
+            "reply" -> NotificationType.REPLY
+            "mention" -> NotificationType.MENTION
+            "transfer" -> NotificationType.TRANSFER
+            "reward" -> NotificationType.REWARD
+            "referralRegistrationBonus" -> NotificationType.REFERRAL_REG_BONUS
+            "referralPurchaseBonus" -> NotificationType.REFERRAL_PURCH_BONUS
+            else -> throw IllegalArgumentException("unknown notificationType $result")
+        }
+    }
+
+    override fun toJson(writer: JsonWriter, value: NotificationType?) {
+        writer.value(
+                when (value) {
+                    null -> null
+                    NotificationType.SUBSCRIBE -> "subscribe"
+                    NotificationType.UPVOTE -> "upvote"
+                    NotificationType.REPLY -> "reply"
+                    NotificationType.MENTION -> "mention"
+                    NotificationType.TRANSFER -> "transfer"
+                    NotificationType.REWARD -> "reward"
+                    NotificationType.REFERRAL_REG_BONUS -> "referralRegistrationBonus"
+                    NotificationType.REFERRAL_PURCH_BONUS -> "referralPurchaseBonus"
+                }
+        )
+    }
+}
+
 
 @JsonClass(generateAdapter = true)
 internal data class GetNotificationsRequest(val limit: Int?, val beforeThan: String?, val filter: List<String>?)

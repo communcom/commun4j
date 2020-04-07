@@ -4,11 +4,11 @@ package io.golos.commun4j.services.model
 import io.golos.commun4j.chain.actions.transaction.abi.TransactionAbi
 import io.golos.commun4j.http.rpc.model.ApiResponseError
 import io.golos.commun4j.http.rpc.model.transaction.response.TransactionCommitted
-import io.golos.commun4j.model.CyberDiscussion
-import io.golos.commun4j.model.CyberDiscussionRaw
-import io.golos.commun4j.model.GetDiscussionsResult
-import io.golos.commun4j.model.GetDiscussionsResultRaw
+import io.golos.commun4j.model.*
+import io.golos.commun4j.model.FeedTimeFrame
 import io.golos.commun4j.sharedmodel.*
+import io.golos.commun4j.utils.StringSigner
+import java.net.SocketTimeoutException
 
 /**
  *
@@ -23,36 +23,90 @@ interface ServicesTransactionPushService {
 
 interface ApiService : ServicesTransactionPushService {
 
-    fun getProfile(userId: String?, username: String?): Either<GetProfileResult, ApiResponseError>
+    fun getUserProfile(userId: CyberName?, userName: String?): Either<GetProfileResult, ApiResponseError>
 
     fun getIframelyEmbed(forLink: String): Either<IFramelyEmbedResult, ApiResponseError>
 
     fun getOEmdedEmbed(forLink: String): Either<OEmbedResult, ApiResponseError>
 
-    fun getRegistrationStateOf(userId: String?, phone: String?, identity: String?): Either<UserRegistrationStateResult, ApiResponseError>
+    fun getRegistrationState(phone: String? = null, identity: String? = null, email: String? = null): Either<UserRegistrationStateResult, ApiResponseError>
 
+    /** method leads to sending sms code to user's [phone]. proper [testingPass] makes backend to omit this check
+     *  @param captcha capthc string
+     *  @param phone  of user for sending sms verification code
+     *  @param testingPass pass to omit cpatcha and phone checks
+     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+     * */
     fun firstUserRegistrationStep(captcha: String?, phone: String, testingPass: String?): Either<FirstRegistrationStepResult, ApiResponseError>
 
+    fun firstUserRegistrationStepEmail(captcha: String?, email: String, testingPass: String?): Either<FirstRegistrationStepEmailResult, ApiResponseError>
+
+    /** method used to verify [phone] by sent [code] through sms. Second step of registration
+     *  @param code sms code sent to [phone]
+     *  @param phone  of user
+     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+     * */
     fun verifyPhoneForUserRegistration(phone: String, code: Int): Either<VerifyStepResult, ApiResponseError>
 
-    fun setVerifiedUserName(user: String, phone: String?, identity: String?): Either<SetUserNameStepResult, ApiResponseError>
+    fun verifyEmailForUserRegistration(email: String, code: Int): Either<VerifyStepResult, ApiResponseError>
 
-    fun writeUserToBlockchain(phone: String?, identity: String?, userId: String, userName: String, owner: String, active: String): Either<WriteToBlockChainStepResult, ApiResponseError>
+    /** method used to connect verified [user] name with [phone]. Third step of registration
+     *  @param user name to associate with [phone]
+     *  @param phone verified phone
+     *  @param identity
+     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+     * */
+    fun setVerifiedUserName(user: String, phone: String? = null, identity: String? = null, email: String? = null): Either<SetUserNameStepResult, ApiResponseError>
 
-    fun resendSmsCode(name: String?, phone: String?): Either<ResultOk, ApiResponseError>
+    /** method used to finalize registration of user in cyberway blockchain. Final step of registration
+     *  @param userName name of user
+     *  @param owner public owner key of user
+     *  @param active public active key of user
+     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+     * */
+    fun writeUserToBlockChain(phone: String?, identity: String?, email: String?, userId: String, userName: String, owner: String, active: String): Either<WriteToBlockChainStepResult, ApiResponseError>
 
-    fun waitBlock(blockNum: Long): Either<ResultOk, ApiResponseError>
+    fun appendReferralParent(phone: String?, identity: String?, email: String?,
+                             refferalId: String, userId: CyberName?
+    ): Either<ResultOk, ApiResponseError>
 
+    /** method used to resend sms code to user during phone verification
+     *  @param forUser name of user
+     *  @param phone phone of user to verify
+     *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+     * */
+    fun resendSmsCode(forUser: String? = null, phone: String? = null): Either<ResendSmsResult, ApiResponseError>
+
+    fun resendEmail(email: String): Either<ResendEmailResult, ApiResponseError>
+
+    fun getReferralUsers(limit: Int? = null, offset: Int? = null): Either<GetReferralUsersResponse, ApiResponseError>
+
+    /** method will block thread until [blockNum] would consumed by prism services
+     * @param blockNum num of block to wait
+     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+     */
+    fun waitForABlock(blockNum: Long): Either<ResultOk, ApiResponseError>
+
+    /** method will block thread until [transactionId] would be consumed by prism services. Old transaction are not stored in services.
+     * @param transactionId userId of transaction to wait
+     * @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
+     * @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+     */
     fun waitForTransaction(transactionId: String): Either<ResultOk, ApiResponseError>
 
     fun subscribeOnMobilePushNotifications(deviceId: String, appName: String, fcmToken: String): Either<ResultOk, ApiResponseError>
 
     fun unSubscribeOnNotifications(userId: String, deviceId: String, appName: String): Either<ResultOk, ApiResponseError>
 
-    fun setNotificationSettings(deviceId: String, app: String,
-                                newBasicSettings: Any?, newWebNotifySettings: WebShowSettings?, newMobilePushSettings: MobileShowSettings?): Either<ResultOk, ApiResponseError>
+    fun setPushSettings(disable: List<NotificationType>): Either<ResultOk, ApiResponseError>
 
-    fun getNotificationSettings(deviceId: String, app: String): Either<UserSettings, ApiResponseError>
+    fun getPushSettings(): Either<PushSettingsResponse, ApiResponseError>
 
     fun getEvents(userProfile: String, appName: String, afterId: String?, limit: Int?, markAsViewed: Boolean?, freshOnly: Boolean?, types: List<EventType>): Either<EventsData, ApiResponseError>
 
@@ -67,17 +121,40 @@ interface ApiService : ServicesTransactionPushService {
                        limit: Int?,
                        offset: Int?): Either<SubscribedUsersResponse, ApiResponseError>
 
+    /**part of auth process. It consists of 3 steps:
+     * 1. getting secret string using method [getAuthSecret]
+     * 2. signing it with [StringSigner]
+     * 3. sending result using [authWithSecret] method
+     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+     * */
     fun getAuthSecret(): Either<AuthSecret, ApiResponseError>
 
-    fun authWithSecret(user: String,
+    /**part of auth process. It consists of 3 steps:
+     * 1. getting secret string using method [getAuthSecret]
+     * 2. signing it with [StringSigner]
+     * 3. sending result using [authWithSecret] method
+     *  @param userName userid, userName, domain name, or whatever current version of services willing to accept
+     *  @param secret secret string, obtained from [getAuthSecret] method
+     *  @param signedSecret [secret] signed with [StringSigner]
+     *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
+     * */
+    fun authWithSecret(userName: String,
                        secret: String,
                        signedSecret: String): Either<AuthResult, ApiResponseError>
 
+    /**disconnects from microservices, effectively unaithing
+     * Method will result  throwing all pending socket requests.
+     * */
     fun unAuth()
 
-    fun resolveProfile(username: String): Either<ResolvedProfile, ApiResponseError>
+    /**function tries to resolve canonical name from domain (..@golos for example) or username
+     * @param username userName to resolve to
+     * @throws IllegalArgumentException if name doesn't exist
+     * */
+    fun resolveCanonicalCyberName(username: String): Either<ResolvedProfile, ApiResponseError>
 
-    fun getCommunitiesList(type: String?, userId: String?, search: String?, offset: Int?, limit: Int?): Either<GetCommunitiesResponse, ApiResponseError>
+    fun getCommunitiesList(type: CommunitiesRequestType? = null, userId: CyberName? = null,
+                           search: String? = null, offset: Int? = null, limit: Int? = null): Either<GetCommunitiesResponse, ApiResponseError>
 
     fun getCommunity(communityId: String?, communityAlias: String?): Either<GetCommunitiesItem, ApiResponseError>
 
@@ -87,31 +164,31 @@ interface ApiService : ServicesTransactionPushService {
                 communityId: String,
                 permlink: String): Either<CyberDiscussion, ApiResponseError>
 
-    fun getPosts(userId: String?,
-                 communityId: String?,
-                 communityAlias: String?,
-                 allowNsfw: Boolean?,
-                 type: String?,
-                 sortBy: String?,
-                 timeframe: String?,
-                 limit: Int?,
-                 offset: Int?): Either<GetDiscussionsResult, ApiResponseError>
+    fun getPosts(userId: CyberName? = null,
+                 communityId: String? = null,
+                 communityAlias: String? = null,
+                 allowNsfw: Boolean? = null,
+                 type: FeedType? = null,
+                 sortBy: FeedSortByType? = null,
+                 timeframe: FeedTimeFrame? = null,
+                 limit: Int? = null,
+                 offset: Int? = null): Either<GetDiscussionsResult, ApiResponseError>
 
     fun getPostRaw(userId: CyberName, communityId: String, permlink: String): Either<CyberDiscussionRaw, ApiResponseError>
 
-    fun getPostsRaw(userId: String?,
-                    communityId: String?,
-                    communityAlias: String?,
-                    allowNsfw: Boolean?,
-                    type: String?,
-                    sortBy: String?,
-                    timeframe: String?,
-                    limit: Int?,
-                    offset: Int?): Either<GetDiscussionsResultRaw, ApiResponseError>
+    fun getPostsRaw(userId: CyberName? = null,
+                    communityId: String? = null,
+                    communityAlias: String? = null,
+                    allowNsfw: Boolean? = null,
+                    type: FeedType? = null,
+                    sortBy: FeedSortByType? = null,
+                    timeframe: FeedTimeFrame? = null,
+                    limit: Int? = null,
+                    offset: Int? = null): Either<GetDiscussionsResultRaw, ApiResponseError>
 
     fun getTokensInfo(list: List<String>): Either<GetTokensInfoResponse, ApiResponseError>
 
-    fun getLeaders(communityId: String, limit: Int?, skip: Int?, query: String?): Either<LeadersResponse, ApiResponseError>
+    fun getLeaders(communityId: String, limit: Int? = null, skip: Int? = null, query: String? = null): Either<LeadersResponse, ApiResponseError>
 
     fun getCommunityBlacklist(communityId: String?,        // Id сообщества
                               communityAlias: String?,// Алиас сообщества
@@ -146,19 +223,23 @@ interface ApiService : ServicesTransactionPushService {
 
     fun suggestNames(text: String): Either<SuggestNameResponse, ApiResponseError>
 
-    fun onBoardingCommunitySubscriptions(name: String, communityIds: List<String>): Either<ResultOk, ApiResponseError>
+    fun onBoardingCommunitySubscriptions(userId: CyberName, communityIds: List<String>): Either<ResultOk, ApiResponseError>
 
-    fun getComment(name: String, communityId: String, permlink: String): Either<CyberComment, ApiResponseError>
+    fun getComment(userId: CyberName, communityId: String, permlink: String): Either<CyberComment, ApiResponseError>
 
-    fun getCommentRaw(name: String, communityId: String, permlink: String): Either<CyberCommentRaw, ApiResponseError>
+    fun getCommentRaw(userId: CyberName, communityId: String, permlink: String): Either<CyberCommentRaw, ApiResponseError>
 
-    fun getComments(sortBy: String?, offset: Int?, limit: Int?, type: String?, userId: String?, permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponse, ApiResponseError>
+    fun getComments(sortBy: CommentsSortBy? = null, offset: Int? = null, limit: Int? = null, type: CommentsSortType? = null,
+                    userId: CyberName? = null, permlink: String? = null, communityId: String? = null,
+                    communityAlias: String? = null, parentComment: ParentComment? = null, resolveNestedComments: Boolean? = null): Either<GetCommentsResponse, ApiResponseError>
 
-    fun getCommentsRaw(sortBy: String?, offset: Int?, limit: Int?, type: String?, userId: String?, permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponseRaw, ApiResponseError>
+    fun getCommentsRaw(sortBy: CommentsSortBy? = null, offset: Int? = null, limit: Int? = null, type: CommentsSortType? = null,
+                       userId: CyberName? = null, permlink: String? = null, communityId: String? = null,
+                       communityAlias: String? = null, parentComment: ParentComment? = null, resolveNestedComments: Boolean? = null): Either<GetCommentsResponseRaw, ApiResponseError>
 
     fun getNotifications(limit: Int?, beforeThan: String?, filter: List<GetNotificationsFilter>?): Either<GetNotificationsResponse, ApiResponseError>
 
-    fun getNotificationsSafe(limit: Int?, beforeThan: String?, filter: List<GetNotificationsFilter>?): Either<GetNotificationsResponse, ApiResponseError>
+    fun getNotificationsSkipUnrecognized(limit: Int? = null, beforeThan: String? = null, filter: List<GetNotificationsFilter>? = null): Either<GetNotificationsResponse, ApiResponseError>
 
     fun getNotificationsStatus(): Either<GetNotificationStatusResponse, ApiResponseError>
 
@@ -170,10 +251,10 @@ interface ApiService : ServicesTransactionPushService {
 
     fun unSubscribeFromNotifications(): Either<ResultOk, ApiResponseError>
 
-    fun getWalletBalance(userId: CyberName): Either<GetUserBalanceResponse, ApiResponseError>
+    fun getBalance(userId: CyberName): Either<GetUserBalanceResponse, ApiResponseError>
 
-    fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection?, transferType: TransferHistoryTransferType?,
-                           symbol: CyberSymbolCode?, rewards: String?, limit: Int?, offset: Int?): Either<GetTransferHistoryResponse, ApiResponseError>
+    fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection? = null, transferType: TransferHistoryTransferType? = null,
+                           symbol: CyberSymbolCode? = null, rewards: String? = null, limit: Int? = null, offset: Int? = null): Either<GetTransferHistoryResponse, ApiResponseError>
 
     fun getBuyPrice(pointSymbol: CyberSymbolCode, quantity: WalletQuantity): Either<GetWalletBuyPriceResponse, ApiResponseError>
 
@@ -187,5 +268,11 @@ interface ApiService : ServicesTransactionPushService {
                        profilesSearchRequest: ExtendedRequestSearchItem?,
                        communitiesSearchRequest: ExtendedRequestSearchItem?,
                        postsSearchRequest: ExtendedRequestSearchItem?): Either<ExtendedSearchResponse, ApiResponseError>
+
+    fun setInfo(timezoneOffset: Int): Either<ResultOk, ApiResponseError>
+
+    fun setFcmToken(token: String): Either<ResultOk, ApiResponseError>
+
+    fun resetFcmToken(): Either<ResultOk, ApiResponseError>
 }
 

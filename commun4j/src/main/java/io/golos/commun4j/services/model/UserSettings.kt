@@ -34,13 +34,8 @@ enum class ServiceSettingsLanguage {
 }
 
 @JsonClass(generateAdapter = true)
-class UserSettings(
-        //device userId
-        val profile: String?,
-        val app:String?,
-        val basic: Any?,
-        val notify: WebShowSettings?,
-        val push: MobileShowSettings?
+class PushSettingsResponse(
+        val disabled: List<NotificationType>
 )
 @JsonClass(generateAdapter = true)
 internal class ServicesSettingsRequest(

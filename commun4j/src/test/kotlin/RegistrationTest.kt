@@ -56,6 +56,7 @@ class RegistrationTest {
 
         val lastStep = client.writeUserToBlockChain(unExistingPhone,
                 null,
+                null,
                 thirdStep.getOrThrow().userId.name,
                 accName,
                 keys[AuthType.OWNER]!!,

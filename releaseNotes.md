@@ -1,1 +1,1 @@
-timeStamp field for `Notification`
+bunch of methods, related to registration through email and push settings
