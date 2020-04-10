@@ -479,21 +479,18 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun firstUserRegistrationStep(
-            captcha: String?,
-            phone: String,
-            testingPass: String?
+    override fun firstUserRegistrationStep(captcha: String?, captchaType: String?, phone: String, testingPass: String?
     ): Either<FirstRegistrationStepResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_FIRST_STEP.toString(),
-                FirstRegistrationStepRequest(captcha, phone, testingPass), FirstRegistrationStepResult::class.java
+                FirstRegistrationStepRequest(captcha, phone, testingPass, captchaType), FirstRegistrationStepResult::class.java
         )
     }
 
-    override fun firstUserRegistrationStepEmail(captcha: String?, email: String, testingPass: String?): Either<FirstRegistrationStepEmailResult, ApiResponseError> {
+    override fun firstUserRegistrationStepEmail(captcha: String?, captchaType: String?, email: String, testingPass: String?): Either<FirstRegistrationStepEmailResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_FIRST_STEP_EMAIL.toString(),
-                FirstRegistrationStepEmailRequest(captcha, email, testingPass), FirstRegistrationStepEmailResult::class.java
+                FirstRegistrationStepEmailRequest(captcha, email, testingPass, captchaType), FirstRegistrationStepEmailResult::class.java
         )
     }
 

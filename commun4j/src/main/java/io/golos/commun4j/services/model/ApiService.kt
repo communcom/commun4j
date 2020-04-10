@@ -38,9 +38,9 @@ interface ApiService : ServicesTransactionPushService {
      *  @throws SocketTimeoutException if socket was unable to answer in [Commun4jConfig.readTimeoutInSeconds] seconds
      *  @return [Either.Success] if transaction succeeded, otherwise [Either.Failure]
      * */
-    fun firstUserRegistrationStep(captcha: String?, phone: String, testingPass: String?): Either<FirstRegistrationStepResult, ApiResponseError>
+    fun firstUserRegistrationStep(captcha: String?, captchaType: String?, phone: String, testingPass: String? = null): Either<FirstRegistrationStepResult, ApiResponseError>
 
-    fun firstUserRegistrationStepEmail(captcha: String?, email: String, testingPass: String?): Either<FirstRegistrationStepEmailResult, ApiResponseError>
+    fun firstUserRegistrationStepEmail(captcha: String?, captchaType: String?, email: String, testingPass: String? = null): Either<FirstRegistrationStepEmailResult, ApiResponseError>
 
     /** method used to verify [phone] by sent [code] through sms. Second step of registration
      *  @param code sms code sent to [phone]

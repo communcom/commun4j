@@ -1,1 +1,1 @@
-bunch of methods, related to registration through email and push settings
+`captachType` param for first step registration
