@@ -1,1 +1,1 @@
-`captachType` param for first step registration
+fix of bug in `getComments` and `getCommentsRaw` functions

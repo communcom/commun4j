@@ -393,7 +393,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     override fun getComments(sortBy: CommentsSortBy?, offset: Int?, limit: Int?, type: CommentsSortType?, userId: CyberName?, permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponse, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_COMMENTS.toString(),
-                GetCommentsRequest(sortBy?.toString(), offset, limit, type?.toString(), userId?.toString(), permlink, communityId, communityAlias,
+                GetCommentsRequest(sortBy?.toString(), offset, limit, type?.toString(), userId?.name, permlink, communityId, communityAlias,
                         parentComment, resolveNestedComments),
                 GetCommentsResponse::class.java)
     }
@@ -402,7 +402,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     override fun getCommentsRaw(sortBy: CommentsSortBy?, offset: Int?, limit: Int?, type: CommentsSortType?, userId: CyberName?, permlink: String?, communityId: String?, communityAlias: String?, parentComment: ParentComment?, resolveNestedComments: Boolean?): Either<GetCommentsResponseRaw, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_COMMENTS.toString(),
-                GetCommentsRequest(sortBy?.toString(), offset, limit, type?.toString(), userId?.toString(), permlink, communityId, communityAlias,
+                GetCommentsRequest(sortBy?.toString(), offset, limit, type?.toString(), userId?.name, permlink, communityId, communityAlias,
                         parentComment, resolveNestedComments),
                 GetCommentsResponseRaw::class.java)
     }
