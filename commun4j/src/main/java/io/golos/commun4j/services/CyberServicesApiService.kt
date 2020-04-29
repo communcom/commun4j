@@ -501,7 +501,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun verifyEmailForUserRegistration(email: String, code: Int): Either<VerifyStepResult, ApiResponseError> {
+    override fun verifyEmailForUserRegistration(email: String, code: String): Either<VerifyStepResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_VERIFY_EMAIL.toString(),
                 VerifyEmailRequest(email, code), VerifyStepResult::class.java

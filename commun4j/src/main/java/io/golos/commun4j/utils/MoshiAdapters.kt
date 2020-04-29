@@ -17,6 +17,7 @@ class UserRegistrationStateAdapter : JsonAdapter<UserRegistrationState>() {
             "setUsername" -> UserRegistrationState.SET_USER_NAME
             "toBlockChain" -> UserRegistrationState.TO_BLOCK_CHAIN
             "createIdentity" -> UserRegistrationState.CREATE_IDENTITY
+            "verifyEmail" -> UserRegistrationState.VERIFY_EMAIL
             else -> throw IllegalArgumentException("unknown step $value")
         }
     }

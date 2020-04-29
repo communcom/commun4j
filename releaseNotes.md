@@ -1,1 +1,1 @@
-fix of bug in `getComments` and `getCommentsRaw` functions
+updated `ReferralRegistrationBonusNotification` and `ReferralPurchaseBonusNotification` models

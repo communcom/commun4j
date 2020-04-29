@@ -50,7 +50,7 @@ interface ApiService : ServicesTransactionPushService {
      * */
     fun verifyPhoneForUserRegistration(phone: String, code: Int): Either<VerifyStepResult, ApiResponseError>
 
-    fun verifyEmailForUserRegistration(email: String, code: Int): Either<VerifyStepResult, ApiResponseError>
+    fun verifyEmailForUserRegistration(email: String, code: String): Either<VerifyStepResult, ApiResponseError>
 
     /** method used to connect verified [user] name with [phone]. Third step of registration
      *  @param user name to associate with [phone]
@@ -237,7 +237,7 @@ interface ApiService : ServicesTransactionPushService {
                        userId: CyberName? = null, permlink: String? = null, communityId: String? = null,
                        communityAlias: String? = null, parentComment: ParentComment? = null, resolveNestedComments: Boolean? = null): Either<GetCommentsResponseRaw, ApiResponseError>
 
-    fun getNotifications(limit: Int?, beforeThan: String?, filter: List<GetNotificationsFilter>?): Either<GetNotificationsResponse, ApiResponseError>
+    fun getNotifications(limit: Int? = null, beforeThan: String? = null, filter: List<GetNotificationsFilter>? = null): Either<GetNotificationsResponse, ApiResponseError>
 
     fun getNotificationsSkipUnrecognized(limit: Int? = null, beforeThan: String? = null, filter: List<GetNotificationsFilter>? = null): Either<GetNotificationsResponse, ApiResponseError>
 

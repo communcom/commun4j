@@ -5,10 +5,10 @@ import io.golos.commun4j.sharedmodel.CyberName
 import java.util.*
 
 @JsonClass(generateAdapter = true)
-data class WriteToBlockChainStepResult(val username: String, val userId: CyberName, val currentState: UserRegistrationState)
+data class WriteToBlockChainStepResult(val username: String, val userId: CyberName, val currentState: String)
 
 @JsonClass(generateAdapter = true)
-data class ResendEmailResult(val nextEmailRetry: Date, val currentState: UserRegistrationState)
+data class ResendEmailResult(val nextEmailRetry: Date, val currentState: String)
 
 @JsonClass(generateAdapter = true)
-data class ResendSmsResult(val nextSmsRetry: Date, val currentState: UserRegistrationState)
+data class ResendSmsResult(val nextSmsRetry: Date, val currentState: String)

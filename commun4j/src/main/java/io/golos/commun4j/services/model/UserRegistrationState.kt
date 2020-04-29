@@ -6,5 +6,6 @@ enum class UserRegistrationState {
     VERIFY,
     CREATE_IDENTITY,
     SET_USER_NAME,
+    VERIFY_EMAIL,
     TO_BLOCK_CHAIN;
 }

@@ -6,4 +6,4 @@ import com.squareup.moshi.JsonClass
 internal class VerifyPhoneRequest(val phone: String, val code: Int)
 
 @JsonClass(generateAdapter = true)
-internal class VerifyEmailRequest(val email: String, val code: Int)
+internal class VerifyEmailRequest(val email: String, val code: String)

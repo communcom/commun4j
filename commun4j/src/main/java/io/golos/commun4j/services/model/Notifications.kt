@@ -186,7 +186,9 @@ data class ReferralRegistrationBonusNotification(override val eventType: String,
                                                  val from: NotificationUserDescription,
                                                  val amount: Double,
                                                  val pointType: String,
-                                                 val isNew: Boolean) : Notification(eventType, id, timestamp)
+                                                 val isNew: Boolean,
+                                                 val referral: NotificationReferral,
+                                                 val community: NotificationCommunityDescription?) : Notification(eventType, id, timestamp)
 
 @JsonClass(generateAdapter = true)
 data class ReferralPurchaseBonusNotification(override val eventType: String,
@@ -197,6 +199,12 @@ data class ReferralPurchaseBonusNotification(override val eventType: String,
                                              val amount: Double,
                                              val pointType: String,
                                              val percent: Int,
-                                             val isNew: Boolean) : Notification(eventType, id, timestamp)
+                                             val isNew: Boolean,
+                                             val referral: NotificationReferral,
+                                             val community: NotificationCommunityDescription?) : Notification(eventType, id, timestamp)
+
+@JsonClass(generateAdapter = true)
+data class NotificationReferral(val userId: CyberName, val username: String?, val avatarUrl: String?)
+
 
 class UnsupportedNotification(eventType: String, id: String, timestamp: Date, val rawData: Map<*, *>) : Notification(eventType, id, timestamp)

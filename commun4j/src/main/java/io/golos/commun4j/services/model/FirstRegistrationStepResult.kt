@@ -5,11 +5,11 @@ import java.util.Date
 
 @JsonClass(generateAdapter = true)
 data class FirstRegistrationStepResult(val code: Int?,
-                                       val currentState: UserRegistrationState,
+                                       val currentState: String,
                                        val nextSmsRetry: Date)
 
 
 @JsonClass(generateAdapter = true)
 data class FirstRegistrationStepEmailResult(val code: String?,
-                                       val currentState: UserRegistrationState,
+                                       val currentState: String,
                                        val nextEmailRetry: Date)
