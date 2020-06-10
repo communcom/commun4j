@@ -24,7 +24,7 @@ import java.math.BigInteger
 import java.util.*
 
 private enum class ServicesGateMethods {
-    GET_POST, GET_COMMENT, GET_COMMENTS, GET_USER_METADATA, GET_SECRET, AUTH, GET_EMBED,
+    GET_POST, GET_COMMENT, GET_COMMENTS, GET_USER_METADATA, GET_SECRET, AUTH, LOGOUT, GET_EMBED,
     GET_REGISTRATION_STATE, REG_FIRST_STEP, REG_VERIFY_PHONE, REG_SET_USER_NAME, REG_WRITE_TO_BLOCKCHAIN,
     REG_FIRST_STEP_EMAIL, REG_VERIFY_EMAIL, REG_APPEND_REFERRAL_PARENT,
     REG_RESEND_SMS, WAIT_BLOCK, WAIT_FOR_TRANSACTION, PUSH_SUBSCRIBE, PUSH_UNSUBSCRIBE, GET_NOTIFS_HISTORY, MARK_VIEWED,
@@ -48,6 +48,7 @@ private enum class ServicesGateMethods {
             GET_SECRET -> "auth.generateSecret"
             GET_EMBED -> "frame.getEmbed"
             AUTH -> "auth.authorize"
+            LOGOUT -> "auth.signOut"
             GET_REGISTRATION_STATE -> "registration.getState"
             REG_FIRST_STEP -> "registration.firstStep"
             REG_FIRST_STEP_EMAIL -> "registration.firstStepEmail"
@@ -192,6 +193,11 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     override fun unAuth() {
         apiClient.dropConnection()
     }
+
+    override fun logout(): Either<ResultOk, ApiResponseError> {
+        return apiClient.send(ServicesGateMethods.LOGOUT.toString(), Any(), ResultOk::class.java)
+    }
+
 
     override fun resolveCanonicalCyberName(username: String): Either<ResolvedProfile, ApiResponseError> {
         return apiClient.send(

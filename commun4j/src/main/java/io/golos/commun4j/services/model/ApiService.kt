@@ -147,6 +147,8 @@ interface ApiService : ServicesTransactionPushService {
      * */
     fun unAuth()
 
+    fun logout(): Either<ResultOk, ApiResponseError>
+
     /**function tries to resolve canonical name from domain (..@golos for example) or username
      * @param username userName to resolve to
      * @throws IllegalArgumentException if name doesn't exist
