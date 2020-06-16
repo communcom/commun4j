@@ -276,5 +276,7 @@ interface ApiService : ServicesTransactionPushService {
     fun setFcmToken(token: String): Either<ResultOk, ApiResponseError>
 
     fun resetFcmToken(): Either<ResultOk, ApiResponseError>
+
+    fun recordPostView(userId: CyberName, communityId: String, permlink: String, deviceId: String): Either<ResultOk, ApiResponseError>
 }
 

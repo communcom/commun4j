@@ -34,7 +34,7 @@ private enum class ServicesGateMethods {
     GET_ENTITY_REPORTS, GET_REPORTS, SUGGEST_NAMES, ONBOARDING_COMMUNITY_SUBSCRIPTION, GET_NOTIFICATIONS,
     GET_NOTIFICATIONS_STATUS, GET_BULK, SUBSCRIBE_NOTIFICATIONS, UN_SUBSCRIBE_NOTIFICATIONS, GET_COIN_BUY_PRICE, GET_COIN_SELL_PRICE,
     GET_CONFIG, SEARCH_QUICK, SEARCH_EXTENDED, SET_DEVICE_INFO, SET_FCM_TOKEN, RESET_FCM_TOKEN, REG_RESEND_EMAIL,
-    GET_REFERRAL_USERS;
+    GET_REFERRAL_USERS, RECORD_POST_VIEW;
 
     override fun toString(): String {
         return when (this) {
@@ -100,6 +100,7 @@ private enum class ServicesGateMethods {
             RESET_FCM_TOKEN -> "device.resetFcmToken"
             REG_VERIFY_EMAIL -> "registration.verifyEmail"
             GET_REFERRAL_USERS -> "content.getReferralUsers"
+            RECORD_POST_VIEW -> "meta.recordPostView"
         }
     }
 }
@@ -794,5 +795,12 @@ internal class CyberServicesApiService @JvmOverloads constructor(
 
     override fun shutDown() {
         apiClient.dropConnection()
+    }
+
+    override fun recordPostView(userId: CyberName, communityId: String, permlink: String, deviceId: String): Either<ResultOk, ApiResponseError> {
+        return apiClient.send(ServicesGateMethods.RECORD_POST_VIEW.toString(), mapOf(
+                "postLink" to "$communityId/$userId/$permlink",
+                "fingerPrint" to deviceId
+        ), ResultOk::class.java)
     }
 }
