@@ -34,7 +34,7 @@ private enum class ServicesGateMethods {
     GET_ENTITY_REPORTS, GET_REPORTS, SUGGEST_NAMES, ONBOARDING_COMMUNITY_SUBSCRIPTION, GET_NOTIFICATIONS,
     GET_NOTIFICATIONS_STATUS, GET_BULK, SUBSCRIBE_NOTIFICATIONS, UN_SUBSCRIBE_NOTIFICATIONS, GET_COIN_BUY_PRICE, GET_COIN_SELL_PRICE,
     GET_CONFIG, SEARCH_QUICK, SEARCH_EXTENDED, SET_DEVICE_INFO, SET_FCM_TOKEN, RESET_FCM_TOKEN, REG_RESEND_EMAIL,
-    GET_REFERRAL_USERS, RECORD_POST_VIEW;
+    GET_REFERRAL_USERS, RECORD_POST_VIEW, GET_DONATIONS_BULK;
 
     override fun toString(): String {
         return when (this) {
@@ -101,6 +101,7 @@ private enum class ServicesGateMethods {
             REG_VERIFY_EMAIL -> "registration.verifyEmail"
             GET_REFERRAL_USERS -> "content.getReferralUsers"
             RECORD_POST_VIEW -> "meta.recordPostView"
+            GET_DONATIONS_BULK -> "wallet.getDonationsBulk"
         }
     }
 }
@@ -803,4 +804,10 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                 "fingerPrint" to deviceId
         ), ResultOk::class.java)
     }
+
+    override fun getDonations(posts: List<DonationPostModel>): Either<GetDonationResponse, ApiResponseError> {
+        val request = GetDonationRequest(posts)
+        return apiClient.send(ServicesGateMethods.GET_DONATIONS_BULK.toString(), request, GetDonationResponse::class.java)
+    }
+
 }
