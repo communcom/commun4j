@@ -134,6 +134,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                                 .withSubtype(RewardNotification::class.java, "reward")
                                 .withSubtype(ReferralRegistrationBonusNotification::class.java, "referralRegistrationBonus")
                                 .withSubtype(ReferralPurchaseBonusNotification::class.java, "referralPurchaseBonus")
+                                .withSubtype(DonationNotification::class.java, "donation")
                 )
                 .add(
                         PolymorphicJsonAdapterFactory.of(QuickSearchResponseItem::class.java, "type")
