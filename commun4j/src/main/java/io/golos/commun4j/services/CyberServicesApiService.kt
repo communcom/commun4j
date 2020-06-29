@@ -212,7 +212,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
 
     override fun getCommunitiesList(type: CommunitiesRequestType?, userId: CyberName?, search: String?, offset: Int?, limit: Int?) = apiClient.send(
             ServicesGateMethods.GET_COMMUNITIES.toString(),
-            GetCommunitiesRequest(type?.toString(), userId?.name, search, offset, limit),
+            GetCommunitiesRequest(type?.toString(), userId?.name, search, offset, limit, listOf("all")),
             GetCommunitiesResponse::class.java)
 
     override fun getCommunity(communityId: String?, communityAlias: String?) = apiClient.send(

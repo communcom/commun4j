@@ -16,7 +16,7 @@ enum class CommunitiesRequestType {
 }
 
 @JsonClass(generateAdapter = true)
-internal data class GetCommunitiesRequest(val type: String?, val userId: String?, val search: String?, val offset: Int?, val limit: Int?)
+internal data class GetCommunitiesRequest(val type: String?, val userId: String?, val search: String?, val offset: Int?, val limit: Int?, val allowedLanguages: List<String>?)
 
 @JsonClass(generateAdapter = true)
 data class GetCommunitiesResponse(val items: List<GetCommunitiesItem>) : List<GetCommunitiesItem> by items
