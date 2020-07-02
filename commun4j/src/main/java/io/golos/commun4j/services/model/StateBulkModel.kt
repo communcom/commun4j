@@ -15,7 +15,10 @@ data class GetStateBulkResponseItem(val topCount: Int,
                                     val collectionEnd: String,
                                     val reward: CyberAsset,
                                     val isClosed: Boolean,
-                                    val contentId: UserAndPermlinkPair)
+                                    val contentId: UserAndPermlinkPair,
+                                    val convertedReward: ConvertedRewardItem?)
 
+@JsonClass(generateAdapter = true)
+data class ConvertedRewardItem(val cmn: Double, val usd: Double)
 
 typealias GetStateBulkResponse = Map<String, List<GetStateBulkResponseItem>>

@@ -801,7 +801,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
 
     override fun recordPostView(userId: CyberName, communityId: String, permlink: String, deviceId: String): Either<ResultOk, ApiResponseError> {
         return apiClient.send(ServicesGateMethods.RECORD_POST_VIEW.toString(), mapOf(
-                "postLink" to "$communityId/$userId/$permlink",
+                "postLink" to "$communityId/${userId.name}/$permlink",
                 "fingerPrint" to deviceId
         ), ResultOk::class.java)
     }
