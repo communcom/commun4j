@@ -41,7 +41,7 @@ inline fun <reified T> Moshi.toJson(`object`: T) = adapter<T>(T::class.java).toJ
 
 val builtInTypes = hashMapOf(*ClassName("kotlin", "String").createVariations("string"),
         *(CyberName::class.java.asTypeName() as ClassName).createVariations("name"),
-        * (arrayOf("int8", "uint8", "int16", "uint16", "int32", "uint32",
+        * (arrayOf("int8", "uint8", "int16", "uint16", "int32", "uint32", "uint32$",
                 "int64", "uint64", "int128", "uint128")
                 .map { it to intStringToClassName(it) })
                 .toList()
@@ -58,6 +58,7 @@ val builtInTypes = hashMapOf(*ClassName("kotlin", "String").createVariations("st
             putAll(CyberSymbolCode::class.asTypeName().createVariations("symbol_code"))
             putAll(CyberSymbol::class.asTypeName().createVariations("symbol"))
             putAll(ByteArray::class.asTypeName().createVariations("bytes"))
+            putAll(ByteArray::class.asTypeName().createVariations("safe_t$"))
             putAll(CyberTimeStampSeconds::class.asTypeName().createVariations("time_point_sec"))
             putAll(CheckSum256::class.asTypeName().createVariations("checksum256"))
             putAll(String::class.asTypeName().createVariations("block_timestamp_type"))
@@ -107,6 +108,7 @@ fun TypeName.createVariations(forName: String): Array<Pair<String, TypeName>> =
 
 fun intStringToClassName(integerString: String): ClassName {
     if (!integerString
+                    .replace("$", "")
                     .matches(integerRegex))
         throw IllegalArgumentException("string $integerString not matches with $integerRegex regexp")
     val intSize = Integer.parseInt(integerString.replace("\\D".toRegex(), ""))
