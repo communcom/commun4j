@@ -41,7 +41,10 @@ data class GetCommunitiesItem(val subscribersCount: Int,
                               val friendsCount: Int?,
                               val isSubscribed: Boolean?,
                               val isBlocked: Boolean?,
-                              val friends: List<CommunityFriendItem>?)
+                              val friends: List<CommunityFriendItem>?,
+                              val isInBlacklist: Boolean?,
+                              val isLeader: Boolean?,
+                              val isStoppedLeader: Boolean?)
 
 @JsonClass(generateAdapter = true)
 data class CommunityRuleItem(val _id: String?, val id: String, val title: String?, val text: String?)

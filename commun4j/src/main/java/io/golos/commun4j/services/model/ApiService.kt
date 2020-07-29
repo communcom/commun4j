@@ -174,7 +174,8 @@ interface ApiService : ServicesTransactionPushService {
                  sortBy: FeedSortByType? = null,
                  timeframe: FeedTimeFrame? = null,
                  limit: Int? = null,
-                 offset: Int? = null): Either<GetDiscussionsResult, ApiResponseError>
+                 offset: Int? = null,
+                 allowedLanguages: List<String>?): Either<GetDiscussionsResult, ApiResponseError>
 
     fun getPostRaw(userId: CyberName, communityId: String, permlink: String): Either<CyberDiscussionRaw, ApiResponseError>
 
@@ -186,7 +187,8 @@ interface ApiService : ServicesTransactionPushService {
                     sortBy: FeedSortByType? = null,
                     timeframe: FeedTimeFrame? = null,
                     limit: Int? = null,
-                    offset: Int? = null): Either<GetDiscussionsResultRaw, ApiResponseError>
+                    offset: Int? = null,
+                    allowedLanguages: List<String>?): Either<GetDiscussionsResultRaw, ApiResponseError>
 
     fun getTokensInfo(list: List<String>): Either<GetTokensInfoResponse, ApiResponseError>
 

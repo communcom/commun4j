@@ -312,20 +312,20 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun getPosts(userId: CyberName?, communityId: String?, communityAlias: String?, allowNsfw: Boolean?, type: FeedType?, sortBy: FeedSortByType?, timeframe: FeedTimeFrame?, limit: Int?, offset: Int?): Either<GetDiscussionsResult, ApiResponseError> {
+    override fun getPosts(userId: CyberName?, communityId: String?, communityAlias: String?, allowNsfw: Boolean?, type: FeedType?, sortBy: FeedSortByType?, timeframe: FeedTimeFrame?, limit: Int?, offset: Int?, allowedLanguages: List<String>?): Either<GetDiscussionsResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_POSTS.toString(),
                 GetPostsRequest(userId?.name, communityId, communityAlias,
-                        allowNsfw, type?.toString(), sortBy?.toString(), timeframe?.toString(), limit, offset),
+                        allowNsfw, type?.toString(), sortBy?.toString(), timeframe?.toString(), limit, offset, allowedLanguages),
                 GetDiscussionsResult::class.java
         )
     }
 
-    override fun getPostsRaw(userId: CyberName?, communityId: String?, communityAlias: String?, allowNsfw: Boolean?, type: FeedType?, sortBy: FeedSortByType?, timeframe: FeedTimeFrame?, limit: Int?, offset: Int?): Either<GetDiscussionsResultRaw, ApiResponseError> {
+    override fun getPostsRaw(userId: CyberName?, communityId: String?, communityAlias: String?, allowNsfw: Boolean?, type: FeedType?, sortBy: FeedSortByType?, timeframe: FeedTimeFrame?, limit: Int?, offset: Int?, allowedLanguages: List<String>?): Either<GetDiscussionsResultRaw, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_POSTS.toString(),
                 GetPostsRequest(userId?.name, communityId, communityAlias,
-                        allowNsfw, type?.toString(), sortBy?.toString(), timeframe?.toString(), limit, offset),
+                        allowNsfw, type?.toString(), sortBy?.toString(), timeframe?.toString(), limit, offset, allowedLanguages),
                 GetDiscussionsResultRaw::class.java
         )
     }
@@ -554,7 +554,9 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     override fun resendSmsCode(forUser: String?, phone: String?): Either<ResendSmsResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_RESEND_SMS.toString(),
-                ResendUserSmsRequest(forUser, phone), ResendSmsResult::class.java
+                mapOf(
+                        "phone" to phone
+                ), ResendSmsResult::class.java
         )
     }
 
