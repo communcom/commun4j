@@ -3,6 +3,8 @@ package io.golos.commun4j.model
 import io.golos.commun4j.abi.implementation.IAction
 import io.golos.commun4j.abi.implementation.c.gallery.*
 import io.golos.commun4j.abi.implementation.c.point.OpenCPointStruct
+import io.golos.commun4j.abi.implementation.cyber.token.TransferCyberTokenAction
+import io.golos.commun4j.sharedmodel.CyberSymbolCode
 import io.golos.commun4j.utils.toCyberName
 
 
@@ -16,6 +18,7 @@ fun getOpenArgsCPointStructIfActionSupportedForBalanceNotExistError(action: IAct
         is DownvoteCGalleryAction -> OpenCPointStruct(action.struct.message_id.author, action.struct.commun_code, ramPayer)
         is UnvoteCGalleryAction -> OpenCPointStruct(action.struct.message_id.author, action.struct.commun_code, ramPayer)
         is ReportCGalleryAction -> OpenCPointStruct(action.struct.message_id.author, action.struct.commun_code, ramPayer)
+        is TransferCyberTokenAction -> OpenCPointStruct(action.struct.from, CyberSymbolCode(action.struct.memo), action.struct.from)
         else -> null
     }
 }

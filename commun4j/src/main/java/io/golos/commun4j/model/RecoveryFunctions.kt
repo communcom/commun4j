@@ -61,11 +61,10 @@ fun recoverFromBalanceDoesNotExistError(error: GolosEosError,
                                         bandWidthRequest: BandWidthRequest?,
                                         clientAuthRequest: ClientAuthRequest?): Either<*, GolosEosError> {
 
-    if (!error.hasBalanceDoesNotExistError()) return Either.Failure<Any, GolosEosError>(error)
+    if (!error.hasBalanceDoesNotExistError() && !error.hasBalanceOfFromNotOpened()) return Either.Failure<Any, GolosEosError>(error)
 
     val argsStruct = getOpenArgsCPointStructIfActionSupportedForBalanceNotExistError(originalAction)
             ?: return Either.Failure<Any, GolosEosError>(error)
-
     print(argsStruct)
 
     var actions = listOf(OpenCPointAction(argsStruct).toActionAbi(listOf(TransactionAuthorizationAbi(argsStruct.getOwner.name, "active"))))
