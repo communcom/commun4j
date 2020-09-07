@@ -36,11 +36,7 @@ data class GetProfileResult(val username: String?,
                                                  val subscribersCount: Int?)
 
     @JsonClass(generateAdapter = true)
-    data class Personal(val biography: String?, val contacts: Contacts?)
-
-    @JsonClass(generateAdapter = true)
-    data class Contacts(val facebook: String?, val telegram: String?, val weChat: String?, val whatsApp: String?, val vkontakte: String?,
-                        val instagram: String?)
+    data class Personal(val biography: String?)
 
     @JsonClass(generateAdapter = true)
     data class Subscribers(val usersCount: Int,

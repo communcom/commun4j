@@ -34,7 +34,7 @@ private enum class ServicesGateMethods {
     GET_ENTITY_REPORTS, GET_REPORTS, SUGGEST_NAMES, ONBOARDING_COMMUNITY_SUBSCRIPTION, GET_NOTIFICATIONS,
     GET_NOTIFICATIONS_STATUS, GET_BULK, SUBSCRIBE_NOTIFICATIONS, UN_SUBSCRIBE_NOTIFICATIONS, GET_COIN_BUY_PRICE, GET_COIN_SELL_PRICE,
     GET_CONFIG, SEARCH_QUICK, SEARCH_EXTENDED, SET_DEVICE_INFO, SET_FCM_TOKEN, RESET_FCM_TOKEN, REG_RESEND_EMAIL,
-    GET_REFERRAL_USERS, RECORD_POST_VIEW, GET_DONATIONS_BULK;
+    GET_REFERRAL_USERS, RECORD_POST_VIEW, GET_DONATIONS_BULK, GET_PROPOSALS;
 
     override fun toString(): String {
         return when (this) {
@@ -102,6 +102,7 @@ private enum class ServicesGateMethods {
             GET_REFERRAL_USERS -> "content.getReferralUsers"
             RECORD_POST_VIEW -> "meta.recordPostView"
             GET_DONATIONS_BULK -> "wallet.getDonationsBulk"
+            GET_PROPOSALS -> "content.getProposals"
         }
     }
 }
@@ -164,7 +165,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                         "deviceType=${config.socketOpenQueryParams.deviceType}" +
                         "&clientType=${config.socketOpenQueryParams.clientType}&version=${config.socketOpenQueryParams.version}".let {
                             val queryParams = config.socketOpenQueryParams;
-                            if (queryParams.deviceId == null)it
+                            if (queryParams.deviceId == null) it
                             else it + "&deviceId=${queryParams.deviceId}"
                         },
                 moshi,
@@ -747,8 +748,8 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     }
 
     override fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection?, transferType: TransferHistoryTransferType?,
-                                    symbol: CyberSymbolCode?, rewards: String?, limit: Int?, offset: Int?): Either<GetTransferHistoryResponse, ApiResponseError> {
-        val request = GetTransferHistoryRequest(userId, direction, transferType, symbol, rewards, limit, offset)
+                                    symbol: CyberSymbolCode?, rewards: String?, limit: Int?, offset: Int?, donation: TransferHistoryDonation?, holdType: TransferHistoryHoldType?): Either<GetTransferHistoryResponse, ApiResponseError> {
+        val request = GetTransferHistoryRequest(userId, direction, transferType, symbol, rewards, limit, offset, donation, holdType)
         return apiClient.send(ServicesGateMethods.GET_TRANSFER_HISTORY.toString(), request, GetTransferHistoryResponse::class.java)
     }
 
@@ -811,6 +812,24 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     override fun getDonations(posts: List<DonationPostModel>): Either<GetDonationResponse, ApiResponseError> {
         val request = GetDonationRequest(posts)
         return apiClient.send(ServicesGateMethods.GET_DONATIONS_BULK.toString(), request, GetDonationResponse::class.java)
+    }
+
+    override fun getProposals(communityIds: List<String>?,
+                              limit: Int?,
+                              offset: Int?): Either<GetProposalResponse, ApiResponseError> {
+
+        return apiClient.send(ServicesGateMethods.GET_PROPOSALS.toString(),
+                GetProposalRequest(communityIds, limit, offset), GetProposalResponse::class.java)
+    }
+
+    override fun getEntityReports(communityId: String?,
+                                  userId: CyberName?,
+                                  permlink: String,
+                                  limit: Int?,
+                                  offset: Int?): Either<GetEntityReportsResponse, ApiResponseError> {
+
+        return apiClient.send(ServicesGateMethods.GET_ENTITY_REPORTS.toString(),
+                GetEntityReportsRequest(userId, permlink, communityId, limit, offset), GetEntityReportsResponse::class.java)
     }
 
 }

@@ -258,7 +258,7 @@ interface ApiService : ServicesTransactionPushService {
     fun getBalance(userId: CyberName): Either<GetUserBalanceResponse, ApiResponseError>
 
     fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection? = null, transferType: TransferHistoryTransferType? = null,
-                           symbol: CyberSymbolCode? = null, rewards: String? = null, limit: Int? = null, offset: Int? = null): Either<GetTransferHistoryResponse, ApiResponseError>
+                           symbol: CyberSymbolCode? = null, rewards: String? = null, limit: Int? = null, offset: Int? = null, donation: TransferHistoryDonation? = null, holdType: TransferHistoryHoldType? = null): Either<GetTransferHistoryResponse, ApiResponseError>
 
     fun getBuyPrice(pointSymbol: CyberSymbolCode, quantity: WalletQuantity): Either<GetWalletBuyPriceResponse, ApiResponseError>
 
@@ -282,5 +282,15 @@ interface ApiService : ServicesTransactionPushService {
     fun recordPostView(userId: CyberName, communityId: String, permlink: String, deviceId: String): Either<ResultOk, ApiResponseError>
 
     fun getDonations(posts: List<DonationPostModel>): Either<GetDonationResponse, ApiResponseError>
+
+    fun getProposals(communityIds: List<String>?,
+                     limit: Int?,
+                     offset: Int?): Either<GetProposalResponse, ApiResponseError>
+
+    fun getEntityReports(communityId: String?,
+                         userId: CyberName?,
+                         permlink: String,
+                         limit: Int?,
+                         offset: Int?): Either<GetEntityReportsResponse, ApiResponseError>
 }
 
