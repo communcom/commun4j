@@ -748,8 +748,8 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     }
 
     override fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection?, transferType: TransferHistoryTransferType?,
-                                    symbol: CyberSymbolCode?, rewards: String?, limit: Int?, offset: Int?, donation: TransferHistoryDonation?, holdType: TransferHistoryHoldType?): Either<GetTransferHistoryResponse, ApiResponseError> {
-        val request = GetTransferHistoryRequest(userId, direction, transferType, symbol, rewards, limit, offset, donation, holdType)
+                                    symbol: CyberSymbolCode?, rewards: String?, limit: Int?, offset: Int?, donation: TransferHistoryDonation?, holdType: TransferHistoryHoldType?, claim: TransferHistoryDonation?): Either<GetTransferHistoryResponse, ApiResponseError> {
+        val request = GetTransferHistoryRequest(userId, direction, transferType, symbol, rewards, limit, offset, donation, holdType, claim)
         return apiClient.send(ServicesGateMethods.GET_TRANSFER_HISTORY.toString(), request, GetTransferHistoryResponse::class.java)
     }
 

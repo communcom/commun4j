@@ -8,7 +8,7 @@ import java.util.*
 
 @JsonClass(generateAdapter = true)
 internal data class GetTransferHistoryRequest(val userId: CyberName, val direction: TransferHistoryDirection?, val transferType: TransferHistoryTransferType?,
-                                              val symbol: CyberSymbolCode?, val rewards: String?, val limit: Int?, val offset: Int?, val donation: TransferHistoryDonation?, val holdType: TransferHistoryHoldType?)
+                                              val symbol: CyberSymbolCode?, val rewards: String?, val limit: Int?, val offset: Int?, val donation: TransferHistoryDonation?, val holdType: TransferHistoryHoldType?, val claim: TransferHistoryDonation?)
 
 enum class TransferHistoryDirection {
     @Json(name = "all")
@@ -47,7 +47,9 @@ enum class TransferHistoryHoldType {
     @Json(name = "dislike")
     DISLIKE,
     @Json(name = "none")
-    NONE;
+    NONE,
+    @Json(name = "all")
+    ALL;
 }
 
 @JsonClass(generateAdapter = true)

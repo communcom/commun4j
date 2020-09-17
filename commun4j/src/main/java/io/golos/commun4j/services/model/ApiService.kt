@@ -257,8 +257,8 @@ interface ApiService : ServicesTransactionPushService {
 
     fun getBalance(userId: CyberName): Either<GetUserBalanceResponse, ApiResponseError>
 
-    fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection? = null, transferType: TransferHistoryTransferType? = null,
-                           symbol: CyberSymbolCode? = null, rewards: String? = null, limit: Int? = null, offset: Int? = null, donation: TransferHistoryDonation? = null, holdType: TransferHistoryHoldType? = null): Either<GetTransferHistoryResponse, ApiResponseError>
+    fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection?, transferType: TransferHistoryTransferType?,
+                                    symbol: CyberSymbolCode?, rewards: String?, limit: Int?, offset: Int?, donation: TransferHistoryDonation?, holdType: TransferHistoryHoldType?, claim: TransferHistoryDonation?): Either<GetTransferHistoryResponse, ApiResponseError>
 
     fun getBuyPrice(pointSymbol: CyberSymbolCode, quantity: WalletQuantity): Either<GetWalletBuyPriceResponse, ApiResponseError>
 
