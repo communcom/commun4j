@@ -216,7 +216,7 @@ interface ApiService : ServicesTransactionPushService {
                    contentType: ReportRequestContentType?,
                    sortBy: ReportsRequestTimeSort?,
                    limit: Int?,
-                   offset: Int?): Either<GetReportsResponse, ApiResponseError>
+                   offset: Int?): Either<GetReportsResponseRaw, ApiResponseError>
 
     fun getReportsRaw(communityIds: List<String>?,
                       status: ReportsRequestStatus?,

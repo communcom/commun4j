@@ -442,11 +442,11 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                             contentType: ReportRequestContentType?,
                             sortBy: ReportsRequestTimeSort?,
                             limit: Int?,
-                            offset: Int?): Either<GetReportsResponse, ApiResponseError> {
+                            offset: Int?): Either<GetReportsResponseRaw, ApiResponseError> {
 
         return apiClient.send(ServicesGateMethods.GET_REPORTS.toString(),
                 GetReportsRequest(communityIds, status?.toString(), contentType?.toString(),
-                        sortBy?.toString(), limit, offset), GetReportsResponse::class.java)
+                        sortBy?.toString(), limit, offset), GetReportsResponseRaw::class.java)
     }
 
     override fun getReportsRaw(communityIds: List<String>?,
