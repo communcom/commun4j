@@ -16,7 +16,7 @@ enum class CommunitiesRequestType {
 }
 
 @JsonClass(generateAdapter = true)
-internal data class GetCommunitiesRequest(val type: String?, val userId: String?, val search: String?, val offset: Int?, val limit: Int?)
+internal data class GetCommunitiesRequest(val type: String?, val userId: String?, val search: String?, val offset: Int?, val limit: Int?, val allowedLanguages: List<String>?)
 
 @JsonClass(generateAdapter = true)
 data class GetCommunitiesResponse(val items: List<GetCommunitiesItem>) : List<GetCommunitiesItem> by items
@@ -41,7 +41,10 @@ data class GetCommunitiesItem(val subscribersCount: Int,
                               val friendsCount: Int?,
                               val isSubscribed: Boolean?,
                               val isBlocked: Boolean?,
-                              val friends: List<CommunityFriendItem>?)
+                              val friends: List<CommunityFriendItem>?,
+                              val isInBlacklist: Boolean?,
+                              val isLeader: Boolean?,
+                              val isStoppedLeader: Boolean?)
 
 @JsonClass(generateAdapter = true)
 data class CommunityRuleItem(val _id: String?, val id: String, val title: String?, val text: String?)

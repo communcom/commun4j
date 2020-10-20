@@ -147,6 +147,8 @@ interface ApiService : ServicesTransactionPushService {
      * */
     fun unAuth()
 
+    fun logout(): Either<ResultOk, ApiResponseError>
+
     /**function tries to resolve canonical name from domain (..@golos for example) or username
      * @param username userName to resolve to
      * @throws IllegalArgumentException if name doesn't exist
@@ -172,7 +174,8 @@ interface ApiService : ServicesTransactionPushService {
                  sortBy: FeedSortByType? = null,
                  timeframe: FeedTimeFrame? = null,
                  limit: Int? = null,
-                 offset: Int? = null): Either<GetDiscussionsResult, ApiResponseError>
+                 offset: Int? = null,
+                 allowedLanguages: List<String>?): Either<GetDiscussionsResult, ApiResponseError>
 
     fun getPostRaw(userId: CyberName, communityId: String, permlink: String): Either<CyberDiscussionRaw, ApiResponseError>
 
@@ -184,7 +187,8 @@ interface ApiService : ServicesTransactionPushService {
                     sortBy: FeedSortByType? = null,
                     timeframe: FeedTimeFrame? = null,
                     limit: Int? = null,
-                    offset: Int? = null): Either<GetDiscussionsResultRaw, ApiResponseError>
+                    offset: Int? = null,
+                    allowedLanguages: List<String>?): Either<GetDiscussionsResultRaw, ApiResponseError>
 
     fun getTokensInfo(list: List<String>): Either<GetTokensInfoResponse, ApiResponseError>
 
@@ -212,7 +216,7 @@ interface ApiService : ServicesTransactionPushService {
                    contentType: ReportRequestContentType?,
                    sortBy: ReportsRequestTimeSort?,
                    limit: Int?,
-                   offset: Int?): Either<GetReportsResponse, ApiResponseError>
+                   offset: Int?): Either<GetReportsResponseRaw, ApiResponseError>
 
     fun getReportsRaw(communityIds: List<String>?,
                       status: ReportsRequestStatus?,
@@ -253,8 +257,8 @@ interface ApiService : ServicesTransactionPushService {
 
     fun getBalance(userId: CyberName): Either<GetUserBalanceResponse, ApiResponseError>
 
-    fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection? = null, transferType: TransferHistoryTransferType? = null,
-                           symbol: CyberSymbolCode? = null, rewards: String? = null, limit: Int? = null, offset: Int? = null): Either<GetTransferHistoryResponse, ApiResponseError>
+    fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection?, transferType: TransferHistoryTransferType?,
+                                    symbol: CyberSymbolCode?, rewards: String?, limit: Int?, offset: Int?, donation: TransferHistoryDonation?, holdType: TransferHistoryHoldType?, claim: TransferHistoryDonation?): Either<GetTransferHistoryResponse, ApiResponseError>
 
     fun getBuyPrice(pointSymbol: CyberSymbolCode, quantity: WalletQuantity): Either<GetWalletBuyPriceResponse, ApiResponseError>
 
@@ -274,5 +278,19 @@ interface ApiService : ServicesTransactionPushService {
     fun setFcmToken(token: String): Either<ResultOk, ApiResponseError>
 
     fun resetFcmToken(): Either<ResultOk, ApiResponseError>
+
+    fun recordPostView(userId: CyberName, communityId: String, permlink: String, deviceId: String): Either<ResultOk, ApiResponseError>
+
+    fun getDonations(posts: List<DonationPostModel>): Either<GetDonationResponse, ApiResponseError>
+
+    fun getProposals(communityIds: List<String>?,
+                     limit: Int?,
+                     offset: Int?): Either<GetProposalResponse, ApiResponseError>
+
+    fun getEntityReports(communityId: String?,
+                         userId: CyberName?,
+                         permlink: String,
+                         limit: Int?,
+                         offset: Int?): Either<GetEntityReportsResponse, ApiResponseError>
 }
 

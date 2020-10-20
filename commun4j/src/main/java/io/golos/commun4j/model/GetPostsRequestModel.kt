@@ -41,7 +41,8 @@ data class GetPostsRequest(val userId: String?,
                            val sortBy: String?,
                            val timeframe: String?,
                            val limit: Int?,
-                           val offset: Int?)
+                           val offset: Int?,
+                           var allowedLanguages: List<String>?)
 
 enum class FeedTimeFrame {
     DAY, WEEK, MONTH, ALL;

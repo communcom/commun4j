@@ -7,8 +7,9 @@ publishing {
             artifact("$buildDir/libs/${project.name}-${version}.jar")
 
             pom.withXml {
+
                 asNode().appendNode('name', "${project.name}")
-                asNode().appendNode('description', "\n${new File('./releaseNotes.md').getText('UTF-8')}\n")
+                asNode().appendNode('description', "\n${new File("${project.rootDir}/releaseNotes.md").getText('UTF-8')}\n")
                 def dependenciesNode = asNode().appendNode('dependencies')
 
                 def adder = {

@@ -23,7 +23,8 @@ data class CyberDiscussion(val document: CyberDiscussionContent?,
                            val url: String?,
                            val stats: DiscussionStats?,
                            val type: String?,
-                           val textLength: Int?)
+                           val textLength: Int?,
+                           val viewsCount: Int?)
 
 @JsonClass(generateAdapter = true)
 data class CyberDiscussionRaw(
@@ -39,7 +40,8 @@ data class CyberDiscussionRaw(
         val url: String?,
         val stats: DiscussionStats?,
         val type: String?,
-        val textLength: Int?)
+        val textLength: Int?,
+        val viewsCount: Int?)
 
 @JsonClass(generateAdapter = true)
 data class CyberDiscussionReports(val reportsCount: Int?)
@@ -92,7 +94,7 @@ data class EmbedResult(val type: String?,
                        val html: String?)
 
 @JsonClass(generateAdapter = true)
-data class DiscussionMetadata(val creationTime: Date)
+data class DiscussionMetadata(val creationTime: Date, val updateTime: Date?, val trxId: String?)
 
 @JsonClass(generateAdapter = true)
 data class DiscussionPayout(val author: Payout?, val curator: Payout?,

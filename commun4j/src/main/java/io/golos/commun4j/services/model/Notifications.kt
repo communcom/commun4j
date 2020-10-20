@@ -10,7 +10,7 @@ import java.math.BigInteger
 import java.util.*
 
 enum class GetNotificationsFilter {
-    SUBSCRIBE, UPVOTE, REPLY, MENTION, TRANSFER, REWARD, REFERRAL_REG_BONUS, REFERRAL_PURCH_BONUS;
+    SUBSCRIBE, UPVOTE, REPLY, MENTION, TRANSFER, REWARD, REFERRAL_REG_BONUS, REFERRAL_PURCH_BONUS, DONATION;
 
     override fun toString(): String {
         return when (this) {
@@ -22,12 +22,13 @@ enum class GetNotificationsFilter {
             REWARD -> "reward"
             REFERRAL_REG_BONUS -> "referralRegistrationBonus"
             REFERRAL_PURCH_BONUS -> "referralPurchaseBonus"
+            DONATION -> "donation"
         }
     }
 }
 
 enum class NotificationType {
-    SUBSCRIBE, UPVOTE, REPLY, MENTION, TRANSFER, REWARD, REFERRAL_REG_BONUS, REFERRAL_PURCH_BONUS;
+    SUBSCRIBE, UPVOTE, REPLY, MENTION, TRANSFER, REWARD, REFERRAL_REG_BONUS, REFERRAL_PURCH_BONUS, DONATION;
 }
 
 class NotificationTypeAdapter : JsonAdapter<NotificationType>() {
@@ -43,6 +44,7 @@ class NotificationTypeAdapter : JsonAdapter<NotificationType>() {
             "reward" -> NotificationType.REWARD
             "referralRegistrationBonus" -> NotificationType.REFERRAL_REG_BONUS
             "referralPurchaseBonus" -> NotificationType.REFERRAL_PURCH_BONUS
+            "donation" -> NotificationType.DONATION
             else -> throw IllegalArgumentException("unknown notificationType $result")
         }
     }
@@ -59,6 +61,7 @@ class NotificationTypeAdapter : JsonAdapter<NotificationType>() {
                     NotificationType.REWARD -> "reward"
                     NotificationType.REFERRAL_REG_BONUS -> "referralRegistrationBonus"
                     NotificationType.REFERRAL_PURCH_BONUS -> "referralPurchaseBonus"
+                    NotificationType.DONATION -> "donation"
                 }
         )
     }
@@ -205,6 +208,21 @@ data class ReferralPurchaseBonusNotification(override val eventType: String,
 
 @JsonClass(generateAdapter = true)
 data class NotificationReferral(val userId: CyberName, val username: String?, val avatarUrl: String?)
+
+@JsonClass(generateAdapter = true)
+data class DonationNotification(override val eventType: String,
+                                override val id: String,
+                                override val timestamp: Date,
+                                val community: NotificationCommunityDescription?,
+                                val userId: CyberName,
+                                val from: NotificationUserDescription,
+                                val entityType: String?,
+                                val post: NotificationEntityContent?,
+                                val amount: Double?,
+                                val symbol: String?,
+                                val pointType: String,
+                                val contentId: NotificationContentId?,
+                                val isNew: Boolean) : Notification(eventType, id, timestamp)
 
 
 class UnsupportedNotification(eventType: String, id: String, timestamp: Date, val rawData: Map<*, *>) : Notification(eventType, id, timestamp)

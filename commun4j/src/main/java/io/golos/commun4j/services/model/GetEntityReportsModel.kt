@@ -1,6 +1,7 @@
 package io.golos.commun4j.services.model
 
 import com.squareup.moshi.JsonClass
+import io.golos.commun4j.model.DiscussionAuthor
 import io.golos.commun4j.sharedmodel.CyberName
 
 //getEntityReports:                  // Получение списка репортов конкретного контента
@@ -12,4 +13,12 @@ import io.golos.commun4j.sharedmodel.CyberName
 
 @JsonClass(generateAdapter = true)
 internal data class GetEntityReportsRequest(val userId: CyberName?, val permlink: String?,
-                                            val communityId: String?, val limit:Int?, val offset:Int?)
+                                            val communityId: String?, val limit: Int?, val offset: Int?)
+
+@JsonClass(generateAdapter = true)
+data class GetEntityReportsResponse(val items: List<EntityReportModel>) : List<EntityReportModel> by items
+
+@JsonClass(generateAdapter = true)
+data class EntityReportModel(val reason: String?,
+                             val author: DiscussionAuthor?
+)

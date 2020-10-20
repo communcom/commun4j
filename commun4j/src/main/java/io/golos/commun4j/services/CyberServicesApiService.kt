@@ -24,7 +24,7 @@ import java.math.BigInteger
 import java.util.*
 
 private enum class ServicesGateMethods {
-    GET_POST, GET_COMMENT, GET_COMMENTS, GET_USER_METADATA, GET_SECRET, AUTH, GET_EMBED,
+    GET_POST, GET_COMMENT, GET_COMMENTS, GET_USER_METADATA, GET_SECRET, AUTH, LOGOUT, GET_EMBED,
     GET_REGISTRATION_STATE, REG_FIRST_STEP, REG_VERIFY_PHONE, REG_SET_USER_NAME, REG_WRITE_TO_BLOCKCHAIN,
     REG_FIRST_STEP_EMAIL, REG_VERIFY_EMAIL, REG_APPEND_REFERRAL_PARENT,
     REG_RESEND_SMS, WAIT_BLOCK, WAIT_FOR_TRANSACTION, PUSH_SUBSCRIBE, PUSH_UNSUBSCRIBE, GET_NOTIFS_HISTORY, MARK_VIEWED,
@@ -34,7 +34,7 @@ private enum class ServicesGateMethods {
     GET_ENTITY_REPORTS, GET_REPORTS, SUGGEST_NAMES, ONBOARDING_COMMUNITY_SUBSCRIPTION, GET_NOTIFICATIONS,
     GET_NOTIFICATIONS_STATUS, GET_BULK, SUBSCRIBE_NOTIFICATIONS, UN_SUBSCRIBE_NOTIFICATIONS, GET_COIN_BUY_PRICE, GET_COIN_SELL_PRICE,
     GET_CONFIG, SEARCH_QUICK, SEARCH_EXTENDED, SET_DEVICE_INFO, SET_FCM_TOKEN, RESET_FCM_TOKEN, REG_RESEND_EMAIL,
-    GET_REFERRAL_USERS;
+    GET_REFERRAL_USERS, RECORD_POST_VIEW, GET_DONATIONS_BULK, GET_PROPOSALS;
 
     override fun toString(): String {
         return when (this) {
@@ -48,6 +48,7 @@ private enum class ServicesGateMethods {
             GET_SECRET -> "auth.generateSecret"
             GET_EMBED -> "frame.getEmbed"
             AUTH -> "auth.authorize"
+            LOGOUT -> "auth.signOut"
             GET_REGISTRATION_STATE -> "registration.getState"
             REG_FIRST_STEP -> "registration.firstStep"
             REG_FIRST_STEP_EMAIL -> "registration.firstStepEmail"
@@ -99,6 +100,9 @@ private enum class ServicesGateMethods {
             RESET_FCM_TOKEN -> "device.resetFcmToken"
             REG_VERIFY_EMAIL -> "registration.verifyEmail"
             GET_REFERRAL_USERS -> "content.getReferralUsers"
+            RECORD_POST_VIEW -> "meta.recordPostView"
+            GET_DONATIONS_BULK -> "wallet.getDonationsBulk"
+            GET_PROPOSALS -> "content.getProposals"
         }
     }
 }
@@ -131,6 +135,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                                 .withSubtype(RewardNotification::class.java, "reward")
                                 .withSubtype(ReferralRegistrationBonusNotification::class.java, "referralRegistrationBonus")
                                 .withSubtype(ReferralPurchaseBonusNotification::class.java, "referralPurchaseBonus")
+                                .withSubtype(DonationNotification::class.java, "donation")
                 )
                 .add(
                         PolymorphicJsonAdapterFactory.of(QuickSearchResponseItem::class.java, "type")
@@ -160,7 +165,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                         "deviceType=${config.socketOpenQueryParams.deviceType}" +
                         "&clientType=${config.socketOpenQueryParams.clientType}&version=${config.socketOpenQueryParams.version}".let {
                             val queryParams = config.socketOpenQueryParams;
-                            if (queryParams.deviceId == null)it
+                            if (queryParams.deviceId == null) it
                             else it + "&deviceId=${queryParams.deviceId}"
                         },
                 moshi,
@@ -193,6 +198,11 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         apiClient.dropConnection()
     }
 
+    override fun logout(): Either<ResultOk, ApiResponseError> {
+        return apiClient.send(ServicesGateMethods.LOGOUT.toString(), Any(), ResultOk::class.java)
+    }
+
+
     override fun resolveCanonicalCyberName(username: String): Either<ResolvedProfile, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.RESOLVE_USERNAME.toString(),
@@ -203,7 +213,7 @@ internal class CyberServicesApiService @JvmOverloads constructor(
 
     override fun getCommunitiesList(type: CommunitiesRequestType?, userId: CyberName?, search: String?, offset: Int?, limit: Int?) = apiClient.send(
             ServicesGateMethods.GET_COMMUNITIES.toString(),
-            GetCommunitiesRequest(type?.toString(), userId?.name, search, offset, limit),
+            GetCommunitiesRequest(type?.toString(), userId?.name, search, offset, limit, listOf("all")),
             GetCommunitiesResponse::class.java)
 
     override fun getCommunity(communityId: String?, communityAlias: String?) = apiClient.send(
@@ -303,20 +313,20 @@ internal class CyberServicesApiService @JvmOverloads constructor(
         )
     }
 
-    override fun getPosts(userId: CyberName?, communityId: String?, communityAlias: String?, allowNsfw: Boolean?, type: FeedType?, sortBy: FeedSortByType?, timeframe: FeedTimeFrame?, limit: Int?, offset: Int?): Either<GetDiscussionsResult, ApiResponseError> {
+    override fun getPosts(userId: CyberName?, communityId: String?, communityAlias: String?, allowNsfw: Boolean?, type: FeedType?, sortBy: FeedSortByType?, timeframe: FeedTimeFrame?, limit: Int?, offset: Int?, allowedLanguages: List<String>?): Either<GetDiscussionsResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_POSTS.toString(),
                 GetPostsRequest(userId?.name, communityId, communityAlias,
-                        allowNsfw, type?.toString(), sortBy?.toString(), timeframe?.toString(), limit, offset),
+                        allowNsfw, type?.toString(), sortBy?.toString(), timeframe?.toString(), limit, offset, allowedLanguages),
                 GetDiscussionsResult::class.java
         )
     }
 
-    override fun getPostsRaw(userId: CyberName?, communityId: String?, communityAlias: String?, allowNsfw: Boolean?, type: FeedType?, sortBy: FeedSortByType?, timeframe: FeedTimeFrame?, limit: Int?, offset: Int?): Either<GetDiscussionsResultRaw, ApiResponseError> {
+    override fun getPostsRaw(userId: CyberName?, communityId: String?, communityAlias: String?, allowNsfw: Boolean?, type: FeedType?, sortBy: FeedSortByType?, timeframe: FeedTimeFrame?, limit: Int?, offset: Int?, allowedLanguages: List<String>?): Either<GetDiscussionsResultRaw, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.GET_POSTS.toString(),
                 GetPostsRequest(userId?.name, communityId, communityAlias,
-                        allowNsfw, type?.toString(), sortBy?.toString(), timeframe?.toString(), limit, offset),
+                        allowNsfw, type?.toString(), sortBy?.toString(), timeframe?.toString(), limit, offset, allowedLanguages),
                 GetDiscussionsResultRaw::class.java
         )
     }
@@ -432,11 +442,11 @@ internal class CyberServicesApiService @JvmOverloads constructor(
                             contentType: ReportRequestContentType?,
                             sortBy: ReportsRequestTimeSort?,
                             limit: Int?,
-                            offset: Int?): Either<GetReportsResponse, ApiResponseError> {
+                            offset: Int?): Either<GetReportsResponseRaw, ApiResponseError> {
 
         return apiClient.send(ServicesGateMethods.GET_REPORTS.toString(),
                 GetReportsRequest(communityIds, status?.toString(), contentType?.toString(),
-                        sortBy?.toString(), limit, offset), GetReportsResponse::class.java)
+                        sortBy?.toString(), limit, offset), GetReportsResponseRaw::class.java)
     }
 
     override fun getReportsRaw(communityIds: List<String>?,
@@ -545,7 +555,9 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     override fun resendSmsCode(forUser: String?, phone: String?): Either<ResendSmsResult, ApiResponseError> {
         return apiClient.send(
                 ServicesGateMethods.REG_RESEND_SMS.toString(),
-                ResendUserSmsRequest(forUser, phone), ResendSmsResult::class.java
+                mapOf(
+                        "phone" to phone
+                ), ResendSmsResult::class.java
         )
     }
 
@@ -736,8 +748,8 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     }
 
     override fun getTransferHistory(userId: CyberName, direction: TransferHistoryDirection?, transferType: TransferHistoryTransferType?,
-                                    symbol: CyberSymbolCode?, rewards: String?, limit: Int?, offset: Int?): Either<GetTransferHistoryResponse, ApiResponseError> {
-        val request = GetTransferHistoryRequest(userId, direction, transferType, symbol, rewards, limit, offset)
+                                    symbol: CyberSymbolCode?, rewards: String?, limit: Int?, offset: Int?, donation: TransferHistoryDonation?, holdType: TransferHistoryHoldType?, claim: TransferHistoryDonation?): Either<GetTransferHistoryResponse, ApiResponseError> {
+        val request = GetTransferHistoryRequest(userId, direction, transferType, symbol, rewards, limit, offset, donation, holdType, claim)
         return apiClient.send(ServicesGateMethods.GET_TRANSFER_HISTORY.toString(), request, GetTransferHistoryResponse::class.java)
     }
 
@@ -789,4 +801,35 @@ internal class CyberServicesApiService @JvmOverloads constructor(
     override fun shutDown() {
         apiClient.dropConnection()
     }
+
+    override fun recordPostView(userId: CyberName, communityId: String, permlink: String, deviceId: String): Either<ResultOk, ApiResponseError> {
+        return apiClient.send(ServicesGateMethods.RECORD_POST_VIEW.toString(), mapOf(
+                "postLink" to "$communityId/${userId.name}/$permlink",
+                "fingerPrint" to deviceId
+        ), ResultOk::class.java)
+    }
+
+    override fun getDonations(posts: List<DonationPostModel>): Either<GetDonationResponse, ApiResponseError> {
+        val request = GetDonationRequest(posts)
+        return apiClient.send(ServicesGateMethods.GET_DONATIONS_BULK.toString(), request, GetDonationResponse::class.java)
+    }
+
+    override fun getProposals(communityIds: List<String>?,
+                              limit: Int?,
+                              offset: Int?): Either<GetProposalResponse, ApiResponseError> {
+
+        return apiClient.send(ServicesGateMethods.GET_PROPOSALS.toString(),
+                GetProposalRequest(communityIds, limit, offset), GetProposalResponse::class.java)
+    }
+
+    override fun getEntityReports(communityId: String?,
+                                  userId: CyberName?,
+                                  permlink: String,
+                                  limit: Int?,
+                                  offset: Int?): Either<GetEntityReportsResponse, ApiResponseError> {
+
+        return apiClient.send(ServicesGateMethods.GET_ENTITY_REPORTS.toString(),
+                GetEntityReportsRequest(userId, permlink, communityId, limit, offset), GetEntityReportsResponse::class.java)
+    }
+
 }

@@ -3,7 +3,7 @@ package io.golos.commun4j.model
 import io.golos.commun4j.ITransactionPusherBridge
 import io.golos.commun4j.abi.implementation.IAction
 import io.golos.commun4j.abi.implementation.c.point.OpenCPointAction
-import io.golos.commun4j.abi.implementation.c.point.OpenArgsCPointStruct
+import io.golos.commun4j.abi.implementation.c.point.OpenCPointStruct
 import io.golos.commun4j.chain.actions.transaction.abi.TransactionAuthorizationAbi
 import io.golos.commun4j.core.crypto.EosPrivateKey
 import io.golos.commun4j.http.rpc.model.transaction.response.TransactionCommitted
@@ -61,11 +61,10 @@ fun recoverFromBalanceDoesNotExistError(error: GolosEosError,
                                         bandWidthRequest: BandWidthRequest?,
                                         clientAuthRequest: ClientAuthRequest?): Either<*, GolosEosError> {
 
-    if (!error.hasBalanceDoesNotExistError()) return Either.Failure<Any, GolosEosError>(error)
+    if (!error.hasBalanceDoesNotExistError() && !error.hasBalanceOfFromNotOpened()) return Either.Failure<Any, GolosEosError>(error)
 
     val argsStruct = getOpenArgsCPointStructIfActionSupportedForBalanceNotExistError(originalAction)
             ?: return Either.Failure<Any, GolosEosError>(error)
-
     print(argsStruct)
 
     var actions = listOf(OpenCPointAction(argsStruct).toActionAbi(listOf(TransactionAuthorizationAbi(argsStruct.getOwner.name, "active"))))
@@ -76,7 +75,7 @@ fun recoverFromBalanceDoesNotExistError(error: GolosEosError,
     return endpoint.pushTransaction(
             actions,
             keys,
-            OpenArgsCPointStruct::class.java,
+            OpenCPointStruct::class.java,
             bandWidthRequest
     )
 }
